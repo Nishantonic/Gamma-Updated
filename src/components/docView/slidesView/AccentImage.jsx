@@ -67,7 +67,7 @@ function AccentImage({ children, ...props }) {
 
   return (
     <div
-      className="min-h-screen w-full md:w-[70vw] md:min-h-[25vw] md:mt-[12vw] md:ml-[30vh] rounded-lg bg-[#342c4e] p-6 relative"
+      className="min-h-screen w-full md:w-[60vw] md:min-h-[25vw] md:mt-[1vw] md:ml-[25vh] rounded-lg bg-[#342c4e] p-6 relative"
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
       onMouseLeave={handleMouseUp}

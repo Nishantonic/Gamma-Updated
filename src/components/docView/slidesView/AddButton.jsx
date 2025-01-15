@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import CardTemplates from "./CardTemplates.jsx";
 
-const AddButton = ({ slidesPreview, setSlidesPreview }) => {
+const AddButton = ({ slidesPreview, setSlidesPreview ,setCurrentSlide}) => {
   const [popupText, setPopupText] = useState("");
 
   const handleMouseEnter = (text) => setPopupText(text);
@@ -13,8 +13,8 @@ const AddButton = ({ slidesPreview, setSlidesPreview }) => {
       number: newSlideId,
       id: newSlideId,
       title: `Slide ${newSlideId}`,
-      content: <div className="flex justify-center"><CardTemplates /></div>,
-      onClick: () => console.log(`Slide ${newSlideId} clicked`),
+      content: <div className="flex justify-center"><CardTemplates slidesPreview={slidesPreview} id={newSlideId} setCurrentSlide={setCurrentSlide} setSlidesPreview={setSlidesPreview} /></div>,
+      onClick: () => setCurrentSlide(newSlideId),
     };
     setSlidesPreview([...slidesPreview, newSlide]);
   };

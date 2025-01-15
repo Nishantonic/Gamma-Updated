@@ -14,8 +14,9 @@ import { TemplatesModal } from "./CardComponents/TempletModal"
 import AccentImage from "./AccentImage"
 
 import AddButton from "./AddButton";
+import ImageCardText from "./ImageCardText"
 
-export default function CardTemplates({ children, ...props }) {
+export default function CardTemplates({ children, slidesPreview, setSlidesPreview, id, setCurrentSlide, ...props }) {
   const [showTwoColumn, setShowTwoColumn] = useState(false);
   const [showImageText, setShowImageText] = useState(false);
   const [showThreeColumn, setShowThreeColumn] = useState(false);
@@ -41,12 +42,56 @@ export default function CardTemplates({ children, ...props }) {
   };
 
   if (showTwoColumn) {
+    // console.log(slidesPreview,setSlidesPreview);
+    
+    setSlidesPreview(slidesPreview => {
+      return slidesPreview.map(slide => {
+        const newSlideId = slidesPreview.length
+        if (slide.id === id) {
+          return {
+            ...slide,
+            
+            content: <div className="flex justify-center"><CardTemplateTwoColumn slidesPreview={slidesPreview} id={newSlideId} setSlidesPreview={setSlidesPreview} /></div>,
+            onClick: () => setCurrentSlide(slide.id),
+          }
+        }
+        return slide
+      })
+    })
     return <CardTemplateTwoColumn />;
   }
   if (showImageText) {
+
+    setSlidesPreview(slidesPreview => {
+      return slidesPreview.map(slide => {
+        const newSlideId = slidesPreview.length
+        if (slide.id === id) {
+          return {
+            ...slide,
+            content: <div className="flex justify-center"><ImageCardText slidesPreview={slidesPreview} id={newSlideId} setSlidesPreview={setSlidesPreview} /></div>,
+            onClick: () => setCurrentSlide(slide.id),
+          }
+        }
+        return slide
+      })
+    })
     return <ImageCradText />;
   }
   if (showThreeColumn) {
+
+    setSlidesPreview(slidesPreview => {
+      return slidesPreview.map(slide => {
+        const newSlideId = slidesPreview.length
+        if (slide.id === id) {
+          return {
+            ...slide,
+            content: <div className="flex justify-center"><CardTemplateImgHeadingThree slidesPreview={slidesPreview} id={newSlideId} setSlidesPreview={setSlidesPreview} /></div>,
+            onClick: () => setCurrentSlide(slide.id),
+          }
+        }
+        return slide
+      })
+    })
     return <CardTemplateImgHeadingThree />;
   }
 

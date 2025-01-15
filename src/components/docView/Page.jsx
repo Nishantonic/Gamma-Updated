@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { Header } from "@/components/docView/Header";
 import { ResizableSidebar } from "@/components/docView/ResizableSidebar";
-import { Slide1 } from "@/components/docView/Slides";
+// import { Slide1 } from "@/components/docView/Slides";
+import CardTemplates from "./slidesView/CardTemplates";
 import { closestCorners, DndContext } from "@dnd-kit/core";
 import { arrayMove } from "@dnd-kit/sortable";
 import AddButton from "./slidesView/AddButton";
@@ -16,22 +17,30 @@ export default function Page() {
     }
   }, [currentSlide]);
 
-  const [slidesPreview, setSlidesPreview] = useState([
-    {
-      number: 1,
-      id: 1,
-      title: "Customer Targeting Strategy",
-      content: <Slide1 />,
-      onClick: () => setCurrentSlide(1),
-    },
-  ]);
+  const [slidesPreview, setSlidesPreview] = useState();
 
-  const [slides, setSlides] = useState([
-    {
-      id: 1,
-      Slide: <Slide1 />,
-    },
-  ]);
+  useEffect(() => {
+    setSlidesPreview([
+      {
+        number: 1,
+        id: 1,
+        title: "Customer Targeting Strategy",
+        content: <div className="flex justify-center">
+        <CardTemplates slidesPreview={slidesPreview} setCurrentSlide={setCurrentSlide} id={1} setSlidesPreview={setSlidesPreview} />
+      </div>,
+        onClick: () => setCurrentSlide(1),
+      },
+    ])
+    setSlides([
+      {
+        id: 1,
+        Slide: <div className="flex justify-center">
+        <CardTemplates slidesPreview={slidesPreview} setCurrentSlide={setCurrentSlide} id={1} setSlidesPreview={setSlidesPreview} />
+      </div>,
+      },
+    ])
+  },[])
+  const [slides, setSlides] = useState();
 
   const handleDragEnd = (e) => {
     const { active, over } = e;
@@ -51,7 +60,7 @@ export default function Page() {
 
   useEffect(() => {
     setSlides(
-      slidesPreview.map((p) => ({
+      slidesPreview?.map((p) => ({
         Slide: p.content,
         id: p.id,
       }))
@@ -63,15 +72,15 @@ export default function Page() {
       <Header />
       <div className="flex flex-1 overflow-hidden">
         <DndContext collisionDetection={closestCorners} onDragEnd={handleDragEnd}>
-          <ResizableSidebar
+          {slidesPreview&&<ResizableSidebar
             setCurrentSlide={setCurrentSlide}
             slidesPreview={slidesPreview}
             setSlidesPreview={setSlidesPreview}
-          />
+          />}
         </DndContext>
         <main className="flex-1 overflow-y-auto">
           <div>
-            {slides.map(({ Slide, id }, index) => (
+            {slides?.map(({ Slide, id }, index) => (
               <div key={index} className="" id={`at-${id}`}>
                 {Slide}
               </div>
@@ -81,6 +90,7 @@ export default function Page() {
               style={{ position: "relative", marginTop: "20px" }}
             >
               <AddButton
+                setCurrentSlide={setCurrentSlide}
                 slidesPreview={slidesPreview}
                 setSlidesPreview={setSlidesPreview}
               />

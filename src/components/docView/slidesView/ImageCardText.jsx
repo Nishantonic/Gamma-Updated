@@ -150,9 +150,7 @@ function ImageCardText({ children, ...props }) {
       </div>
     </div>
     </div>
-    <div className="mt-5">
-    <AddButton />
-    </div>
+    
     </div>
   )
 }
