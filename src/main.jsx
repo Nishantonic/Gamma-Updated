@@ -1,10 +1,13 @@
-import { StrictMode } from 'react'
-import { createRoot } from 'react-dom/client'
+import React from 'react'
+import { DragProvider } from './components/SidebarLeft/DragContext'
 import './index.css'
 import App from './App.jsx'
+import ReactDOM from "react-dom"
 
-createRoot(document.getElementById('root')).render(
-  <StrictMode>
+
+ReactDOM.render(
+  <DragProvider>
     <App />
-  </StrictMode>,
+  </DragProvider>,
+  document.getElementById("root")
 )

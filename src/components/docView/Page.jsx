@@ -5,7 +5,7 @@ import { Slide1 } from "@/components/docView/Slides";
 import { closestCorners, DndContext } from "@dnd-kit/core";
 import { arrayMove } from "@dnd-kit/sortable";
 import AddButton from "./slidesView/AddButton";
-
+import Home from "../Home/Home";
 export default function Page() {
   const [currentSlide, setCurrentSlide] = useState(1);
 
@@ -59,6 +59,8 @@ export default function Page() {
   }, [slidesPreview]);
 
   return (
+    <>
+
     <div className="h-screen flex flex-col bg-background">
       <Header />
       <div className="flex flex-1 overflow-hidden">
@@ -89,5 +91,8 @@ export default function Page() {
         </main>
       </div>
     </div>
+
+    <Home />
+    </>
   );
 }

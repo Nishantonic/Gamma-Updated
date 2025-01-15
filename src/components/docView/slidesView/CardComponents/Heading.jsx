@@ -79,8 +79,8 @@ export default function Heading() {
   }
 
   return (
-    <Card className="w-full flex justify-start max-w-4xl flex-wrap  mt-10 bg-[#2e294e] border-none shadow-xl">
-      <CardHeader className="flex flex-row justify-between space-y-0 px-4 py-3">
+    <Card className="w-full flex justify-start max-w-4xl flex-wrap  mt-1 bg-[#2e294e] border-none shadow-xl">
+      <CardHeader className="flex flex-row justify-between space-y-0 px-1 py-1">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button 

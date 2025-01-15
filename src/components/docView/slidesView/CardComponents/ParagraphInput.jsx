@@ -69,8 +69,8 @@ export default function TextEditor() {
   }
 
   return (
-    <Card className="w-full flex justify-start max-w-4xl p-0 m-0 mt-10 bg-[#2e294e] flex-wrap border-none shadow-xl">
-      <CardHeader className="flex flex-row justify-between space-y-0 px-4 py-3">
+    <Card className="w-full flex justify-start max-w-4xl p-0 m-0 mt-5 bg-[#2e294e] flex-wrap border-none shadow-xl">
+      <CardHeader className="flex flex-row justify-between space-y-0 px-1 py-1">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button 
