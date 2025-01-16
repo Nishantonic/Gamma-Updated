@@ -52,7 +52,7 @@ function CardTemplateTwoColumn({ children, ...props }) {
   }
 
   return (
-    <div className="flex flex-col items-center mb-2 mt-1">
+    <div className="flex flex-col items-center ">
       <div
         className="min-h-screen w-full md:w-[60vw] md:min-h-[25vw] rounded-lg bg-[#342c4e] p-6 relative"
         onDragOver={handleDragOver}
@@ -70,8 +70,6 @@ function CardTemplateTwoColumn({ children, ...props }) {
 
         <div className="mt-16 space-y-6">
           <TitleInput />
-          {/* Render Templates Conditionally */}
-          {currentTemplate === "twoColumn" && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="w-full">
                 <ParagraphInput
@@ -83,7 +81,6 @@ function CardTemplateTwoColumn({ children, ...props }) {
                 <ParagraphInput placeholder="Start typing the second paragraph..." />
               </div>
             </div>
-          )}
           {/* {currentTemplate === "ImageText" && <ImageCardText />}
           {currentTemplate === "ThreeColumn" && <CardTemplateImgHeadingThree />} */}
         </div>
@@ -97,9 +94,7 @@ function CardTemplateTwoColumn({ children, ...props }) {
           </div>
         )}
       </div>
-      <div className="mt-5">
-        <AddButton />
-      </div>
+      
     </div>
   );
 }

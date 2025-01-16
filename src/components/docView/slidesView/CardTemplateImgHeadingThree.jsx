@@ -1,16 +1,37 @@
-import React, { useState, useContext } from "react";
-import { CardMenu } from "./Menu/CardMenu";
-import TitleInput from "./CardComponents/TitleInput";
-import Heading from "./CardComponents/Heading";
-import ParagraphInput from "./CardComponents/ParagraphInput";
-import AddButton from "./AddButton";
-import { DragContext } from "@/components/SidebarLeft/DragContext";
+//three img text
+import React, { useContext, useEffect, useState } from "react"
+import { CardMenu } from "./Menu/CardMenu"
+import TitleInput from "./CardComponents/TitleInput"
+import Heading from './CardComponents/Heading'
+import ParagraphInput from './CardComponents/ParagraphInput'
+import AddButton from "./AddButton"
+import { DragContext } from "@/components/SidebarLeft/DragContext"
 
-function CardTemplateImgHeadingThree({ children, ...props }) {
-  const [previews, setPreviews] = useState([null, null, null]);
+function CardTemplateImgHeadingThree({ setSlidesPreview, slidesPreview, id, children, ...props }) {
+  const [previews, setPreviews] = useState([null, null, null])
   const [replacedTemplate, setReplacedTemplate] = useState(null); // Track replaced template
   const [droppedItems, setDroppedItems] = useState([]);
   const { draggedElement } = useContext(DragContext);
+  
+  // const [changeTitle,setChangeTitle]=useState()
+  // useEffect(() => {
+  //   if(setSlidesPreview)
+  //   setSlidesPreview(slidesPreview => {
+  //     return slidesPreview.map(slide => {
+  //       const newSlideId = slidesPreview.length
+  //       if (slide.id === id) {
+  //         return {
+  //           number: newSlideId,
+  //           id: newSlideId,
+  //           title: `Slide ${newSlideId}`,
+  //           content: <div className="flex justify-center"><CardTemplateImgHeadingThree slidesPreview={slidesPreview} id={newSlideId} setSlidesPreview={setSlidesPreview} /></div>,
+  //           onClick: () => setCurrentSlide(newSlideId),
+  //         }
+  //       }
+  //       return slide
+  //     })
+  //   })
+  // }, [])
 
   const handleImagePreview = (e, index) => {
     const file = e.target.files[0];
@@ -23,7 +44,27 @@ function CardTemplateImgHeadingThree({ children, ...props }) {
       };
       reader.readAsDataURL(file);
     }
-  };
+  }
+
+  const handleEdit = () => {
+    console.log("Edit clicked")
+  }
+
+  const handleDelete = () => {
+    console.log("Delete clicked")
+  }
+
+  const handleDuplicate = () => {
+    console.log("Duplicate clicked")
+  }
+
+  const handleShare = () => {
+    console.log("Share clicked")
+  }
+
+  const handleDownload = () => {
+    console.log("Download clicked")
+  }
 
   const handleDrop = (event) => {
     event.preventDefault();
@@ -32,7 +73,7 @@ function CardTemplateImgHeadingThree({ children, ...props }) {
     } else if (draggedElement?.template) {
       setDroppedItems([...droppedItems, draggedElement.template]);
     }
-  };
+  }
 
   const handleDragOver = (event) => {
     event.preventDefault();
@@ -44,27 +85,26 @@ function CardTemplateImgHeadingThree({ children, ...props }) {
   }
 
   return (
-    <div className="flex flex-col items-center mb-2 mt-2">
-      <div
-        className="min-h-screen w-full md:w-[60vw]  md:min-h-[25vh] rounded-lg bg-[#342c4e] p-5 relative"
+    <div className="flex flex-col items-center ">
+      <div className="min-h-screen w-full md:w-[60vw] md:min-h-[25vw] rounded-lg bg-[#342c4e] p-6 relative"
         onDragOver={handleDragOver}
         onDrop={handleDrop}
       >
         <div className="absolute top-4 left-11">
           <CardMenu
-            onEdit={() => console.log("Edit clicked")}
-            onDelete={() => console.log("Delete clicked")}
-            onDuplicate={() => console.log("Duplicate clicked")}
-            onShare={() => console.log("Share clicked")}
-            onDownload={() => console.log("Download clicked")}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+            onDuplicate={handleDuplicate}
+            onShare={handleShare}
+            onDownload={handleDownload}
           />
         </div>
 
-        {/* Title Section */}
-        <TitleInput />
+      {/* Title Section */}
+      <TitleInput/>
 
-        {/* Images and Inputs */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5 px-1 mt-5">
+        {/* Cards Container */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5 px-10 mt-6">
           {[0, 1, 2].map((index) => (
             <div
               key={index}
@@ -102,9 +142,7 @@ function CardTemplateImgHeadingThree({ children, ...props }) {
                   </div>
                 )}
                 <div className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                  <span className="text-white text-sm font-medium">
-                    Click to Upload Image
-                  </span>
+                  <span className="text-white text-sm font-medium">Click to Upload Image</span>
                 </div>
                 <input
                   type="file"

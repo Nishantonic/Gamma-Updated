@@ -11,8 +11,12 @@ import card2 from "./assets/card2.png";
 import card3 from "./assets/card3.png";
 import card4 from "./assets/card4.png";
 import { DragContext } from "@/components/SidebarLeft/DragContext";
+import { TemplatesModal } from "./CardComponents/TempletModal"
+import AccentImage from "./AccentImage"
+import AddButton from "./AddButton";
+import ImageCardText from "./ImageCardText"
 
-export default function CardTemplates({ children, ...props }) {
+export default function CardTemplates({ children, slidesPreview, setSlidesPreview, id, setCurrentSlide, ...props }) {
   const [showTwoColumn, setShowTwoColumn] = useState(false);
   const [showImageText, setShowImageText] = useState(false);
   const [showThreeColumn, setShowThreeColumn] = useState(false);
@@ -33,13 +37,78 @@ export default function CardTemplates({ children, ...props }) {
     event.preventDefault();
   };
 
+  const handleEdit = () => {
+    console.log("Edit clicked");
+  };
+
+  const handleDelete = () => {
+    console.log("Delete clicked");
+  };
+
+  const handleDuplicate = () => {
+    console.log("Duplicate clicked");
+  };
+
+  const handleShare = () => {
+    console.log("Share clicked");
+  };
+
+  const handleDownload = () => {
+    console.log("Download clicked");
+  };
+
   if (showTwoColumn) {
+    // console.log(slidesPreview,setSlidesPreview);
+    
+    setSlidesPreview(slidesPreview => {
+      return slidesPreview.map(slide => {
+        const newSlideId = slidesPreview.length
+        if (slide.id === id) {
+          return {
+            ...slide,
+            
+            content: <div className="flex justify-center"><CardTemplateTwoColumn slidesPreview={slidesPreview} id={newSlideId} setSlidesPreview={setSlidesPreview} /></div>,
+            onClick: () => setCurrentSlide(slide.id),
+          }
+        }
+        return slide
+      })
+    })
     return <CardTemplateTwoColumn />;
   }
+
   if (showImageText) {
+
+    setSlidesPreview(slidesPreview => {
+      return slidesPreview.map(slide => {
+        const newSlideId = slidesPreview.length
+        if (slide.id === id) {
+          return {
+            ...slide,
+            content: <div className="flex justify-center"><ImageCardText slidesPreview={slidesPreview} id={newSlideId} setSlidesPreview={setSlidesPreview} /></div>,
+            onClick: () => setCurrentSlide(slide.id),
+          }
+        }
+        return slide
+      })
+    })
     return <ImageCradText />;
   }
   if (showThreeColumn) {
+
+    setSlidesPreview(slidesPreview => {
+      return slidesPreview.map(slide => {
+        const newSlideId = slidesPreview.length
+        if (slide.id === id) {
+          return {
+            ...slide,
+            content: <div className="flex justify-center"><CardTemplateImgHeadingThree slidesPreview={slidesPreview} id={newSlideId} setSlidesPreview={setSlidesPreview} /></div>,
+            onClick: () => setCurrentSlide(slide.id),
+          }
+        }
+        return slide
+      })
+    })
     return <CardTemplateImgHeadingThree />;
   }
 
@@ -54,11 +123,17 @@ export default function CardTemplates({ children, ...props }) {
 
 
   return (
-    <div onDragOver={handleDragOver} onDrop={handleDrop} className="mt-2 mb-2">
+    <div onDragOver={handleDragOver} onDrop={handleDrop} >
     
         <div className="min-h-screen  w-full md:w-[60vw] md:min-h-[25vw] md:mt-[3vh] rounded-lg px-1 bg-[#342c4e] p-6 relative ">
           <div className="absolute top-4 left-11">
-            <CardMenu />
+            <CardMenu
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+              onDuplicate={handleDuplicate}
+              onShare={handleShare}
+              onDownload={handleDownload}
+            />
           </div>
           <div className="mt-10">
             <TitleInput />
@@ -76,7 +151,6 @@ export default function CardTemplates({ children, ...props }) {
             </h2>
 
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 px-10">
-              {/* Display Drop Div */}
 
               <Card
                 className="p-4 bg-[#2a2438] border-[#3a3347] hover:border-[#4a4357] cursor-pointer transition-colors relative group"

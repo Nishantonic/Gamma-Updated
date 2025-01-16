@@ -90,7 +90,7 @@ function AccentImage({ children, ...props }) {
   return (
     <div className="flex flex-col items-center mb-2 mt-2">
     <div
-      className="min-h-screen w-full md:w-[60vw] md:min-h-[25vh] md:mt-[12vw]  rounded-lg bg-[#342c4e] p-6 relative"
+      className="min-h-screen w-full md:w-[60vw] md:min-h-[25vw] md:mt-[1vw] md:ml-[25vh] rounded-lg bg-[#342c4e] p-6 relative"
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
       onMouseLeave={handleMouseUp}
