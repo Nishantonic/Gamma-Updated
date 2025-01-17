@@ -32,13 +32,22 @@ export default function CardTemplates({ children, slidesPreview, setSlidesPrevie
     if (draggedElement?.template && draggedElement.type === "CardTemplate") {
       setReplacedTemplate(draggedElement.template); // Set the dropped template
     } else if (draggedElement?.template) {
-      setDroppedItems([...droppedItems, draggedElement.template]);
+      const newElement = {
+        id: Date.now(),
+        content: draggedElement.template,
+      };
+      setDroppedItems((prev) => [...prev, newElement]);
     }
   };
 
   const handleDragOver = (event) => {
     event.preventDefault();
   };
+
+  const handleDeleteDroppedItem = (id) => {
+    setDroppedItems((prev) => prev.filter((item) => item.id !== id));
+  };
+
 
   const handleEdit = () => {
     console.log("Edit clicked");
@@ -161,9 +170,13 @@ export default function CardTemplates({ children, slidesPreview, setSlidesPrevie
             <TitleAi initialData={title} onUpdate={(newTitle) => setTitle(newTitle)} />
           </div>
           {droppedItems.length > 0 ? (
-            <div>
-              {droppedItems.map((item, index) => (
-                <div key={index} className="mb-4">{item}</div>
+            <div className="mt-6 space-y-4">
+              {droppedItems.map((item) => (
+                <div key={item.id} className="relative">
+                  {React.cloneElement(item.content, {
+                    onDelete: () => handleDeleteDroppedItem(item.id),
+                  })}
+                </div>
               ))}
             </div>
       ) : (
