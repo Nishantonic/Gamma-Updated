@@ -1,77 +1,76 @@
-"use client"
-// image right, text left with dynamic resizing from bottom-left corner
-import React, { useState } from "react"
-import { CardMenu } from "./Menu/CardMenu"
-import TitleInput from "./CardComponents/TitleInput"
-import ParagraphInput from "./CardComponents/ParagraphInput"
+"use client";
 
-function AccentImage({ children, ...props}) {
-  const [preview, setPreview] = useState(null)
-  const [imageSize, setImageSize] = useState({ width: 300, height: 210 })
-  const [isResizing, setIsResizing] = useState(false)
-  const [initialMousePos, setInitialMousePos] = useState({ x: 0, y: 0 })
-  const [initialSize, setInitialSize] = useState({ width: 0, height: 0 })
-  
-  const handleImagePreview = (e) => {
-    const file = e.target.files[0]
-    if (file) {
-      const reader = new FileReader()
-      reader.onload = () => {
-        setPreview(reader.result)
-      }
-      reader.readAsDataURL(file)
+import React, { useState, useEffect } from "react";
+import { CardMenu } from "../../slidesView/Menu/CardMenu";
+import TitleAi from "./TitleAi.jsx";
+import ParagraphAi from "./ParagraphAi.jsx";
+
+function AccentImageAi({ generateAi = {}, ...props }) {
+  const [preview, setPreview] = useState(generateAi.image);
+  const [imageSize, setImageSize] = useState({ width: 300, height: 210 });
+  const [isResizing, setIsResizing] = useState(false);
+  const [initialMousePos, setInitialMousePos] = useState({ x: 0, y: 0 });
+  const [initialSize, setInitialSize] = useState({ width: 0, height: 0 });
+  const [title, setTitle] = useState(generateAi.title || "Untitled Card");
+  const [description, setDescription] = useState(generateAi.description || "Start typing...");
+
+  useEffect(() => {
+    if (generateAi.image && isValidImageUrl(generateAi.image)) {
+      setPreview(generateAi.image);
     }
-  }
+  }, [generateAi.image]);
+
+  const isValidImageUrl = (url) => {
+    return url.match(/\.(jpeg|jpg|gif|png)$/) != null;
+  };
+
+  const handleImagePreview = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        setPreview(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   const handleMouseDown = (e) => {
-    setIsResizing(true)
-    setInitialMousePos({ x: e.clientX, y: e.clientY })
-    setInitialSize({ width: imageSize.width, height: imageSize.height })
-  }
+    setIsResizing(true);
+    setInitialMousePos({ x: e.clientX, y: e.clientY });
+    setInitialSize({ width: imageSize.width, height: imageSize.height });
+  };
 
   const handleMouseMove = (e) => {
     if (isResizing) {
-      const dx = initialMousePos.x - e.clientX // Negative for resizing leftwards
-      const dy = e.clientY - initialMousePos.y
+      const dx = e.clientX - initialMousePos.x;
+      const dy = e.clientY - initialMousePos.y;
 
       setImageSize({
-        width: Math.max(initialSize.width + dx, 100), // Minimum width of 100px
-        height: Math.max(initialSize.height + dy, 100), // Minimum height of 100px
-      })
+        width: Math.max(initialSize.width + dx, 100),
+        height: Math.max(initialSize.height + dy, 100),
+      });
     }
-  }
-  
+  };
+
   const handleMouseUp = () => {
-    setIsResizing(false)
-  }
+    setIsResizing(false);
+  };
 
-  const handleEdit = () => {
-    console.log("Edit clicked")
-  }
-
-  const handleDelete = () => {
-    console.log("Delete clicked")
-  }
-
-  const handleDuplicate = () => {
-    console.log("Duplicate clicked")
-  }
-
-  const handleShare = () => {
-    console.log("Share clicked")
-  }
-
-  const handleDownload = () => {
-    console.log("Download clicked")
-  }
+  const handleEdit = () => console.log("Edit clicked");
+  const handleDelete = () => console.log("Delete clicked");
+  const handleDuplicate = () => console.log("Duplicate clicked");
+  const handleShare = () => console.log("Share clicked");
+  const handleDownload = () => console.log("Download clicked");
 
   return (
     <div
-      className="min-h-screen  w-full md:w-[60vw] md:min-h-[25vw] md:mt-[3vh] md:mb-[3vh] rounded-lg px-1 bg-[#342c4e] p-6 relative"
+      className="min-h-screen w-full md:w-[60vw] md:min-h-[25vw] md:mt-[3vh] md:mb-[3vh] rounded-lg px-1 bg-[#342c4e] p-6 relative"
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
       onMouseLeave={handleMouseUp}
     >
+      {/* Card Menu */}
       <div className="absolute top-4 left-11">
         <CardMenu
           onEdit={handleEdit}
@@ -87,17 +86,22 @@ function AccentImage({ children, ...props}) {
         <div
           className="flex flex-col gap-4"
           style={{
-            width: `calc(100% - ${imageSize.width}px)`, // Adjust based on image width
+            width: `calc(100% - ${imageSize.width}px)`,
           }}
         >
           <div>
-            <TitleInput placeholder="Title" />
-            <ParagraphInput placeholder="Start typing..." />
+            <TitleAi
+              initialData={title}
+              onUpdate={(newTitle) => setTitle(newTitle)}
+            />
+            <ParagraphAi
+              initialData={description}
+              onUpdate={(newDescription) => setDescription(newDescription)}
+            />
           </div>
         </div>
 
         {/* Image Section */}
-
         <div
           className="relative flex justify-center items-center rounded-lg bg-[#2a2438] overflow-hidden group"
           style={{
@@ -107,7 +111,7 @@ function AccentImage({ children, ...props}) {
         >
           {preview ? (
             <img
-              src={preview}
+              src={preview || "/placeholder.svg"}
               alt="Preview"
               className="w-full h-full object-cover rounded-lg"
             />
@@ -139,8 +143,11 @@ function AccentImage({ children, ...props}) {
             </div>
           )}
 
+          {/* Image Upload Overlay */}
           <div className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-            <span className="text-white text-sm font-medium">Click to Upload Image</span>
+            <span className="text-white text-sm font-medium">
+              Click to Upload Image
+            </span>
           </div>
 
           <input
@@ -150,6 +157,7 @@ function AccentImage({ children, ...props}) {
             onChange={handleImagePreview}
           />
 
+          {/* Resizing Handle */}
           <div
             className="absolute left-0 bottom-0 w-6 h-6 bg-white/90 cursor-se-resize hover:bg-white transition-colors duration-200"
             onMouseDown={handleMouseDown}
@@ -157,7 +165,8 @@ function AccentImage({ children, ...props}) {
         </div>
       </div>
     </div>
-  )
+  );
 }
 
-export default AccentImage
+export default AccentImageAi;
+

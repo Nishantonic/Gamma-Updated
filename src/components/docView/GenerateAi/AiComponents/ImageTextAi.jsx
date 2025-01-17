@@ -1,10 +1,10 @@
-import React, { useState, useContext } from "react";
-import { CardMenu } from "./Menu/CardMenu";
-import TitleInput from "./CardComponents/TitleInput";
-import ParagraphInput from "./CardComponents/ParagraphInput";
+import React, { useState, useEffect, useContext } from "react";
+import { CardMenu } from "../../slidesView/Menu/CardMenu";
+import TitleAi from "./TitleAi.jsx";
+import ParagraphAi from "./ParagraphAi.jsx";
 import { DragContext } from "@/components/SidebarLeft/DragContext";
 
-function ImageCardText({ children, ...props }) {
+function ImageTextAi({ generateAi = {}, ...props }) {
   const [preview, setPreview] = useState(null);
   const [imageSize, setImageSize] = useState({ width: 300, height: 210 });
   const [isResizing, setIsResizing] = useState(false);
@@ -13,6 +13,18 @@ function ImageCardText({ children, ...props }) {
   const [replacedTemplate, setReplacedTemplate] = useState(null);
   const [droppedItems, setDroppedItems] = useState([]);
   const { draggedElement } = useContext(DragContext);
+  const [title, setTitle] = useState(generateAi.title || "Untitled Card");
+  const [description, setDescription] = useState(generateAi.description || "Start typing...");
+
+  useEffect(() => {
+    if (generateAi.image && isValidImageUrl(generateAi.image)) {
+      setPreview(generateAi.image);
+    }
+  }, [generateAi.image]);
+
+  const isValidImageUrl = (url) => {
+    return url && url.match(/\.(jpeg|jpg|gif|png)$/) != null;
+  };
   
   const handleImagePreview = (e) => {
     const file = e.target.files[0];
@@ -47,30 +59,16 @@ function ImageCardText({ children, ...props }) {
     setIsResizing(false);
   };
 
-  const handleEdit = () => {
-    console.log("Edit clicked")
-  }
-
-  const handleDelete = () => {
-    console.log("Delete clicked")
-  }
-
-  const handleDuplicate = () => {
-    console.log("Duplicate clicked")
-  }
-
-  const handleShare = () => {
-    console.log("Share clicke")
-  }
-
-  const handleDownload = () => {
-    console.log("Download clicked")
-  }
+  const handleEdit = () => console.log("Edit clicked");
+  const handleDelete = () => console.log("Delete clicked");
+  const handleDuplicate = () => console.log("Duplicate clicked");
+  const handleShare = () => console.log("Share clicked");
+  const handleDownload = () => console.log("Download clicked");
 
   const handleDrop = (event) => {
     event.preventDefault();
     if (draggedElement?.template && draggedElement.type === "CardTemplate") {
-      setReplacedTemplate(draggedElement.template); // Set the dropped template
+      setReplacedTemplate(draggedElement.template);
     } else if (draggedElement?.template) {
       setDroppedItems([...droppedItems, draggedElement.template]);
     }
@@ -86,28 +84,25 @@ function ImageCardText({ children, ...props }) {
 
   return (
     <div
-      className="flex flex-col items-center"
+      className="min-h-screen w-full md:w-[60vw] md:min-h-[25vw] md:mt-[3vh] md:mb-[3vh] rounded-lg px-1 bg-[#342c4e] p-6 relative"
+      onMouseMove={handleMouseMove}
+      onMouseUp={handleMouseUp}
+      onMouseLeave={handleMouseUp}
       onDragOver={handleDragOver}
       onDrop={handleDrop}
     >
-      <div
-        className="min-h-screen  w-full md:w-[60vw] md:min-h-[20vh] md:mt-[3vh] md:mb-[3vh] rounded-lg bg-[#342c4e] p-6 relative"
-        onMouseMove={handleMouseMove}
-        onMouseUp={handleMouseUp}
-        onMouseLeave={handleMouseUp}
-      >
-        <div className="absolute top-4 left-11">
-          <CardMenu
-            onEdit={handleEdit}
-            onDelete={handleDelete}
-            onDuplicate={handleDuplicate}
-            onShare={handleShare}
-            onDownload={handleDownload}
-          />
-        </div>
+      <div className="absolute top-4 left-11">
+        <CardMenu
+          onEdit={handleEdit}
+          onDelete={handleDelete}
+          onDuplicate={handleDuplicate}
+          onShare={handleShare}
+          onDownload={handleDownload}
+        />
+      </div>
 
-        <div className="flex flex-col md:flex-row gap-8 mt-16">
-          <div
+      <div className="flex flex-col md:flex-row gap-8 mt-16">
+       <div
             className="relative flex justify-center items-center w-full md:w-[32%] rounded-lg bg-[#2a2438] overflow-hidden group"
             style={{
               width: `${imageSize.width}px`,
@@ -166,25 +161,37 @@ function ImageCardText({ children, ...props }) {
             />
           </div>
 
-          <div className="flex flex-col w-full  md:w-[65%] gap-4">
-            <div>
-              <TitleInput placeholder="Title" />
-              <ParagraphInput placeholder="Start typing..." />
-            </div>
+        <div
+          className="flex flex-col gap-4"
+          style={{
+            width: `calc(100% - ${imageSize.width}px)`,
+          }}
+        >
+          <div>
+            <TitleAi
+              initialData={title}
+              onUpdate={(newTitle) => setTitle(newTitle)}
+            />
+            <ParagraphAi
+              initialData={description}
+              onUpdate={(newDescription) => setDescription(newDescription)}
+            />
           </div>
         </div>
-        {droppedItems.length > 0 && (
-          <div className="mt-6 space-y-4">
-            {droppedItems.map((item, index) => (
-              <div key={index} className="mb-4">
-                {item}
-              </div>
-            ))}
-          </div>
-        )}
       </div>
+
+      {droppedItems.length > 0 && (
+        <div className="mt-6 space-y-4">
+          {droppedItems.map((item, index) => (
+            <div key={index} className="mb-4">
+              {item}
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
 
-export default ImageCardText;
+export default ImageTextAi;
+

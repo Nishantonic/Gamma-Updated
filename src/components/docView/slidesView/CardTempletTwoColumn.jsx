@@ -54,7 +54,7 @@ function CardTemplateTwoColumn({ children, ...props }) {
   return (
     <div className="flex flex-col items-center ">
       <div
-        className="min-h-screen w-full md:w-[60vw] md:min-h-[25vw] rounded-lg bg-[#342c4e] p-6 relative"
+        className="min-h-screen w-full md:w-[60vw] md:min-h-[25vw] md:mt-[3vh] md:mb-[3vh] rounded-lg bg-[#342c4e] p-6 relative"
         onDragOver={handleDragOver}
         onDrop={handleDrop}
       >

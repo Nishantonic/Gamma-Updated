@@ -1,4 +1,6 @@
-import { useRef, useState } from 'react'
+"use client";
+
+import { useRef, useState, useEffect } from 'react'
 import { Bold, Italic, Underline, Code, AlignLeft, AlignCenter, AlignRight, Type, Palette } from 'lucide-react'
 import { 
   DropdownMenu,
@@ -29,13 +31,21 @@ const SIZES = [
   { name: 'Extra Large', value: '2.5rem' },
 ]
 
-export default function TextEditor() {
+export default function TitleAi({ initialData, onUpdate }) {
   const editorRef = useRef(null)
   const [alignment, setAlignment] = useState('left')
+  const [content, setContent] = useState(initialData)
+
+  useEffect(() => {
+    if (editorRef.current) {
+      editorRef.current.innerHTML = content;
+    }
+  }, []);
 
   const applyCommand = (command, value = null) => {
     document.execCommand(command, false, value)
     editorRef.current?.focus()
+    updateContent()
   }
 
   const applyAlignment = (newAlignment) => {
@@ -54,6 +64,7 @@ export default function TextEditor() {
       const span = document.createElement('span')
       span.style.fontSize = size
       range.surroundContents(span)
+      updateContent()
     }
   }
 
@@ -66,10 +77,17 @@ export default function TextEditor() {
         editorRef.current.innerHTML = ''
       }
     }
+    updateContent()
+  }
+
+  const updateContent = () => {
+    const newContent = editorRef.current?.innerHTML || '';
+    setContent(newContent);
+    onUpdate(newContent);
   }
 
   return (
-    <Card className="w-full flex justify-start w-2xl mx-auto bg-transparent border-transparent  mb-2  ">
+    <Card className="w-full flex justify-start w-2xl mx-auto bg-transparent border-transparent mb-2">
       <CardHeader className="flex flex-row justify-between space-y-0 px-4 py-3">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -178,8 +196,9 @@ export default function TextEditor() {
           ref={editorRef}
           onFocus={handlePlaceholder}
           onBlur={handlePlaceholder}
+          onInput={updateContent}
         >
-          <span type="text" className="text-white/50 w-full bg-transparent text-3xl">Untitle Card </span>
+        <span className="text-white/50 w-full text-xl bg-transparent">{content}</span>
         </div>
       </CardContent>
     </Card>

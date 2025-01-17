@@ -1,4 +1,6 @@
-import { useRef, useState } from 'react'
+"use client";
+
+import { useRef, useState, useEffect } from 'react'
 import { Bold, Italic, Underline, Code, AlignLeft, AlignCenter, AlignRight, Type, Palette } from 'lucide-react'
 import { 
   DropdownMenu,
@@ -29,13 +31,21 @@ const SIZES = [
   { name: 'Extra Large', value: '2.5rem' },
 ]
 
-export default function TextEditor() {
+export default function Heading({ initialData, onUpdate }) {
   const editorRef = useRef(null)
   const [alignment, setAlignment] = useState('left')
+  const [content, setContent] = useState(initialData)
+
+  useEffect(() => {
+    if (editorRef.current) {
+      editorRef.current.innerHTML = content;
+    }
+  }, []);
 
   const applyCommand = (command, value = null) => {
     document.execCommand(command, false, value)
     editorRef.current?.focus()
+    updateContent()
   }
 
   const applyAlignment = (newAlignment) => {
@@ -54,6 +64,7 @@ export default function TextEditor() {
       const span = document.createElement('span')
       span.style.fontSize = size
       range.surroundContents(span)
+      updateContent()
     }
   }
 
@@ -61,16 +72,23 @@ export default function TextEditor() {
     const text = editorRef.current?.textContent || ''
     if (!text.trim()) {
       if (event.type === 'blur') {
-        editorRef.current.innerHTML = '<span class="text-muted-foreground">Untitled Card</span>'
+        editorRef.current.innerHTML = '<span class="text-muted-foreground">Start typing...</span>'
       } else {
         editorRef.current.innerHTML = ''
       }
     }
+    updateContent()
+  }
+
+  const updateContent = () => {
+    const newContent = editorRef.current?.innerHTML || '';
+    setContent(newContent);
+    onUpdate(newContent);
   }
 
   return (
-    <Card className="w-full flex justify-start w-2xl mx-auto bg-transparent border-transparent  mb-2  ">
-      <CardHeader className="flex flex-row justify-between space-y-0 px-4 py-3">
+    <Card className="w-full flex justify-start max-w-4xl p-0 m-0 mt-5 bg-transparent flex-wrap border-none shadow-xl">
+      <CardHeader className="flex flex-row justify-between space-y-0 px-1 py-1">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button 
@@ -78,7 +96,7 @@ export default function TextEditor() {
               size="icon"
               className="hover:bg-white/10 transition-colors"
             >
-              <div className="flex items-center justify-center bg-white/90 rounded-full hover:bg-white p-1 transition-colors">
+              <div className="flex items-center justify-center bg-white/90 hover:bg-white p-1 rounded-full transition-colors">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   width="20"
@@ -167,9 +185,9 @@ export default function TextEditor() {
           </DropdownMenuContent>
         </DropdownMenu>
       </CardHeader>
-      <CardContent className="px-1 py-1 w-full">
+      <CardContent className="p-2 w-full">
         <div 
-          className="min-h-[5px] w-full rounded-lg  bg-transparent p-6 text-white/90 focus:outline-none  text-3xl"
+          className="min-h-[100px] w-full rounded-lg bg-white/10 p-6 text-white/90 focus:outline-none text-xl"
           style={{
             textAlign: alignment
           }}
@@ -178,10 +196,12 @@ export default function TextEditor() {
           ref={editorRef}
           onFocus={handlePlaceholder}
           onBlur={handlePlaceholder}
+          onInput={updateContent}
         >
-          <span type="text" className="text-white/50 w-full bg-transparent text-3xl">Untitle Card </span>
+        <span className="text-white/50 w-full text-2xl bg-transparent">{content}</span>
         </div>
       </CardContent>
     </Card>
   )
 }
+

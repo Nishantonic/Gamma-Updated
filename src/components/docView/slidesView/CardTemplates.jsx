@@ -15,11 +15,14 @@ import { TemplatesModal } from "./CardComponents/TempletModal"
 import AccentImage from "./AccentImage"
 import AddButton from "./AddButton";
 import ImageCardText from "./ImageCardText"
+import TitleAi from "../GenerateAi/AiComponents/TitleAi";
 
-export default function CardTemplates({ children, slidesPreview, setSlidesPreview, id, setCurrentSlide, ...props }) {
+export default function CardTemplates({ children, slidesPreview, setSlidesPreview, id, setCurrentSlide,generateAi = {}, ...props }) {
   const [showTwoColumn, setShowTwoColumn] = useState(false);
   const [showImageText, setShowImageText] = useState(false);
+  const [title, setTitle] = useState(generateAi.title || "Untitled Card");
   const [showThreeColumn, setShowThreeColumn] = useState(false);
+  const [showAccentImage,setShowAccentImage] = useState(false);
   const [replacedTemplate, setReplacedTemplate] = useState(null);
   const [droppedItems, setDroppedItems] = useState([]);
   const { draggedElement } = useContext(DragContext);
@@ -94,6 +97,25 @@ export default function CardTemplates({ children, slidesPreview, setSlidesPrevie
     })
     return <ImageCradText />;
   }
+
+  if (showAccentImage) {
+
+    setSlidesPreview(slidesPreview => {
+      return slidesPreview.map(slide => {
+        const newSlideId = slidesPreview.length
+        if (slide.id === id) {
+          return {
+            ...slide,
+            content: <div className="flex justify-center"><AccentImage slidesPreview={slidesPreview} id={newSlideId} setSlidesPreview={setSlidesPreview} /></div>,
+            onClick: () => setCurrentSlide(slide.id),
+          }
+        }
+        return slide
+      })
+    })
+    return <AccentImage />;
+  }
+
   if (showThreeColumn) {
 
     setSlidesPreview(slidesPreview => {
@@ -125,7 +147,7 @@ export default function CardTemplates({ children, slidesPreview, setSlidesPrevie
   return (
     <div onDragOver={handleDragOver} onDrop={handleDrop} >
     
-        <div className="min-h-screen  w-full md:w-[60vw] md:min-h-[25vw] md:mt-[3vh] rounded-lg px-1 bg-[#342c4e] p-6 relative ">
+        <div className="min-h-screen  w-full md:w-[60vw] md:min-h-[25vw] md:mt-[3vh] md:mb-[3vh] rounded-lg px-1 bg-[#342c4e] p-6 relative ">
           <div className="absolute top-4 left-11">
             <CardMenu
               onEdit={handleEdit}
@@ -136,7 +158,7 @@ export default function CardTemplates({ children, slidesPreview, setSlidesPrevie
             />
           </div>
           <div className="mt-10">
-            <TitleInput />
+            <TitleAi initialData={title} onUpdate={(newTitle) => setTitle(newTitle)} />
           </div>
           {droppedItems.length > 0 ? (
             <div>
@@ -188,7 +210,9 @@ export default function CardTemplates({ children, slidesPreview, setSlidesPrevie
                 </div>
               </Card>
 
-              <Card className="p-4 bg-[#2a2438] border-[#3a3347] hover:border-[#4a4357] cursor-pointer transition-colors relative group">
+              <Card className="p-4 bg-[#2a2438] border-[#3a3347] hover:border-[#4a4357] cursor-pointer transition-colors relative group"
+                onClick={() => setShowAccentImage(true)}
+              >
                 <div className="h-24 flex items-center justify-center overflow-hidden">
                   <img
                     src={card3}
