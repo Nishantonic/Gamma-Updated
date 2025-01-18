@@ -3,6 +3,7 @@ import { CardMenu } from "../../slidesView/Menu/CardMenu";
 import Heading from "./Heading";
 import ParagraphAi from "./ParagraphAi.jsx";
 import { DragContext } from "@/components/SidebarLeft/DragContext";
+import TitleAi from "./TitleAi";
 
 function ThreeImgTextAi({ generateAi = {}, ...props }) {
   const [title, setTitle] = useState(generateAi.title || "Untitled Card");
@@ -80,7 +81,7 @@ function ThreeImgTextAi({ generateAi = {}, ...props }) {
       </div>
 
       <div className="mt-16 space-y-6">
-        <Heading
+        <TitleAi
           initialData={title}
           onUpdate={(newTitle) => setTitle(newTitle)}
         />

@@ -14,7 +14,7 @@ import { Button } from '../../../ui/button'
 import { Card, CardContent, CardHeader } from '../../../ui/card'
 
 const COLORS = [
-  { name: 'Default', value: 'inherit' },
+  { name: 'Default', value: '#fff' },
   { name: 'Purple', value: '#9333ea' },
   { name: 'Blue', value: '#2563eb' },
   { name: 'Red', value: '#dc2626' },
