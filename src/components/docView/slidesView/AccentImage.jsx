@@ -1,16 +1,24 @@
-"use client"
-// image right, text left with dynamic resizing from bottom-left corner
-import React, { useState } from "react"
+import React, { useState, useContext } from "react"
 import { CardMenu } from "./Menu/CardMenu"
 import TitleInput from "./CardComponents/TitleInput"
 import ParagraphInput from "./CardComponents/ParagraphInput"
+import { DragContext } from "@/components/SidebarLeft/DragContext"
 
-function AccentImage({ children, ...props}) {
-  const [preview, setPreview] = useState(null)
-  const [imageSize, setImageSize] = useState({ width: 300, height: 210 })
-  const [isResizing, setIsResizing] = useState(false)
-  const [initialMousePos, setInitialMousePos] = useState({ x: 0, y: 0 })
-  const [initialSize, setInitialSize] = useState({ width: 0, height: 0 })
+function AccentImage ({
+  setSlidesPreview,
+  slidesPreview,
+  id,
+  children,
+  ...props
+}) {
+  const [preview, setPreview] = useState(null);
+  const [imageSize, setImageSize] = useState({ width: 300, height: 210 });
+  const [isResizing, setIsResizing] = useState(false);
+  const [initialMousePos, setInitialMousePos] = useState({ x: 0, y: 0 });
+  const [initialSize, setInitialSize] = useState({ width: 0, height: 0 });
+  const [replacedTemplate, setReplacedTemplate] = useState(null);
+  const [droppedItems, setDroppedItems] = useState([]);
+  const { draggedElement } = useContext(DragContext);
   
   const handleImagePreview = (e) => {
     const file = e.target.files[0]
@@ -65,12 +73,41 @@ function AccentImage({ children, ...props}) {
     console.log("Download clicked")
   }
 
+  const handleDrop = (event) => {
+    event.preventDefault();
+    if (draggedElement?.template && draggedElement.type === "CardTemplate") {
+      setReplacedTemplate(draggedElement.template); // Set the dropped template
+    } else if (draggedElement?.template) {
+      const newElement = {
+        id: Date.now(),
+        content: draggedElement.template,
+      };
+      setDroppedItems((prev) => [...prev, newElement]);
+    }
+  }
+
+
+  const handleDragOver = (event) => {
+    event.preventDefault();
+  };
+
+  const handleDeleteDroppedItem = (id) => {
+    setDroppedItems((prev) => prev.filter((item) => item.id !== id));
+  };
+
+  if (replacedTemplate) {
+    return <div>{replacedTemplate}</div>;
+  }
+
   return (
+    <div className="flex flex-col items-center mb-2 mt-2">
     <div
       className="min-h-screen  w-full md:w-[60vw] md:min-h-[25vw] md:mt-[3vh] md:mb-[3vh] rounded-lg px-1 bg-[#342c4e] p-6 relative"
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
       onMouseLeave={handleMouseUp}
+      onDragOver={handleDragOver}
+      onDrop={handleDrop}
     >
       <div className="absolute top-4 left-11">
         <CardMenu
@@ -156,8 +193,21 @@ function AccentImage({ children, ...props}) {
           />
         </div>
       </div>
+      {droppedItems.length > 0 && (
+        <div className="mt-6 space-y-4">
+        {droppedItems.map((item) => (
+          <div key={item.id} className="relative">
+            {React.cloneElement(item.content, {
+              onDelete: () => handleDeleteDroppedItem(item.id),
+            })}
+          </div>
+        ))}
+      </div>
+    
+      )}
+    </div>
     </div>
   )
 }
 
-export default AccentImage
+export default AccentImage;

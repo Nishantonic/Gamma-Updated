@@ -7,8 +7,13 @@ import { DragContext } from "@/components/SidebarLeft/DragContext";
 import CardTemplateImgHeadingThree from "./CardTemplateImgHeadingThree";
 import ImageCardText from "./ImageCardText";
 
-function CardTemplateTwoColumn({ children, ...props }) {
-  const [currentTemplate, setCurrentTemplate] = useState("twoColumn"); // Default template
+function CardTemplateTwoColumn({
+  setSlidesPreview,
+  slidesPreview,
+  id,
+  children,
+  ...props
+}) {
   const [replacedTemplate, setReplacedTemplate] = useState(null); // Track replaced template
   const [droppedItems, setDroppedItems] = useState([]);
   const { draggedElement } = useContext(DragContext);
@@ -18,13 +23,22 @@ function CardTemplateTwoColumn({ children, ...props }) {
     if (draggedElement?.template && draggedElement.type === "CardTemplate") {
       setReplacedTemplate(draggedElement.template); // Set the dropped template
     } else if (draggedElement?.template) {
-      setDroppedItems([...droppedItems, draggedElement.template]);
+      const newElement = {
+        id: Date.now(),
+        content: draggedElement.template,
+      };
+      setDroppedItems((prev) => [...prev, newElement]);
     }
   };
 
   const handleDragOver = (event) => {
     event.preventDefault();
   };
+
+  const handleDeleteDroppedItem = (id) => {
+    setDroppedItems((prev) => prev.filter((item) => item.id !== id));
+  };
+
 
   const handleEdit = () => {
     console.log("Edit clicked");
@@ -85,14 +99,16 @@ function CardTemplateTwoColumn({ children, ...props }) {
           {currentTemplate === "ThreeColumn" && <CardTemplateImgHeadingThree />} */}
         </div>
         {droppedItems.length > 0 && (
-          <div className="mt-6 space-y-4">
-            {droppedItems.map((item, index) => (
-              <div key={index} className="mb-4">
-                {item}
-              </div>
-            ))}
-          </div>
-        )}
+                  <div className="mt-6 space-y-4">
+                    {droppedItems.map((item) => (
+                      <div key={item.id} className="relative">
+                        {React.cloneElement(item.content, {
+                          onDelete: () => handleDeleteDroppedItem(item.id),
+                        })}
+                      </div>
+                    ))}
+                  </div>
+                )}
       </div>
       
     </div>

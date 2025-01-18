@@ -1,37 +1,22 @@
-//three img text
-import React, { useContext, useEffect, useState } from "react"
-import { CardMenu } from "./Menu/CardMenu"
-import TitleInput from "./CardComponents/TitleInput"
-import Heading from './CardComponents/Heading'
-import ParagraphInput from './CardComponents/ParagraphInput'
-import AddButton from "./AddButton"
-import { DragContext } from "@/components/SidebarLeft/DragContext"
+import React, { useContext, useState } from "react";
+import { CardMenu } from "./Menu/CardMenu";
+import TitleInput from "./CardComponents/TitleInput";
+import Heading from "./CardComponents/Heading";
+import ParagraphInput from "./CardComponents/ParagraphInput";
+import ResponsiveAudio from "@/components/SidebarLeft/components/ToolBarElements/ResponsiveAudio";
+import { DragContext } from "@/components/SidebarLeft/DragContext";
 
-function CardTemplateImgHeadingThree({ setSlidesPreview, slidesPreview, id, children, ...props }) {
-  const [previews, setPreviews] = useState([null, null, null])
+function CardTemplateImgHeadingThree({
+  setSlidesPreview,
+  slidesPreview,
+  id,
+  children,
+  ...props
+}) {
+  const [previews, setPreviews] = useState([null, null, null]);
   const [replacedTemplate, setReplacedTemplate] = useState(null); // Track replaced template
   const [droppedItems, setDroppedItems] = useState([]);
   const { draggedElement } = useContext(DragContext);
-  
-  // const [changeTitle,setChangeTitle]=useState()
-  // useEffect(() => {
-  //   if(setSlidesPreview)
-  //   setSlidesPreview(slidesPreview => {
-  //     return slidesPreview.map(slide => {
-  //       const newSlideId = slidesPreview.length
-  //       if (slide.id === id) {
-  //         return {
-  //           number: newSlideId,
-  //           id: newSlideId,
-  //           title: `Slide ${newSlideId}`,
-  //           content: <div className="flex justify-center"><CardTemplateImgHeadingThree slidesPreview={slidesPreview} id={newSlideId} setSlidesPreview={setSlidesPreview} /></div>,
-  //           onClick: () => setCurrentSlide(newSlideId),
-  //         }
-  //       }
-  //       return slide
-  //     })
-  //   })
-  // }, [])
 
   const handleImagePreview = (e, index) => {
     const file = e.target.files[0];
@@ -44,39 +29,27 @@ function CardTemplateImgHeadingThree({ setSlidesPreview, slidesPreview, id, chil
       };
       reader.readAsDataURL(file);
     }
-  }
-
-  const handleEdit = () => {
-    console.log("Edit clicked")
-  }
-
-  const handleDelete = () => {
-    console.log("Delete clicked")
-  }
-
-  const handleDuplicate = () => {
-    console.log("Duplicate clicked")
-  }
-
-  const handleShare = () => {
-    console.log("Share clicked")
-  }
-
-  const handleDownload = () => {
-    console.log("Download clicked")
-  }
+  };
 
   const handleDrop = (event) => {
     event.preventDefault();
     if (draggedElement?.template && draggedElement.type === "CardTemplate") {
       setReplacedTemplate(draggedElement.template); // Set the dropped template
     } else if (draggedElement?.template) {
-      setDroppedItems([...droppedItems, draggedElement.template]);
+      const newElement = {
+        id: Date.now(),
+        content: draggedElement.template,
+      };
+      setDroppedItems((prev) => [...prev, newElement]);
     }
-  }
+  };
 
   const handleDragOver = (event) => {
     event.preventDefault();
+  };
+
+  const handleDeleteDroppedItem = (id) => {
+    setDroppedItems((prev) => prev.filter((item) => item.id !== id));
   };
 
   // If a new template is dropped, render it instead
@@ -85,23 +58,24 @@ function CardTemplateImgHeadingThree({ setSlidesPreview, slidesPreview, id, chil
   }
 
   return (
-    <div className="flex flex-col items-center ">
-      <div className="min-h-screen w-full md:w-[60vw] md:min-h-[25vw] md:mt-[3vh] md:mb-[3vh] rounded-lg bg-[#342c4e] p-6 relative"
+    <div className="flex flex-col items-center">
+      <div
+        className="min-h-screen w-full md:w-[60vw] md:min-h-[25vw] md:mt-[3vh] md:mb-[3vh] rounded-lg bg-[#342c4e] p-6 relative"
         onDragOver={handleDragOver}
         onDrop={handleDrop}
       >
         <div className="absolute top-4 left-11">
           <CardMenu
-            onEdit={handleEdit}
-            onDelete={handleDelete}
-            onDuplicate={handleDuplicate}
-            onShare={handleShare}
-            onDownload={handleDownload}
+            onEdit={() => console.log("Edit clicked")}
+            onDelete={() => console.log("Delete clicked")}
+            onDuplicate={() => console.log("Duplicate clicked")}
+            onShare={() => console.log("Share clicked")}
+            onDownload={() => console.log("Download clicked")}
           />
         </div>
 
-      {/* Title Section */}
-      <TitleInput/>
+        {/* Title Section */}
+        <TitleInput />
 
         {/* Cards Container */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5 px-10 mt-6">
@@ -160,17 +134,20 @@ function CardTemplateImgHeadingThree({ setSlidesPreview, slidesPreview, id, chil
             </div>
           ))}
         </div>
+
+        {/* Dropped Items Section */}
         {droppedItems.length > 0 && (
           <div className="mt-6 space-y-4">
-            {droppedItems.map((item, index) => (
-              <div key={index} className="mb-4">
-                {item}
+            {droppedItems.map((item) => (
+              <div key={item.id} className="relative">
+                {React.cloneElement(item.content, {
+                  onDelete: () => handleDeleteDroppedItem(item.id),
+                })}
               </div>
             ))}
           </div>
         )}
       </div>
-     
     </div>
   );
 }

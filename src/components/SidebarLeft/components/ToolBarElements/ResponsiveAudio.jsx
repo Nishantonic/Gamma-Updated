@@ -1,19 +1,19 @@
 import React, { useState } from "react";
 
-const ResponsiveImage = ({ initialImage = null, onDelete }) => {
-  const [preview, setPreview] = useState(initialImage);
-  const [imageSize, setImageSize] = useState({ width: 300, height: 210 });
+const ResponsiveAudio = ({ initialAudio = null, onDelete }) => {
+  const [preview, setPreview] = useState(initialAudio);
+  const [audioSize, setAudioSize] = useState({ width: 400, height: 100 });
   const [isResizing, setIsResizing] = useState(false);
   const [initialMousePos, setInitialMousePos] = useState({ x: 0, y: 0 });
   const [initialSize, setInitialSize] = useState({ width: 0, height: 0 });
-  const [isUploading, setIsUploading] = useState(!initialImage);
+  const [isUploading, setIsUploading] = useState(!initialAudio);
   const [showMenu, setShowMenu] = useState(false);
 
-  const handleImagePreview = (e) => {
+  const handleAudioPreview = (e) => {
     const file = e.target.files[0];
-    if (file && file.type.startsWith("image/")) {
-      const imageURL = URL.createObjectURL(file);
-      setPreview(imageURL);
+    if (file && file.type.startsWith("audio/")) {
+      const audioURL = URL.createObjectURL(file);
+      setPreview(audioURL);
       setIsUploading(false);
     }
   };
@@ -29,14 +29,14 @@ const ResponsiveImage = ({ initialImage = null, onDelete }) => {
   const handleMouseDown = (e) => {
     setIsResizing(true);
     setInitialMousePos({ x: e.clientX, y: e.clientY });
-    setInitialSize({ width: imageSize.width, height: imageSize.height });
+    setInitialSize({ width: audioSize.width, height: audioSize.height });
   };
 
   const handleMouseMove = (e) => {
     if (isResizing) {
       const dx = e.clientX - initialMousePos.x;
       const dy = e.clientY - initialMousePos.y;
-      setImageSize({
+      setAudioSize({
         width: Math.max(initialSize.width + dx, 100),
         height: Math.max(initialSize.height + dy, 100),
       });
@@ -48,17 +48,17 @@ const ResponsiveImage = ({ initialImage = null, onDelete }) => {
   };
 
   return (
-
     <span
       className="relative flex justify-center items-center w-full rounded-lg bg-[#2a2438] overflow-hidden group"
-      style={{
-        width: `${imageSize.width}px`,
-        height: `${imageSize.height}px`,
+      style={{ 
+        width: `${audioSize.width}px`, 
+        height: `${audioSize.height}px` 
       }}
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
       onMouseLeave={handleMouseUp}
     >
+      {/* Three-dot menu */}
       <div className="absolute top-2 left-2">
         <button
           className="text-white bg-gray-600 rounded-full p-1 hover:bg-gray-700"
@@ -79,13 +79,16 @@ const ResponsiveImage = ({ initialImage = null, onDelete }) => {
       </div>
 
       {preview ? (
-        <img
-          src={preview}
-          alt="Preview"
-          className="w-full h-full object-cover rounded-lg"
-        />
+        <audio 
+          src={preview} 
+          controls 
+          className="w-full object-cover rounded-lg"
+        >
+          Your browser does not support the audio tag.
+        </audio>
       ) : (
-        <div className="flex items-center justify-center w-12 h-full text-[#9d8ba7]"
+        <div
+          className="flex items-center justify-center w-full h-full text-[#9d8ba7] cursor-pointer"
           onClick={() => setIsUploading(true)}
         >
           <span>Click to Upload</span>
@@ -95,13 +98,13 @@ const ResponsiveImage = ({ initialImage = null, onDelete }) => {
       {isUploading && (
         <input
           type="file"
-          accept="image/*"
+          accept="audio/*"
           className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-          onChange={handleImagePreview}
+          onChange={handleAudioPreview}
         />
       )}
-
-      <div
+      
+      <div 
         className="absolute right-0 bottom-0 w-6 h-6 bg-white cursor-se-resize hover:bg-gray-200"
         onMouseDown={handleMouseDown}
       />
@@ -109,4 +112,4 @@ const ResponsiveImage = ({ initialImage = null, onDelete }) => {
   );
 };
 
-export default ResponsiveImage;
+export default ResponsiveAudio;
