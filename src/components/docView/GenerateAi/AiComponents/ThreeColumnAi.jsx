@@ -66,7 +66,7 @@ function ThreeImgTextAi({ generateAi = {}, ...props }) {
 
   return (
     <div
-      className="min-h-screen w-full md:w-[60vw] md:min-h-[25vw] md:mt-[3vh] md:mb-[3vh] rounded-lg px-1 bg-[#342c4e] p-6 relative"
+      className="min-h-screen w-full  md:min-h-[25vw] md:mt-[3vh] md:mb-[3vh] rounded-lg px-1 bg-[#342c4e] p-6 relative max-w-4xl mx-auto"
       onDragOver={handleDragOver}
       onDrop={handleDrop}
     >
