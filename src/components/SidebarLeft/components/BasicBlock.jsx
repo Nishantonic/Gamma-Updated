@@ -6,10 +6,9 @@ import TitleInput from "@/components/docView/slidesView/CardComponents/TitleInpu
 import ParagraphInput from "@/components/docView/slidesView/CardComponents/ParagraphInput";
 
 const BasicBlock = () => {
-  const [isDropdownVisible, setIsDropdownVisible] = useState(false);
+  const [isCardVisible, setIsCardVisible] = useState(false);
   const [isNameVisible, setIsNameVisible] = useState(false);
   const { setDraggedElement } = useContext(DragContext);
-
   const cardRef = useRef(null);
 
   useEffect(() => {
@@ -35,9 +34,9 @@ const BasicBlock = () => {
     <div className="relative group" ref={cardRef}>
       <div
         className={`relative group cursor-pointer p-2 rounded transition-all duration-300 ${
-          isDropdownVisible ? "bg-gray-200" : "hover:bg-gray-100"
+          isCardVisible ? "bg-gray-200" : "hover:bg-gray-100"
         }`}
-        onClick={() => setIsDropdownVisible((prev) => !prev)}
+        onClick={() => setIsCardVisible((prev) => !prev)}
         onMouseEnter={() => setIsNameVisible(true)}
         onMouseLeave={() => setIsNameVisible(false)}
       >
@@ -46,7 +45,7 @@ const BasicBlock = () => {
         </div>
       </div>
 
-      {isDropdownVisible && (
+      {isCardVisible && (
         <div className="absolute whitespace-nowrap right-11 top-0 bg-gray-200 text-black rounded-md p-4 shadow-md w-96 h-auto">
           <h3 className="text-gray-400 mb-4">Basic Blocks</h3>
           {/* Container for text templates */}

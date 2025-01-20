@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import { Bold, Italic, Underline, Code, AlignLeft, AlignCenter, AlignRight, Type, Palette } from 'lucide-react'
+import { Bold, Italic, Underline, Code, AlignLeft, AlignCenter, AlignRight, Type, Palette, Trash2 } from 'lucide-react'
 import { 
   DropdownMenu,
   DropdownMenuContent,
@@ -29,7 +29,7 @@ const SIZES = [
   { name: 'Extra Large', value: '2.5rem' },
 ]
 
-export default function TextEditor() {
+export default function TextEditor({onDelete}) {
   const editorRef = useRef(null)
   const [alignment, setAlignment] = useState('left')
 
@@ -67,6 +67,12 @@ export default function TextEditor() {
       }
     }
   }
+  
+  const handleDelete = () => {
+    if (onDelete) {
+      onDelete(); // Call parent-provided delete function
+    }
+  };
 
   return (
     <Card className="w-full flex justify-start w-2xl mx-auto bg-transparent border-transparent  mb-2  ">
@@ -164,6 +170,14 @@ export default function TextEditor() {
               <AlignRight className="mr-2 h-4 w-4" />
               <span>Align Right</span>
             </DropdownMenuItem>
+            
+            <DropdownMenuSeparator />
+
+            <DropdownMenuItem onClick={handleDelete}>
+              <Trash2 className="mr-2 h-4 w-4" />
+              <span>Delete</span>
+            </DropdownMenuItem>
+
           </DropdownMenuContent>
         </DropdownMenu>
       </CardHeader>
