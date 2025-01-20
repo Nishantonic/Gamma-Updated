@@ -1,8 +1,8 @@
-"use client";
+"use client"
 
-import { useRef, useState, useEffect } from 'react'
-import { Bold, Italic, Underline, Code, AlignLeft, AlignCenter, AlignRight, Type, Palette } from 'lucide-react'
-import { 
+import { useRef, useState, useEffect } from "react"
+import { Bold, Italic, Underline, Code, AlignLeft, AlignCenter, AlignRight, Type, Palette } from "lucide-react"
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -11,36 +11,37 @@ import {
   DropdownMenuSub,
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
-} from '../../../ui/dropdown-menu'
-import { Button } from '../../../ui/button'
-import { Card, CardContent, CardHeader } from '../../../ui/card'
+} from "../../../ui/dropdown-menu"
+import { Button } from "../../../ui/button"
+import { Card, CardContent, CardHeader } from "../../../ui/card"
 
 const COLORS = [
-  { name: 'Default', value: 'inherit' },
-  { name: 'Purple', value: '#9333ea' },
-  { name: 'Blue', value: '#2563eb' },
-  { name: 'Red', value: '#dc2626' },
-  { name: 'Green', value: '#16a34a' },
-  { name: 'Yellow', value: '#ca8a04' },
+  { name: "Default", value: "inherit" },
+  { name: "Purple", value: "#9333ea" },
+  { name: "Blue", value: "#2563eb" },
+  { name: "Red", value: "#dc2626" },
+  { name: "Green", value: "#16a34a" },
+  { name: "Yellow", value: "#ca8a04" },
 ]
 
 const SIZES = [
-  { name: 'Small', value: '1rem' },
-  { name: 'Normal', value: '1.5rem' },
-  { name: 'Large', value: '2rem' },
-  { name: 'Extra Large', value: '2.5rem' },
+  { name: "Small", value: "1rem" },
+  { name: "Normal", value: "1.5rem" },
+  { name: "Large", value: "2rem" },
+  { name: "Extra Large", value: "2.5rem" },
 ]
 
-export default function ParagraphAi({ initialData, onUpdate }) {
+export default function ParagraphAi({ initialData, onUpdate, index }) {
   const editorRef = useRef(null)
-  const [alignment, setAlignment] = useState('left')
+  const [alignment, setAlignment] = useState("left")
   const [content, setContent] = useState(initialData)
+  const [styles, setStyles] = useState({})
 
   useEffect(() => {
     if (editorRef.current) {
-      editorRef.current.innerHTML = content;
+      editorRef.current.innerHTML = content
     }
-  }, []);
+  }, [])
 
   const applyCommand = (command, value = null) => {
     document.execCommand(command, false, value)
@@ -50,18 +51,18 @@ export default function ParagraphAi({ initialData, onUpdate }) {
 
   const applyAlignment = (newAlignment) => {
     setAlignment(newAlignment)
-    applyCommand('justify' + newAlignment)
+    applyCommand("justify" + newAlignment)
   }
 
   const applyColor = (color) => {
-    applyCommand('foreColor', color)
+    applyCommand("foreColor", color)
   }
 
   const applyFontSize = (size) => {
     const selection = window.getSelection()
     if (selection && selection.rangeCount > 0) {
       const range = selection.getRangeAt(0)
-      const span = document.createElement('span')
+      const span = document.createElement("span")
       span.style.fontSize = size
       range.surroundContents(span)
       updateContent()
@@ -69,33 +70,42 @@ export default function ParagraphAi({ initialData, onUpdate }) {
   }
 
   const handlePlaceholder = (event) => {
-    const text = editorRef.current?.textContent || ''
+    const text = editorRef.current?.textContent || ""
     if (!text.trim()) {
-      if (event.type === 'blur') {
+      if (event.type === "blur") {
         editorRef.current.innerHTML = '<span class="text-muted-foreground">Start typing...</span>'
       } else {
-        editorRef.current.innerHTML = ''
+        editorRef.current.innerHTML = ""
       }
     }
     updateContent()
   }
 
   const updateContent = () => {
-    const newContent = editorRef.current?.innerHTML || '';
-    setContent(newContent);
-    onUpdate(newContent);
+    const newContent = editorRef.current?.innerHTML || ""
+    setContent(newContent)
+    const computedStyles = window.getComputedStyle(editorRef.current)
+    const newStyles = {
+      fontSize: computedStyles.fontSize,
+      color: computedStyles.color,
+      fontWeight: computedStyles.fontWeight,
+      fontStyle: computedStyles.fontStyle,
+      textDecoration: computedStyles.textDecoration,
+      textAlign: computedStyles.textAlign,
+    }
+    setStyles(newStyles)
+    onUpdate(newContent, newStyles)
   }
 
   return (
-    <Card className="w-full flex justify-start max-w-4xl p-0 m-0 mt-5 bg-[#2e294e] flex-wrap border-none shadow-xl">
+    <Card
+      id={`paragraph-${index}`}
+      className="w-full flex justify-start max-w-4xl p-0 m-0 mt-5 bg-[#2e294e] flex-wrap border-none shadow-xl"
+    >
       <CardHeader className="flex flex-row justify-between space-y-0 px-1 py-1">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button 
-              variant="ghost" 
-              size="icon"
-              className="hover:bg-white/10 transition-colors"
-            >
+            <Button variant="ghost" size="icon" className="hover:bg-white/10 transition-colors">
               <div className="flex items-center justify-center bg-white/90 hover:bg-white p-1 rounded-full transition-colors">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -113,25 +123,25 @@ export default function ParagraphAi({ initialData, onUpdate }) {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-56 bg-white">
-            <DropdownMenuItem onClick={() => applyCommand('bold')}>
+            <DropdownMenuItem onClick={() => applyCommand("bold")}>
               <Bold className="mr-2 h-4 w-4" />
               <span>Bold</span>
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => applyCommand('italic')}>
+            <DropdownMenuItem onClick={() => applyCommand("italic")}>
               <Italic className="mr-2 h-4 w-4" />
               <span>Italic</span>
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => applyCommand('underline')}>
+            <DropdownMenuItem onClick={() => applyCommand("underline")}>
               <Underline className="mr-2 h-4 w-4" />
               <span>Underline</span>
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => applyCommand('formatBlock', 'pre')}>
+            <DropdownMenuItem onClick={() => applyCommand("formatBlock", "pre")}>
               <Code className="mr-2 h-4 w-4" />
               <span>Code</span>
             </DropdownMenuItem>
-            
+
             <DropdownMenuSeparator />
-            
+
             <DropdownMenuSub>
               <DropdownMenuSubTrigger>
                 <Type className="mr-2 h-4 w-4" />
@@ -153,13 +163,13 @@ export default function ParagraphAi({ initialData, onUpdate }) {
               </DropdownMenuSubTrigger>
               <DropdownMenuSubContent>
                 {COLORS.map((color) => (
-                  <DropdownMenuItem 
-                    key={color.value} 
+                  <DropdownMenuItem
+                    key={color.value}
                     onClick={() => applyColor(color.value)}
                     className="flex items-center gap-2"
                   >
-                    <div 
-                      className="w-4 h-4 rounded-full border border-gray-200" 
+                    <div
+                      className="w-4 h-4 rounded-full border border-gray-200"
                       style={{ backgroundColor: color.value }}
                     />
                     <span>{color.name}</span>
@@ -170,15 +180,15 @@ export default function ParagraphAi({ initialData, onUpdate }) {
 
             <DropdownMenuSeparator />
 
-            <DropdownMenuItem onClick={() => applyAlignment('left')}>
+            <DropdownMenuItem onClick={() => applyAlignment("left")}>
               <AlignLeft className="mr-2 h-4 w-4" />
               <span>Align Left</span>
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => applyAlignment('center')}>
+            <DropdownMenuItem onClick={() => applyAlignment("center")}>
               <AlignCenter className="mr-2 h-4 w-4" />
               <span>Align Center</span>
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => applyAlignment('right')}>
+            <DropdownMenuItem onClick={() => applyAlignment("right")}>
               <AlignRight className="mr-2 h-4 w-4" />
               <span>Align Right</span>
             </DropdownMenuItem>
@@ -186,10 +196,11 @@ export default function ParagraphAi({ initialData, onUpdate }) {
         </DropdownMenu>
       </CardHeader>
       <CardContent className="p-2 w-full">
-        <div 
+        <div
           className="min-h-[100px] w-full rounded-lg bg-white/10 p-6 text-white/80 focus:outline-none text-xl"
           style={{
-            textAlign: alignment
+            textAlign: alignment,
+            ...styles,
           }}
           contentEditable
           suppressContentEditableWarning
@@ -198,7 +209,7 @@ export default function ParagraphAi({ initialData, onUpdate }) {
           onBlur={handlePlaceholder}
           onInput={updateContent}
         >
-        <span className="text-white/80 w-full text-xl bg-">{content}</span>
+          <span className="text-white/80 w-full text-xl bg-transparent">{content}</span>
         </div>
       </CardContent>
     </Card>

@@ -3,6 +3,7 @@ import { CardMenu } from "./Menu/CardMenu"
 import TitleInput from "./CardComponents/TitleInput"
 import ParagraphInput from "./CardComponents/ParagraphInput"
 import { DragContext } from "@/components/SidebarLeft/DragContext"
+import AddButton from "./AddButton"
 
 function AccentImage ({
   setSlidesPreview,
@@ -206,6 +207,7 @@ function AccentImage ({
     
       )}
     </div>
+
     </div>
   )
 }
