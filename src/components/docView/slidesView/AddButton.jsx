@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import CardTemplates from "./CardTemplates.jsx";
 
-const AddButton = ({ slidesPreview, setSlidesPreview ,setCurrentSlide}) => {
+const AddButton = ({ slidesPreview, setSlidesPreview, setSlides, setCurrentSlide }) => {
   const [popupText, setPopupText] = useState("");
 
   const handleMouseEnter = (text) => setPopupText(text);
@@ -13,10 +13,28 @@ const AddButton = ({ slidesPreview, setSlidesPreview ,setCurrentSlide}) => {
       number: newSlideId,
       id: newSlideId,
       title: `Slide ${newSlideId}`,
-      content: <div className="flex justify-center"><CardTemplates slidesPreview={slidesPreview} id={newSlideId} setCurrentSlide={setCurrentSlide} setSlidesPreview={setSlidesPreview} /></div>,
+      content: (
+        <div className="flex justify-center">
+          <CardTemplates
+            slidesPreview={slidesPreview}
+            id={newSlideId}
+            setSlidesPreview={setSlidesPreview}
+          />
+        </div>
+      ),
       onClick: () => setCurrentSlide(newSlideId),
     };
+
+    // Update preview
     setSlidesPreview([...slidesPreview, newSlide]);
+
+    // Update main slides
+    setSlides((prevSlides) => [
+      ...prevSlides,
+      { Slide: newSlide.content, id: newSlideId },
+    ]);
+
+    setCurrentSlide(newSlideId);
   };
 
   return (

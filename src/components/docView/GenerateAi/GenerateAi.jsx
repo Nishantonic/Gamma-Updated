@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from "react"
+import { useState, useRef } from "react"
 import axios from "axios"
 import { Send, Loader2, Download } from "lucide-react"
 import { Button } from "../../ui/button"
@@ -10,7 +10,7 @@ import ImageTextAi from "./AiComponents/ImageTextAi"
 import ThreeColumnAi from "./AiComponents/ThreeColumnAi"
 import pptxgen from "pptxgenjs"
 import DefaultAi from "./AiComponents/DefaultAi"
-import PreviewBar from "./PreviewBar"
+import { useEffect } from "react"
 
 const getBase64FromImgElement = async (imgUrl) => {
   try {
@@ -64,13 +64,12 @@ const getComputedStyle = (element) => {
   }
 }
 
-export default function GenerateAi() {
+export default function GenerateAi({inputData,setShowPopup}) {
   const [slides, setSlides] = useState([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState(null)
-  const [prompt, setPrompt] = useState("")
+  const [prompt, setPrompt] = useState(inputData)
   const [editableSlides, setEditableSlides] = useState([])
-  const [selectedSlideIndex, setSelectedSlideIndex] = useState(0)
 
   const enhancedPrompt = `
 ${prompt}
@@ -158,22 +157,23 @@ Note : Ensure all images are accessible, relevant, and high-quality for the topi
       const jsonSlides = validateAndParseJson(aiText)
       setSlides(jsonSlides)
       setEditableSlides(jsonSlides)
-      setSelectedSlideIndex(0)
     } catch (err) {
       console.error("Error:", err)
       setError(err.message || "An unexpected error occurred.")
     } finally {
       setIsLoading(false)
+      setShowPopup(false)
+
     }
   }
 
-  const handleEdit = useCallback((index, updatedSlide) => {
+  const handleEdit = (index, updatedSlide) => {
     setEditableSlides((prevSlides) => {
       const newSlides = [...prevSlides]
       newSlides[index] = updatedSlide
       return newSlides
     })
-  }, [])
+  }
 
   const downloadPPT = async () => {
     try {
@@ -419,54 +419,24 @@ Note : Ensure all images are accessible, relevant, and high-quality for the topi
         return <DefaultAi key={index} generateAi={slideProps} />
     }
   }
-
+  useEffect(() => {
+    if (prompt){
+    generateResponse() ;
+    }
+  } , [prompt])
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-6 pb-32">
+    <div className="min-h-screen  p-6">
       <div className="max-w-4xl mx-auto">
-        <Card className="bg-white/10 backdrop-blur-lg border-0">
-          <CardContent className="p-6 space-y-4">
-            <Textarea
-              value={prompt}
-              onChange={(e) => setPrompt(e.target.value)}
-              onInput={(e) => {
-                e.target.style.height = "auto"
-                e.target.style.height = `${e.target.scrollHeight}px`
-              }}
-              placeholder="Enter your topic for presentation..."
-              className="min-h-[100px] bg-white/5 border-white/10 text-white placeholder:text-white/50 overflow-hidden resize-none"
-              rows={1}
-            />
-            <Button
-              onClick={generateResponse}
-              disabled={isLoading || !prompt}
-              className="w-full bg-purple-600 hover:bg-purple-700 text-white"
-              size="lg"
-            >
-              {isLoading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Generating Slides...
-                </>
-              ) : (
-                <>
-                  <Send className="mr-2 h-4 w-4" />
-                  Generate Presentation
-                </>
-              )}
-            </Button>
-          </CardContent>
-        </Card>
-
         {error && (
           <Card className="mt-4 bg-red-500/10 border-red-500/20 text-red-200">
             <CardContent className="p-4">Error: {error}</CardContent>
           </Card>
         )}
 
-        {editableSlides.length > 0 && (
-          <div className="mt-8 space-y-8">
-            {renderSlide(editableSlides[selectedSlideIndex], selectedSlideIndex)}
-            <Card className="bg-white/10 backdrop-blur-lg border-0">
+        {slides.length > 0 && (
+          <div className="mt-8 space-y-8 ">
+            {editableSlides.map((slide, index) => renderSlide(slide, index))}
+            <Card className="bg-white/10  backdrop-blur-lg border-0 ">
               <CardContent className="p-6 flex justify-center">
                 <Button onClick={downloadPPT} className="bg-green-600 hover:bg-green-700 text-white" size="lg">
                   <Download className="mr-2 h-4 w-4" />
@@ -474,11 +444,11 @@ Note : Ensure all images are accessible, relevant, and high-quality for the topi
                 </Button>
               </CardContent>
             </Card>
-            <PreviewBar
-              slides={editableSlides}
-              selectedSlideIndex={selectedSlideIndex}
-              onSelectSlide={setSelectedSlideIndex}
-            />
+          </div>
+        )}
+         {isLoading && (
+          <div className="flex justify-center mt-10">
+            <Loader2 className="h-6 w-6 animate-spin text-muted" />
           </div>
         )}
       </div>
