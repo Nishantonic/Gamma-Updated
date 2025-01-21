@@ -36,10 +36,6 @@ export function Header({ setGenerateAi }) {
             </DropdownMenuContent>
           </DropdownMenu>
         <Button variant="ghost" size="sm">
-          <Monitor className="h-4 w-4 mr-2" />
-          Theme
-        </Button>
-        <Button variant="ghost" size="sm">
           <Share2 className="h-4 w-4 mr-2" />
           Share
         </Button>

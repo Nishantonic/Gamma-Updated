@@ -3,21 +3,20 @@ import { CardMenu } from "../../slidesView/Menu/CardMenu";
 import { DragContext } from "@/components/SidebarLeft/DragContext";
 import TitleAi from "./TitleAi.jsx";
 import ParagraphAi from "./ParagraphAi.jsx";
+import { Button } from "@/components/ui/button";
 
 function CardTemplateTwoColumn({ generateAi = {}, ...props }) {
   const [title, setTitle] = useState(generateAi.title || "Untitled Card");
   const [columns, setColumns] = useState(generateAi.columns || [{ content: "" }, { content: "" }]);
   const { draggedElement } = useContext(DragContext);
   const [replacedTemplate, setReplacedTemplate] = useState(null);
-  const [droppedItems, setDroppedItems] = useState([]);
+  const [droppedItems, setDroppedItems] = useState([]); // To store dropped items
+
   const [preview, setPreview] = useState(null);
   const [imageSize, setImageSize] = useState({ width: 300, height: 210 });
   const [isResizing, setIsResizing] = useState(false);
   const [initialMousePos, setInitialMousePos] = useState({ x: 0, y: 0 });
   const [initialSize, setInitialSize] = useState({ width: 0, height: 0 });
-  const [description1, setDescription1] = useState(generateAi.description1 || "Start typing the first paragraph...");
-  const [description2, setDescription2] = useState(generateAi.description2 || "Start typing the second paragraph...");
-
 
   useEffect(() => {
     if (generateAi.image && isValidImageUrl(generateAi.image)) {
@@ -62,17 +61,27 @@ function CardTemplateTwoColumn({ generateAi = {}, ...props }) {
     setIsResizing(false);
   };
 
+  // Handle drag-and-drop functionality
   const handleDrop = (event) => {
     event.preventDefault();
     if (draggedElement?.template && draggedElement.type === "CardTemplate") {
       setReplacedTemplate(draggedElement.template);
     } else if (draggedElement?.template) {
-      setDroppedItems([...droppedItems, draggedElement.template]);
+      const newItem = {
+        id: Date.now(), // Unique ID for each dropped item
+        content: draggedElement.template,
+      };
+      setDroppedItems((prev) => [...prev, newItem]);
     }
   };
 
   const handleDragOver = (event) => {
     event.preventDefault();
+  };
+
+  // Handle deletion of dropped items
+  const handleDeleteDroppedItem = (id) => {
+    setDroppedItems((prev) => prev.filter((item) => item.id !== id));
   };
 
   const handleEdit = () => console.log("Edit clicked");
@@ -87,7 +96,7 @@ function CardTemplateTwoColumn({ generateAi = {}, ...props }) {
 
   return (
     <div
-      className="min-h-screen w-full  md:min-h-[25vw] md:mt-[3vh] md:mb-[3vh] rounded-lg px-1 bg-[#342c4e] p-6 relative max-w-4xl mx-auto"
+      className="min-h-screen w-full md:min-h-[25vw] md:mt-[3vh] md:mb-[3vh] rounded-lg px-1 bg-[#342c4e] p-6 relative max-w-4xl mx-auto"
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
       onMouseLeave={handleMouseUp}
@@ -105,10 +114,13 @@ function CardTemplateTwoColumn({ generateAi = {}, ...props }) {
       </div>
 
       <div className="flex flex-col gap-8 mt-16">
+        {/* Title Section */}
         <TitleAi
           initialData={title}
           onUpdate={(newTitle) => setTitle(newTitle)}
         />
+
+        {/* Two Column Section */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {columns.map((column, index) => (
             <ParagraphAi
@@ -124,11 +136,16 @@ function CardTemplateTwoColumn({ generateAi = {}, ...props }) {
         </div>
       </div>
 
+      {/* Dropped Items Section */}
       {droppedItems.length > 0 && (
         <div className="mt-6 space-y-4">
-          {droppedItems.map((item, index) => (
-            <div key={index} className="mb-4">
-              {item}
+          {droppedItems.map((item) => (
+            <div key={item.id} className="relative bg-[#2a2438] p-4 rounded-lg shadow-md">
+              {/* Render dropped item */}
+              {React.cloneElement(item.content, {
+                onDelete: () => handleDeleteDroppedItem(item.id),
+              })}
+              {/* Delete Button */}
             </div>
           ))}
         </div>
@@ -138,4 +155,3 @@ function CardTemplateTwoColumn({ generateAi = {}, ...props }) {
 }
 
 export default CardTemplateTwoColumn;
-

@@ -1,8 +1,11 @@
+"use client";
+
 import React, { useState, useEffect, useContext } from "react";
 import { CardMenu } from "../../slidesView/Menu/CardMenu";
 import TitleAi from "./TitleAi.jsx";
 import ParagraphAi from "./ParagraphAi.jsx";
 import { DragContext } from "@/components/SidebarLeft/DragContext";
+import { Button } from "@/components/ui/button";
 
 function ImageTextAi({ generateAi = {}, ...props }) {
   const [preview, setPreview] = useState(generateAi.image || null);
@@ -10,9 +13,10 @@ function ImageTextAi({ generateAi = {}, ...props }) {
   const [isResizing, setIsResizing] = useState(false);
   const [initialMousePos, setInitialMousePos] = useState({ x: 0, y: 0 });
   const [initialSize, setInitialSize] = useState({ width: 0, height: 0 });
+  const [droppedItems, setDroppedItems] = useState([]); // Store dropped items
   const [replacedTemplate, setReplacedTemplate] = useState(null);
-  const [droppedItems, setDroppedItems] = useState([]);
   const { draggedElement } = useContext(DragContext);
+
   const [title, setTitle] = useState(generateAi.title || "Untitled Card");
   const [description, setDescription] = useState(generateAi.description || "Start typing...");
 
@@ -66,33 +70,37 @@ function ImageTextAi({ generateAi = {}, ...props }) {
   };
 
   const updateParent = (updates) => {
-    generateAi.onEdit({
-      ...generateAi,
-      ...updates,
-      title,
-      description,
-      image: preview,
-      imageSize,
-    });
+    if (generateAi.onEdit) {
+      generateAi.onEdit({
+        ...generateAi,
+        ...updates,
+        title,
+        description,
+        image: preview,
+        imageSize,
+      });
+    }
   };
-
-  const handleEdit = () => console.log("Edit clicked");
-  const handleDelete = () => console.log("Delete clicked");
-  const handleDuplicate = () => console.log("Duplicate clicked");
-  const handleShare = () => console.log("Share clicked");
-  const handleDownload = () => console.log("Download clicked");
 
   const handleDrop = (event) => {
     event.preventDefault();
     if (draggedElement?.template && draggedElement.type === "CardTemplate") {
       setReplacedTemplate(draggedElement.template);
     } else if (draggedElement?.template) {
-      setDroppedItems([...droppedItems, draggedElement.template]);
+      const newElement = {
+        id: Date.now(), // Unique ID for each dropped item
+        content: draggedElement.template,
+      };
+      setDroppedItems((prev) => [...prev, newElement]);
     }
   };
 
   const handleDragOver = (event) => {
     event.preventDefault();
+  };
+
+  const handleDeleteDroppedItem = (id) => {
+    setDroppedItems((prev) => prev.filter((item) => item.id !== id));
   };
 
   if (replacedTemplate) {
@@ -105,20 +113,21 @@ function ImageTextAi({ generateAi = {}, ...props }) {
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
       onMouseLeave={handleMouseUp}
-      onDragOver={handleDragOver}
-      onDrop={handleDrop}
+      onDragOver={handleDragOver} // Enable drag-over
+      onDrop={handleDrop} // Enable drop
     >
       <div className="absolute top-4 left-11">
         <CardMenu
-          onEdit={handleEdit}
-          onDelete={handleDelete}
-          onDuplicate={handleDuplicate}
-          onShare={handleShare}
-          onDownload={handleDownload}
+          onEdit={() => console.log("Edit clicked")}
+          onDelete={() => console.log("Delete clicked")}
+          onDuplicate={() => console.log("Duplicate clicked")}
+          onShare={() => console.log("Share clicked")}
+          onDownload={() => console.log("Download clicked")}
         />
       </div>
 
-      <div className="flex flex-col md:flex-row gap-8 mt-16">
+      <div className="flex flex-col md:flex-row gap-8 ml-3 mt-16">
+        {/* Image Section */}
         <div
           className="relative flex justify-center items-center w-full md:w-[32%] rounded-lg bg-[#2a2438] overflow-hidden group"
           style={{
@@ -151,11 +160,6 @@ function ImageTextAi({ generateAi = {}, ...props }) {
                     fill="currentColor"
                     d="M0 96C0 60.7 28.7 32 64 32H448c35.3 0 64 28.7 64 64V416c0 35.3-28.7 64-64 64H64c-35.3 0-64-28.7-64-64V96zM323.8 202.5c-4.5-6.6-11.9-10.5-19.8-10.5s-15.4 3.9-19.8 10.5l-87 127.6L170.7 297c-4.6-5.7-11.5-9-18.7-9s-14.2 3.3-18.7 9l-64 80c-5.8 7.2-6.9 17.1-2.9 25.4s12.4 13.6 21.6 13.6h96 32H424c8.9 0 17.1-4.9 21.2-12.8s3.6-17.4-1.4-24.7l-120-176zM112 192a48 48 0 1 0 0-96 48 48 0 1 0 0 96z"
                   />
-                  <path
-                    className="fa-primary"
-                    fill="currentColor"
-                    d="M323.8 202.5c-4.5-6.6-11.9-10.5-19.8-10.5s-15.4 3.9-19.8 10.5l-87 127.6L170.7 297c-4.6-5.7-11.5-9-18.7-9s-14.2 3.3-18.7 9l-64 80c-5.8 7.2-6.9 17.1-2.9 25.4s12.4 13.6 21.6 13.6h96 32H424c8.9 0 17.1-4.9 21.2-12.8s3.6-17.4-1.4-24.7l-120-176z"
-                  />
                 </g>
               </svg>
             </div>
@@ -178,6 +182,7 @@ function ImageTextAi({ generateAi = {}, ...props }) {
           />
         </div>
 
+        {/* Title and Description Section */}
         <div
           className="flex flex-col gap-4"
           style={{
@@ -203,11 +208,14 @@ function ImageTextAi({ generateAi = {}, ...props }) {
         </div>
       </div>
 
+      {/* Dropped Items Section */}
       {droppedItems.length > 0 && (
         <div className="mt-6 space-y-4">
-          {droppedItems.map((item, index) => (
-            <div key={index} className="mb-4">
-              {item}
+          {droppedItems.map((item) => (
+            <div key={item.id} className="relative">
+              {React.cloneElement(item.content, {
+                onDelete: () => handleDeleteDroppedItem(item.id),
+              })}
             </div>
           ))}
         </div>

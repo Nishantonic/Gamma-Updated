@@ -64,7 +64,7 @@ const getComputedStyle = (element) => {
   }
 }
 
-export default function GenerateAi({inputData,setShowPopup}) {
+export default function GenerateAi({inputData,setShowPopup,setIsLoadingCopy}) {
   const [slides, setSlides] = useState([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState(null)
@@ -122,7 +122,8 @@ the images must related to the topic and image is must availabele
 enerate a profetional text for each slide 
 ensure the user's requirement for perticular slide
 use all templates in ppt
-Note : Ensure all images are accessible, relevant, and high-quality for the topic image url must available if not change url and provide only accessable image url.
+Note : the content foe each slide managed your self because each templates height and width is width: '1024px', height: '768px'.**give midium content for each slide and each templates in specially accentImage template  but make sure the content is profatinal**.**for CardTemplateImgHeadingThree template description must be shorter and all 3 column which present in this templates these description's word size also must same** and  Ensure all images are accessible, relevant, and high-quality for the topic image url must available if not change url and provide only accessable image url.
+the last slide must be conclusion slide in default template
 `
 
   const validateAndParseJson = (text) => {
@@ -163,7 +164,7 @@ Note : Ensure all images are accessible, relevant, and high-quality for the topi
     } finally {
       setIsLoading(false)
       setShowPopup(false)
-
+      setIsLoadingCopy(false)
     }
   }
 
@@ -420,10 +421,13 @@ Note : Ensure all images are accessible, relevant, and high-quality for the topi
     }
   }
   useEffect(() => {
-    if (prompt){
-    generateResponse() ;
-    }
-  } , [prompt])
+  if (prompt) {
+    setSlides([]); // Clear previous slides
+    setEditableSlides([]); // Reset editable slides
+    generateResponse(); // Trigger new generation
+  }
+}, [prompt]);
+
   return (
     <div className="min-h-screen  p-6">
       <div className="max-w-4xl mx-auto">
@@ -448,7 +452,7 @@ Note : Ensure all images are accessible, relevant, and high-quality for the topi
         )}
          {isLoading && (
           <div className="flex justify-center mt-10">
-            <Loader2 className="h-6 w-6 animate-spin text-muted" />
+            <Loader2 className="h-6 w-6 animate-spin  text-black" />
           </div>
         )}
       </div>

@@ -9,13 +9,23 @@ import Home from "../Home/Home";
 import GenerateAi from "./GenerateAi/GenerateAi";
 import { Loader2, Send } from "lucide-react";
 import { Button } from "../ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+  DialogClose,
+} from "../ui/dialog";
+import { Input } from "../ui/input";
 
 export default function Page() {
   const [currentSlide, setCurrentSlide] = useState(1);
   const [slidesPreview, setSlidesPreview] = useState([]);
   const [slides, setSlides] = useState([]);
   const [generateAi, setGenerateAi] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingCopy, setIsLoadingCopy] = useState(false);
   const [showPopup, setShowPopup] = useState(false);
   const [aiInputData, setAiInputData] = useState("");
 
@@ -79,14 +89,15 @@ export default function Page() {
   };
 
   const handleAiPopupSubmit = () => {
-    setGenerateAi(true);
-    setIsLoading(true);
-    
-  };
+  
+  setGenerateAi(true); // Show AI generation UI
+  setIsLoadingCopy(true); // Indicate loading state
+};
+
 
   return (
     <div className="h-screen flex flex-col bg-background">
-      <Header setGenerateAi={() => setShowPopup(true)}/>
+      <Header setGenerateAi={() => setShowPopup(true)} />
       <div className="flex flex-1 overflow-hidden">
         <DndContext collisionDetection={closestCorners} onDragEnd={handleDragEnd}>
           {slidesPreview.length > 0 && (
@@ -99,7 +110,7 @@ export default function Page() {
         </DndContext>
         <main className="flex-1 overflow-y-auto">
           {generateAi ? (
-            <GenerateAi inputData={aiInputData} setShowPopup={setShowPopup} />
+            <GenerateAi key={`ai-${Date.now()}`} inputData={aiInputData} setShowPopup={setShowPopup} setIsLoadingCopy={setIsLoadingCopy} />
           ) : (
             <div>
               {slides.map(({ Slide, id }) => (
@@ -120,44 +131,49 @@ export default function Page() {
         </main>
       </div>
 
-      {showPopup && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-          <div className="bg-white rounded-lg p-6 w-96">
-            <h2 className="text-xl font-bold mb-4">Enter Input for AI</h2>
-            <input
-              type="text"
-              value={aiInputData}
-              onChange={(e) => setAiInputData(e.target.value)}
-              className="w-full p-2 border rounded mb-4"
-              placeholder="Enter your prompt here..."
-            />
-            <div className="flex justify-end gap-2">
-              <button
-                className="bg-gray-300 px-4 py-2 rounded"
-                onClick={() => setShowPopup(false)}
-              >
-                Cancel
-              </button>
-              <Button
-                onClick={handleAiPopupSubmit}
-                disabled={isLoading || !aiInputData}
-              >
-                {isLoading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Generating Slides...
-                  </>
-                ) : (
-                  <>
-                    <Send className="mr-2 h-4 w-4" />
-                    Generate Presentation
-                  </>
-                )}
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* AI Input Dialog */}
+      <Dialog open={showPopup} onOpenChange={(open) => setShowPopup(open)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Generate with Gemini AI</DialogTitle>
+            <DialogDescription>
+              Enter the prompt for AI generation:
+            </DialogDescription>
+          </DialogHeader>
+
+          <Input
+            type="text"
+            placeholder="Enter your prompt..."
+            value={aiInputData}
+            onChange={(e) => setAiInputData(e.target.value)}
+          />
+
+          <DialogFooter>
+            <Button
+              onClick={() => {
+                handleAiPopupSubmit();
+                setShowPopup(false); // Close dialog after submission
+              }}
+              disabled={!aiInputData || isLoadingCopy}
+            >
+              {isLoadingCopy ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Generating...
+                </>
+              ) : (
+                <>
+                  <Send className="mr-2 h-4 w-4" />
+                  Generate
+                </>
+              )}
+            </Button>
+            <DialogClose asChild>
+              <Button variant="ghost" >Cancel</Button>
+            </DialogClose>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Home />
     </div>

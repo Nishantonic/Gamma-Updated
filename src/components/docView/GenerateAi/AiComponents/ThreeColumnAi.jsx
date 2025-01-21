@@ -4,6 +4,7 @@ import Heading from "./Heading";
 import ParagraphAi from "./ParagraphAi.jsx";
 import { DragContext } from "@/components/SidebarLeft/DragContext";
 import TitleAi from "./TitleAi";
+import { Button } from "@/components/ui/button";
 
 function ThreeImgTextAi({ generateAi = {}, ...props }) {
   const [title, setTitle] = useState(generateAi.title || "Untitled Card");
@@ -15,7 +16,7 @@ function ThreeImgTextAi({ generateAi = {}, ...props }) {
     ]
   );
   const [replacedTemplate, setReplacedTemplate] = useState(null);
-  const [droppedItems, setDroppedItems] = useState([]);
+  const [droppedItems, setDroppedItems] = useState([]); // To store dropped items
   const { draggedElement } = useContext(DragContext);
 
   useEffect(() => {
@@ -41,23 +42,25 @@ function ThreeImgTextAi({ generateAi = {}, ...props }) {
     }
   };
 
-  const handleEdit = () => console.log("Edit clicked");
-  const handleDelete = () => console.log("Delete clicked");
-  const handleDuplicate = () => console.log("Duplicate clicked");
-  const handleShare = () => console.log("Share clicked");
-  const handleDownload = () => console.log("Download clicked");
-
   const handleDrop = (event) => {
     event.preventDefault();
     if (draggedElement?.template && draggedElement.type === "CardTemplate") {
       setReplacedTemplate(draggedElement.template);
     } else if (draggedElement?.template) {
-      setDroppedItems([...droppedItems, draggedElement.template]);
+      const newItem = {
+        id: Date.now(), // Unique ID for each dropped item
+        content: draggedElement.template,
+      };
+      setDroppedItems((prev) => [...prev, newItem]);
     }
   };
 
   const handleDragOver = (event) => {
     event.preventDefault();
+  };
+
+  const handleDeleteDroppedItem = (id) => {
+    setDroppedItems((prev) => prev.filter((item) => item.id !== id));
   };
 
   if (replacedTemplate) {
@@ -66,26 +69,28 @@ function ThreeImgTextAi({ generateAi = {}, ...props }) {
 
   return (
     <div
-      className="min-h-screen w-full  md:min-h-[25vw] md:mt-[3vh] md:mb-[3vh] rounded-lg px-1 bg-[#342c4e] p-6 relative max-w-4xl mx-auto"
+      className="min-h-screen w-full md:min-h-[25vw] md:mt-[3vh] md:mb-[3vh] rounded-lg px-1 bg-[#342c4e] p-6 relative max-w-4xl mx-auto"
       onDragOver={handleDragOver}
       onDrop={handleDrop}
     >
       <div className="absolute top-4 left-11">
         <CardMenu
-          onEdit={handleEdit}
-          onDelete={handleDelete}
-          onDuplicate={handleDuplicate}
-          onShare={handleShare}
-          onDownload={handleDownload}
+          onEdit={() => console.log("Edit clicked")}
+          onDelete={() => console.log("Delete clicked")}
+          onDuplicate={() => console.log("Duplicate clicked")}
+          onShare={() => console.log("Share clicked")}
+          onDownload={() => console.log("Download clicked")}
         />
       </div>
 
       <div className="mt-16 space-y-6">
+        {/* Title Section */}
         <TitleAi
           initialData={title}
           onUpdate={(newTitle) => setTitle(newTitle)}
         />
 
+        {/* Three Cards Section */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5 px-10">
           {cards.map((card, index) => (
             <div
@@ -133,7 +138,7 @@ function ThreeImgTextAi({ generateAi = {}, ...props }) {
                 />
               </div>
 
-              <Heading 
+              <Heading
                 initialData={card.heading}
                 onUpdate={(newHeading) => {
                   const updatedCards = [...cards];
@@ -155,11 +160,14 @@ function ThreeImgTextAi({ generateAi = {}, ...props }) {
         </div>
       </div>
 
+      {/* Dropped Items Section */}
       {droppedItems.length > 0 && (
-        <div className="mt-6 space-y-4">
-          {droppedItems.map((item, index) => (
-            <div key={index} className="mb-4">
-              {item}
+        <div className="mt-6 ml-3 mr-3 space-y-4">
+          {droppedItems.map((item) => (
+            <div key={item.id} className="relative bg-[#2a2438] p-4 rounded-lg shadow-md">
+              {React.cloneElement(item.content, {
+                onDelete: () => handleDeleteDroppedItem(item.id),
+              })}
             </div>
           ))}
         </div>
@@ -169,4 +177,3 @@ function ThreeImgTextAi({ generateAi = {}, ...props }) {
 }
 
 export default ThreeImgTextAi;
-
