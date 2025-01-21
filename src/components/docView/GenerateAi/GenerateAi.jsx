@@ -1,4 +1,4 @@
-import { useState, useRef } from "react"
+import { useState, useRef, useCallback } from "react"
 import axios from "axios"
 import { Send, Loader2, Download } from "lucide-react"
 import { Button } from "../../ui/button"
@@ -10,6 +10,7 @@ import ImageTextAi from "./AiComponents/ImageTextAi"
 import ThreeColumnAi from "./AiComponents/ThreeColumnAi"
 import pptxgen from "pptxgenjs"
 import DefaultAi from "./AiComponents/DefaultAi"
+import PreviewBar from "./PreviewBar"
 
 const getBase64FromImgElement = async (imgUrl) => {
   try {
@@ -69,6 +70,7 @@ export default function GenerateAi() {
   const [error, setError] = useState(null)
   const [prompt, setPrompt] = useState("")
   const [editableSlides, setEditableSlides] = useState([])
+  const [selectedSlideIndex, setSelectedSlideIndex] = useState(0)
 
   const enhancedPrompt = `
 ${prompt}
@@ -110,13 +112,17 @@ Generate a JSON response for ${prompt} for a presentation using the following pr
        - **description**: Supporting text for the card.
 
 5. **Default**:
-   - Purpose: General content for unmatched structures.
+   - Purpose: General content for slide  note that it contains title and description it use as giving conclusion.
    - Fields:
      - **type**: "default".
      - **title**: Slide title.
      -**description**:slide description.
 
 Return 8-10 slides in JSON format, ensuring each slide adheres to one of these templates. Do not include extra explanations or non-JSON text Note that the description's size 6 to 8 sentences and also don't bold any text just give normal text for title and description and also must note that provide only must available and apropreate to the topic image url reuired
+the images must related to the topic and image is must availabele 
+enerate a profetional text for each slide 
+ensure the user's requirement for perticular slide
+use all templates in ppt
 Note : Ensure all images are accessible, relevant, and high-quality for the topic image url must available if not change url and provide only accessable image url.
 `
 
@@ -152,6 +158,7 @@ Note : Ensure all images are accessible, relevant, and high-quality for the topi
       const jsonSlides = validateAndParseJson(aiText)
       setSlides(jsonSlides)
       setEditableSlides(jsonSlides)
+      setSelectedSlideIndex(0)
     } catch (err) {
       console.error("Error:", err)
       setError(err.message || "An unexpected error occurred.")
@@ -160,13 +167,13 @@ Note : Ensure all images are accessible, relevant, and high-quality for the topi
     }
   }
 
-  const handleEdit = (index, updatedSlide) => {
+  const handleEdit = useCallback((index, updatedSlide) => {
     setEditableSlides((prevSlides) => {
       const newSlides = [...prevSlides]
       newSlides[index] = updatedSlide
       return newSlides
     })
-  }
+  }, [])
 
   const downloadPPT = async () => {
     try {
@@ -414,15 +421,20 @@ Note : Ensure all images are accessible, relevant, and high-quality for the topi
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-6">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-6 pb-32">
       <div className="max-w-4xl mx-auto">
         <Card className="bg-white/10 backdrop-blur-lg border-0">
           <CardContent className="p-6 space-y-4">
             <Textarea
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
+              onInput={(e) => {
+                e.target.style.height = "auto"
+                e.target.style.height = `${e.target.scrollHeight}px`
+              }}
               placeholder="Enter your topic for presentation..."
-              className="min-h-[100px] bg-white/5 border-white/10 text-white placeholder:text-white/50"
+              className="min-h-[100px] bg-white/5 border-white/10 text-white placeholder:text-white/50 overflow-hidden resize-none"
+              rows={1}
             />
             <Button
               onClick={generateResponse}
@@ -451,10 +463,10 @@ Note : Ensure all images are accessible, relevant, and high-quality for the topi
           </Card>
         )}
 
-        {slides.length > 0 && (
-          <div className="mt-8 space-y-8 ">
-            {editableSlides.map((slide, index) => renderSlide(slide, index))}
-            <Card className="bg-white/10  backdrop-blur-lg border-0 ">
+        {editableSlides.length > 0 && (
+          <div className="mt-8 space-y-8">
+            {renderSlide(editableSlides[selectedSlideIndex], selectedSlideIndex)}
+            <Card className="bg-white/10 backdrop-blur-lg border-0">
               <CardContent className="p-6 flex justify-center">
                 <Button onClick={downloadPPT} className="bg-green-600 hover:bg-green-700 text-white" size="lg">
                   <Download className="mr-2 h-4 w-4" />
@@ -462,6 +474,11 @@ Note : Ensure all images are accessible, relevant, and high-quality for the topi
                 </Button>
               </CardContent>
             </Card>
+            <PreviewBar
+              slides={editableSlides}
+              selectedSlideIndex={selectedSlideIndex}
+              onSelectSlide={setSelectedSlideIndex}
+            />
           </div>
         )}
       </div>

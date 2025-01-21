@@ -24,7 +24,7 @@ function DefaultAi({ generateAi = {}, index }) {
   return (
     <div
       id={`slide-${index}`}
-      className="min-h-screen w-full md:mt-[3vh] md:mb-[3vh] rounded-lg px-6 py-4 bg-[#342c4e] text-white max-w-4xl mx-auto"
+      className=" w-full md:mt-[3vh] md:mb-[3vh] rounded-lg px-6 py-4 bg-[#342c4e] text-white max-w-4xl mx-auto"
     >
       <div className="flex flex-col gap-8">
         <TitleAi
