@@ -465,9 +465,6 @@ const renderSlide = (slide, index) => {
       {/* Add Button */}
       <div className="flex justify-center align-middle">
         <AddButtonAi index={index} addNewSlide={addNewSlide} />
-        <Button onClick={() => handleDelete(slide.id)} className="ml-4 mt-3 bg-red-500 text-white">
-            Delete
-          </Button>
       </div>
     </div>
   )

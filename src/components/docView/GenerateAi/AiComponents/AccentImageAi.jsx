@@ -1,5 +1,3 @@
-"use client";
-
 import React, { useState, useEffect, useRef, useContext } from "react";
 import { CardMenu } from "../../slidesView/Menu/CardMenu";
 import TitleAi from "./TitleAi.jsx";
@@ -113,7 +111,7 @@ function AccentImageAi({ generateAi = {}, ...props }) {
         <div className="absolute top-4 left-11">
           <CardMenu
             onEdit={() => console.log("Edit clicked")}
-            onDelete={() => console.log("Delete clicked")}
+            onDelete={generateAi.onDelete}
             onDuplicate={() => console.log("Duplicate clicked")}
             onShare={() => console.log("Share clicked")}
             onDownload={() => console.log("Download clicked")}

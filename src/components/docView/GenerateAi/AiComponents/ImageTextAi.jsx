@@ -5,7 +5,6 @@ import { CardMenu } from "../../slidesView/Menu/CardMenu";
 import TitleAi from "./TitleAi.jsx";
 import ParagraphAi from "./ParagraphAi.jsx";
 import { DragContext } from "@/components/SidebarLeft/DragContext";
-import { Button } from "@/components/ui/button";
 
 function ImageTextAi({ generateAi = {}, ...props }) {
   const [preview, setPreview] = useState(generateAi.image || null);
@@ -116,10 +115,11 @@ function ImageTextAi({ generateAi = {}, ...props }) {
       onDragOver={handleDragOver} // Enable drag-over
       onDrop={handleDrop} // Enable drop
     >
+      {/* Card Menu with Delete Option */}
       <div className="absolute top-4 left-11">
         <CardMenu
           onEdit={() => console.log("Edit clicked")}
-          onDelete={() => console.log("Delete clicked")}
+          onDelete={generateAi.onDelete} // Pass the onDelete function from parent
           onDuplicate={() => console.log("Duplicate clicked")}
           onShare={() => console.log("Share clicked")}
           onDownload={() => console.log("Download clicked")}
@@ -143,24 +143,17 @@ function ImageTextAi({ generateAi = {}, ...props }) {
             />
           ) : (
             <div className="flex items-center justify-center w-12 h-full text-[#9d8ba7]">
-              {/* Placeholder Icon */}
               <svg
                 aria-hidden="true"
                 focusable="false"
-                data-prefix="fad"
-                data-icon="image"
-                className="svg-inline--fa fa-image fa-fw"
-                role="img"
+                className="w-12 h-12 text-gray-400"
                 xmlns="http://www.w3.org/2000/svg"
                 viewBox="0 0 512 512"
               >
-                <g>
-                  <path
-                    className="fa-secondary"
-                    fill="currentColor"
-                    d="M0 96C0 60.7 28.7 32 64 32H448c35.3 0 64 28.7 64 64V416c0 35.3-28.7 64-64 64H64c-35.3 0-64-28.7-64-64V96zM323.8 202.5c-4.5-6.6-11.9-10.5-19.8-10.5s-15.4 3.9-19.8 10.5l-87 127.6L170.7 297c-4.6-5.7-11.5-9-18.7-9s-14.2 3.3-18.7 9l-64 80c-5.8 7.2-6.9 17.1-2.9 25.4s12.4 13.6 21.6 13.6h96 32H424c8.9 0 17.1-4.9 21.2-12.8s3.6-17.4-1.4-24.7l-120-176zM112 192a48 48 0 1 0 0-96 48 48 0 1 0 0 96z"
-                  />
-                </g>
+                <path
+                  fill="currentColor"
+                  d="M464 448H48c-26.5 0-48-21.5-48-48V112c0-26.5 21.5-48 48-48h416c26.5 0 48 21.5 48 48v288c0 26.5-21.5 48-48 48zm-288-48h208c8.8 0 16-7.2 16-16V128c0-8.8-7.2-16-16-16H176c-8.8 0-16 7.2-16 16v256c0 8.8 7.2 16 16 16z"
+                />
               </svg>
             </div>
           )}

@@ -4,7 +4,6 @@ import Heading from "./Heading";
 import ParagraphAi from "./ParagraphAi.jsx";
 import { DragContext } from "@/components/SidebarLeft/DragContext";
 import TitleAi from "./TitleAi";
-import { Button } from "@/components/ui/button";
 
 function ThreeImgTextAi({ generateAi = {}, ...props }) {
   const [title, setTitle] = useState(generateAi.title || "Untitled Card");
@@ -73,10 +72,11 @@ function ThreeImgTextAi({ generateAi = {}, ...props }) {
       onDragOver={handleDragOver}
       onDrop={handleDrop}
     >
+      {/* Card Menu with Delete Option */}
       <div className="absolute top-4 left-11">
         <CardMenu
           onEdit={() => console.log("Edit clicked")}
-          onDelete={() => console.log("Delete clicked")}
+          onDelete={generateAi.onDelete} // Pass the onDelete prop from parent
           onDuplicate={() => console.log("Duplicate clicked")}
           onShare={() => console.log("Share clicked")}
           onDownload={() => console.log("Download clicked")}
@@ -97,6 +97,7 @@ function ThreeImgTextAi({ generateAi = {}, ...props }) {
               key={index}
               className="flex flex-col bg-[#2a2438] rounded-lg p-4 shadow-lg"
             >
+              {/* Image Section */}
               <div className="relative w-full h-40 bg-[#342c4e] rounded-lg overflow-hidden group mb-4 flex items-center justify-center">
                 {card.image ? (
                   <img
@@ -138,6 +139,7 @@ function ThreeImgTextAi({ generateAi = {}, ...props }) {
                 />
               </div>
 
+              {/* Heading and Description */}
               <Heading
                 initialData={card.heading}
                 onUpdate={(newHeading) => {
@@ -146,7 +148,6 @@ function ThreeImgTextAi({ generateAi = {}, ...props }) {
                   setCards(updatedCards);
                 }}
               />
-
               <ParagraphAi
                 initialData={card.description}
                 onUpdate={(newDescription) => {
