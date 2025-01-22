@@ -13,6 +13,7 @@ import DefaultAi from "./AiComponents/DefaultAi"
 import { useEffect } from "react"
 import AddButtonAi from "./AiComponents/AddButtonAi"
 import PreviewBar from "./PreviewBar"
+import { v4 as uuidv4 } from "uuid";
 
 const getBase64FromImgElement = async (imgUrl) => {
   try {
@@ -129,18 +130,18 @@ the last slide must be conclusion slide in default template
 
   const validateAndParseJson = (text) => {
     try {
-      const jsonStartIndex = text.indexOf("[")
-      const jsonEndIndex = text.lastIndexOf("]")
+      const jsonStartIndex = text.indexOf("[");
+      const jsonEndIndex = text.lastIndexOf("]");
       if (jsonStartIndex === -1 || jsonEndIndex === -1) {
-        throw new Error("No valid JSON found in the response.")
+        throw new Error("No valid JSON found in the response.");
       }
-      const jsonString = text.substring(jsonStartIndex, jsonEndIndex + 1)
-      const slides = JSON.parse(jsonString)
-      return slides
+      const jsonString = text.substring(jsonStartIndex, jsonEndIndex + 1);
+      const slides = JSON.parse(jsonString);
+      return slides.map((slide) => ({ ...slide, id: uuidv4() })); // Add UUID
     } catch (err) {
-      throw new Error("Invalid JSON structure or missing required fields.")
+      throw new Error("Invalid JSON structure or missing required fields.");
     }
-  }
+  };
 
   const generateResponse = async () => {
     setIsLoading(true)
@@ -176,7 +177,9 @@ the last slide must be conclusion slide in default template
       return newSlides
     })
   }
-  console.log("Editable Slides:", editableSlides);
+  const handleDelete = (id) => {
+    setEditableSlides((prevSlides) => prevSlides.filter((slide) => slide.id !== id));
+  };
   const downloadPPT = async () => {
     try {
       const pptx = new pptxgen()
@@ -401,64 +404,74 @@ the last slide must be conclusion slide in default template
     }
   }
 
-const addNewSlide = (newSlide, insertIndex) => {
+const addNewSlide = (insertIndex) => {
   setEditableSlides((prevSlides) => {
-    const updatedSlides = [...prevSlides];
+    // Create a new array to avoid mutation
+    const updatedSlides = [...prevSlides]
 
-    // Insert the new slide at the specified index
-    updatedSlides.splice(insertIndex, 0, newSlide);
+    // Create the new slide
+    const newSlide = {
+      type: "default",
+      title: "Untitled Card",
+      description: "This is a new slide. Edit as needed.",
+      // Ensure unique ID and correct number
+      id: uuidv4(), // Use UUID for unique ID
+      number: insertIndex + 1,
+    }
 
-    // Re-index all slides to maintain proper order
+    // Insert the new slide at the correct position
+    updatedSlides.splice(insertIndex, 0, newSlide)
+
+    // Re-index all slides with stable IDs
     return updatedSlides.map((slide, idx) => ({
       ...slide,
-      number: idx + 1, // Update the slide number dynamically
-      id: idx + 1,     // Update the slide ID dynamically
-    }));
-  });
-};
-
-
-
-
-
-
-
+      number: idx + 1,
+      // Preserve original ID if it exists, otherwise create new one
+      id: slide.id || `slide-${Date.now()}-${idx}`,
+    }))
+  })
+}
 
 const renderSlide = (slide, index) => {
   const slideProps = {
     ...slide,
     index,
     onEdit: (updatedSlide) => handleEdit(index, updatedSlide),
-  };
+    onDelete: () => handleDelete(slide.id), // Pass delete handler
+
+  }
+
+  // Use stable key based on slide ID
+  // const slideKey = `slide-${slide.id}-${index}`
 
   return (
-    <div key={index} id={`slide-${index}`}>
+    <div key={slide.id} id={`slide-${index}`} className="slide-container">
       {/* Render Slide Content */}
       {(() => {
         switch (slide.type) {
           case "accentImage":
-            return <AccentImageAi generateAi={slideProps} />;
+            return <AccentImageAi generateAi={slideProps} />
           case "twoColumn":
-            return <TwoColumnAi generateAi={slideProps} />;
+            return <TwoColumnAi generateAi={slideProps} />
           case "imageCardText":
-            return <ImageTextAi generateAi={slideProps} />;
+            return <ImageTextAi generateAi={slideProps} />
           case "threeImgCard":
-            return <ThreeColumnAi generateAi={slideProps} />;
+            return <ThreeColumnAi generateAi={slideProps} />
           default:
-            return <DefaultAi generateAi={slideProps} />;
+            return <DefaultAi generateAi={slideProps} />
         }
       })()}
 
       {/* Add Button */}
       <div className="flex justify-center align-middle">
-        <AddButtonAi
-          index={index} // Pass the current slide index to AddButtonAi
-          addNewSlide={addNewSlide}
-        />
+        <AddButtonAi index={index} addNewSlide={addNewSlide} />
+        <Button onClick={() => handleDelete(slide.id)} className="ml-4 mt-3 bg-red-500 text-white">
+            Delete
+          </Button>
       </div>
     </div>
-  );
-};
+  )
+}
 
 
 
@@ -483,8 +496,8 @@ const renderSlide = (slide, index) => {
 
       {editableSlides.length > 0 && (
         <div className="mt-8 space-y-8">
-          {editableSlides.map((slide, index) => renderSlide(slide, index))}
-          <Card className="bg-white/10 backdrop-blur-lg border-0">
+            {editableSlides.slice().map((slide, index) => renderSlide(slide, index))}          
+            <Card className="bg-white/10 backdrop-blur-lg border-0">
             <CardContent className="p-6 flex justify-center">
               <Button
                 onClick={downloadPPT}

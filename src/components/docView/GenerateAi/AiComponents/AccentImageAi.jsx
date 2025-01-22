@@ -110,7 +110,7 @@ function AccentImageAi({ generateAi = {}, ...props }) {
       onDrop={handleDrop} // Enable drop functionality
     >
       <CardContent className="p-6">
-        <div className="absolute top-4 right-4 z-10">
+        <div className="absolute top-4 left-11">
           <CardMenu
             onEdit={() => console.log("Edit clicked")}
             onDelete={() => console.log("Delete clicked")}

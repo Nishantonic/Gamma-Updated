@@ -5,6 +5,8 @@ import TitleAi from "./TitleAi.jsx";
 import ParagraphAi from "./ParagraphAi.jsx";
 import { DragContext } from "@/components/SidebarLeft/DragContext";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card.jsx";
+import { CardMenu } from "../../slidesView/Menu/CardMenu.jsx";
 
 function DefaultAi({ generateAi = {}, index }) {
   const [title, setTitle] = useState(generateAi.title || "Untitled Card");
@@ -59,14 +61,24 @@ function DefaultAi({ generateAi = {}, index }) {
   }
 
   return (
-    <div
-      id={`slide-${index}`}
-      className="w-full md:mt-[3vh] md:mb-[3vh] rounded-lg px-6 py-4 bg-[#342c4e] text-white max-w-4xl mx-auto"
-      onDragOver={handleDragOver}
-      onDrop={handleDrop}
-    >
+    <Card
+          id={`slide-${generateAi.index}`}
+          className="min-h-screen w-full md:min-h-[25vw] my-8 bg-[#342c4e] relative overflow-hidden max-w-4xl mx-auto outline-none border-none"
+          onDragOver={handleDragOver} // Enable drag-over functionality
+          onDrop={handleDrop} // Enable drop functionality
+        >
+          <CardContent className="p-6">
+            <div className="absolute top-4 left-11">
+                    <CardMenu
+                      onEdit={() => console.log("Edit clicked")}
+                      onDelete={() => console.log("Delete clicked")}
+                      onDuplicate={() => console.log("Duplicate clicked")}
+                      onShare={() => console.log("Share clicked")}
+                      onDownload={() => console.log("Download clicked")}
+                    />
+                  </div>
       {/* Title and Description Sections */}
-      <div className="flex flex-col gap-8">
+      <div className="flex flex-col gap-8 mt-10">
         {/* Editable Title */}
         <TitleAi
           initialData={title}
@@ -96,7 +108,8 @@ function DefaultAi({ generateAi = {}, index }) {
           ))}
         </div>
       )}
-    </div>
+    </CardContent>
+    </Card>
   );
 }
 

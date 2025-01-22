@@ -1,20 +1,10 @@
-import React, { useState } from "react";
-import CardTemplates from "../../slidesView/CardTemplates";
-
+import React from "react"
 
 const AddButtonAi = ({ index, addNewSlide }) => {
   const handlePlusClick = () => {
-    const newSlide = {
-      number: index + 1, // Dynamically determine the slide's number
-      id: index + 1,     // Dynamically determine the slide's ID
-      type: "default",   // Default slide type (can be customized)
-      title: `Slide ${index + 1}`, // Title for the new slide
-      description: "This is a new slide. Edit as needed.", // Description placeholder
-    };
-
-    // Add a new slide at the specified index
-    addNewSlide(newSlide, index + 1);
-  };
+    // Simply pass the index where we want to insert the new slide
+    addNewSlide(index + 1)
+  }
 
   return (
     <button
@@ -33,11 +23,8 @@ const AddButtonAi = ({ index, addNewSlide }) => {
     >
       +
     </button>
-  );
-};
+  )
+}
 
-export default AddButtonAi;
-
-
-
+export default AddButtonAi
 
