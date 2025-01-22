@@ -11,6 +11,8 @@ import ThreeColumnAi from "./AiComponents/ThreeColumnAi"
 import pptxgen from "pptxgenjs"
 import DefaultAi from "./AiComponents/DefaultAi"
 import { useEffect } from "react"
+import AddButtonAi from "./AiComponents/AddButtonAi"
+import PreviewBar from "./PreviewBar"
 
 const getBase64FromImgElement = async (imgUrl) => {
   try {
@@ -69,8 +71,7 @@ export default function GenerateAi({inputData,setShowPopup,setIsLoadingCopy}) {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState(null)
   const [prompt, setPrompt] = useState(inputData)
-  const [editableSlides, setEditableSlides] = useState([])
-
+  const [editableSlides, setEditableSlides] = useState([]); // Proper initialization
   const enhancedPrompt = `
 ${prompt}
 
@@ -175,7 +176,7 @@ the last slide must be conclusion slide in default template
       return newSlides
     })
   }
-
+  console.log("Editable Slides:", editableSlides);
   const downloadPPT = async () => {
     try {
       const pptx = new pptxgen()
@@ -400,63 +401,111 @@ the last slide must be conclusion slide in default template
     }
   }
 
-  const renderSlide = (slide, index) => {
-    const slideProps = {
-      ...slide,
-      index,
-      onEdit: (updatedSlide) => handleEdit(index, updatedSlide),
-    }
+const addNewSlide = (newSlide, insertIndex) => {
+  setEditableSlides((prevSlides) => {
+    const updatedSlides = [...prevSlides];
 
-    switch (slide.type) {
-      case "accentImage":
-        return <AccentImageAi key={index} generateAi={slideProps} />
-      case "twoColumn":
-        return <TwoColumnAi key={index} generateAi={slideProps} />
-      case "imageCardText":
-        return <ImageTextAi key={index} generateAi={slideProps} />
-      case "threeImgCard":
-        return <ThreeColumnAi key={index} generateAi={slideProps} />
-      default:
-        return <DefaultAi key={index} generateAi={slideProps} />
-    }
-  }
+    // Insert the new slide at the specified index
+    updatedSlides.splice(insertIndex, 0, newSlide);
+
+    // Re-index all slides to maintain proper order
+    return updatedSlides.map((slide, idx) => ({
+      ...slide,
+      number: idx + 1, // Update the slide number dynamically
+      id: idx + 1,     // Update the slide ID dynamically
+    }));
+  });
+};
+
+
+
+
+
+
+
+
+const renderSlide = (slide, index) => {
+  const slideProps = {
+    ...slide,
+    index,
+    onEdit: (updatedSlide) => handleEdit(index, updatedSlide),
+  };
+
+  return (
+    <div key={index} id={`slide-${index}`}>
+      {/* Render Slide Content */}
+      {(() => {
+        switch (slide.type) {
+          case "accentImage":
+            return <AccentImageAi generateAi={slideProps} />;
+          case "twoColumn":
+            return <TwoColumnAi generateAi={slideProps} />;
+          case "imageCardText":
+            return <ImageTextAi generateAi={slideProps} />;
+          case "threeImgCard":
+            return <ThreeColumnAi generateAi={slideProps} />;
+          default:
+            return <DefaultAi generateAi={slideProps} />;
+        }
+      })()}
+
+      {/* Add Button */}
+      <div className="flex justify-center align-middle">
+        <AddButtonAi
+          index={index} // Pass the current slide index to AddButtonAi
+          addNewSlide={addNewSlide}
+        />
+      </div>
+    </div>
+  );
+};
+
+
+
+
   useEffect(() => {
   if (prompt) {
-    setSlides([]); // Clear previous slides
-    setEditableSlides([]); // Reset editable slides
-    generateResponse(); // Trigger new generation
+    setSlides([]);
+    setEditableSlides([]); // Avoid resetting unnecessarily
+    generateResponse();
   }
 }, [prompt]);
 
-  return (
-    <div className="min-h-screen  p-6">
-      <div className="max-w-4xl mx-auto">
-        {error && (
-          <Card className="mt-4 bg-red-500/10 border-red-500/20 text-red-200">
-            <CardContent className="p-4">Error: {error}</CardContent>
-          </Card>
-        )}
 
-        {slides.length > 0 && (
-          <div className="mt-8 space-y-8 ">
-            {editableSlides.map((slide, index) => renderSlide(slide, index))}
-            <Card className="bg-white/10  backdrop-blur-lg border-0 ">
-              <CardContent className="p-6 flex justify-center">
-                <Button onClick={downloadPPT} className="bg-green-600 hover:bg-green-700 text-white" size="lg">
-                  <Download className="mr-2 h-4 w-4" />
-                  Download Presentation
-                </Button>
-              </CardContent>
-            </Card>
-          </div>
-        )}
-         {isLoading && (
-          <div className="flex justify-center mt-10">
-            <Loader2 className="h-6 w-6 animate-spin  text-black" />
-          </div>
-        )}
-      </div>
+  return (
+  <div className="min-h-screen p-6">
+    <div className="max-w-4xl mx-auto">
+      {error && (
+        <Card className="mt-4 bg-red-500/10 border-red-500/20 text-red-200">
+          <CardContent className="p-4">Error: {error}</CardContent>
+        </Card>
+      )}
+
+      {editableSlides.length > 0 && (
+        <div className="mt-8 space-y-8">
+          {editableSlides.map((slide, index) => renderSlide(slide, index))}
+          <Card className="bg-white/10 backdrop-blur-lg border-0">
+            <CardContent className="p-6 flex justify-center">
+              <Button
+                onClick={downloadPPT}
+                className="bg-green-600 hover:bg-green-700 text-white"
+                size="lg"
+              >
+                <Download className="mr-2 h-4 w-4" />
+                Download Presentation
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {isLoading && (
+        <div className="flex justify-center mt-10">
+          <Loader2 className="h-6 w-6 animate-spin text-black" />
+        </div>
+      )}
     </div>
-  )
+  </div>
+);
 }
 
