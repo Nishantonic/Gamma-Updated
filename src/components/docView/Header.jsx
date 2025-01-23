@@ -7,7 +7,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-export function Header({ setGenerateAi }) {
+export function Header({ setGenerateAi, startPresentation }) {
   const handleGenerateAiClick = () => {
     setGenerateAi(true);
   };
@@ -40,17 +40,21 @@ export function Header({ setGenerateAi }) {
           Share
         </Button>
         <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="primary" size="sm">
-              Present
-              <ChevronDown className="h-4 w-4 ml-2" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent>
-            <DropdownMenuItem>From beginning</DropdownMenuItem>
-            <DropdownMenuItem>From current slide</DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="primary" size="sm">
+            Present
+            <ChevronDown className="h-4 w-4 ml-2" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent>
+          <DropdownMenuItem onClick={() => startPresentation(true)}>
+            From beginning
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => startPresentation(false)}>
+            From current slide
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
         <Button variant="ghost" size="icon">
           <MoreHorizontal className="h-5 w-5" />
         </Button>
