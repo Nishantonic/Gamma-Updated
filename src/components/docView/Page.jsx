@@ -19,12 +19,16 @@ import {
   DialogClose,
 } from "../ui/dialog";
 import { Input } from "../ui/input";
+import { PresentationMode } from "./PresentationMode";
 
 export default function Page() {
   const [currentSlide, setCurrentSlide] = useState(1);
   const [slidesPreview, setSlidesPreview] = useState([]);
   const [slides, setSlides] = useState([]);
   const [generateAi, setGenerateAi] = useState(false);
+ const [isPresentationMode, setIsPresentationMode] = useState(false);
+  const [presentationStartIndex, setPresentationStartIndex] = useState(0);
+
   const [isLoadingCopy, setIsLoadingCopy] = useState(false);
   const [showPopup, setShowPopup] = useState(false);
   const [aiInputData, setAiInputData] = useState("");
@@ -94,10 +98,23 @@ export default function Page() {
   setIsLoadingCopy(true); // Indicate loading state
 };
 
-
+  const startPresentation = (fromBeginning = true) => {
+    setPresentationStartIndex(fromBeginning ? 0 : currentSlide - 1);
+    setIsPresentationMode(true);
+  };
   return (
     <div className="h-screen flex flex-col bg-background">
-      <Header setGenerateAi={() => setShowPopup(true)} />
+      <Header 
+        setGenerateAi={() => setShowPopup(true)}
+        startPresentation={startPresentation}
+      />
+      {isPresentationMode && (
+        <PresentationMode 
+          slides={slides}
+          startIndex={presentationStartIndex}
+          onClose={() => setIsPresentationMode(false)}
+        />
+      )}
       <div className="flex flex-1 overflow-hidden">
         <DndContext collisionDetection={closestCorners} onDragEnd={handleDragEnd}>
           {slidesPreview.length > 0 && (
@@ -174,7 +191,6 @@ export default function Page() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
       <Home />
     </div>
   );
