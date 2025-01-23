@@ -18,7 +18,10 @@ export function PresentationMode({
         slides.map(async (slide) => {
           const element = document.getElementById(`at-${slide.id}`);
           if (element) {
-            const canvas = await html2canvas(element);
+            const canvas = await html2canvas(element, {
+              scale: 2, // Increase the scale for higher resolution
+              useCORS: true, // Ensure cross-origin images are handled
+            });
             return canvas.toDataURL('image/png');
           }
           return '';
@@ -32,18 +35,18 @@ export function PresentationMode({
 
   const goToNextSlide = () => {
     if (currentSlideIndex < slides.length - 1) {
-      setCurrentSlideIndex(prev => prev + 1);
+      setCurrentSlideIndex((prev) => prev + 1);
     }
   };
 
   const goToPreviousSlide = () => {
     if (currentSlideIndex > 0) {
-      setCurrentSlideIndex(prev => prev - 1);
+      setCurrentSlideIndex((prev) => prev - 1);
     }
   };
 
   return (
-    <div className="min-h-screen fixed inset-0 z-50 bg-white  flex flex-col">
+    <div className="min-h-screen fixed inset-0 z-50 bg-white flex flex-col">
       <div className="flex-1 flex items-center justify-center">
         {slideImages[currentSlideIndex] ? (
           <img 

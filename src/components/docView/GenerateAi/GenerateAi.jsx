@@ -13,7 +13,7 @@ import DefaultAi from "./AiComponents/DefaultAi"
 import { useEffect } from "react"
 import AddButtonAi from "./AiComponents/AddButtonAi"
 import PreviewBar from "./PreviewBar"
-import { v4 as uuidv4 } from "uuid";
+import { v4 as uuidv4 } from "uuid"
 
 const getBase64FromImgElement = async (imgUrl) => {
   try {
@@ -67,12 +67,19 @@ const getComputedStyle = (element) => {
   }
 }
 
-export default function GenerateAi({inputData,setShowPopup,setIsLoadingCopy}) {
-  const [slides, setSlides] = useState([])
+export default function GenerateAi({
+  inputData,
+  setShowPopup,
+  setIsLoadingCopy,
+  setSlidesPreview,
+  setSlides,
+  setGenerateAi,
+}) {
+  const [slides, setSlidesState] = useState([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState(null)
   const [prompt, setPrompt] = useState(inputData)
-  const [editableSlides, setEditableSlides] = useState([]); // Proper initialization
+  const [editableSlides, setEditableSlides] = useState([])
   const enhancedPrompt = `
 ${prompt}
 
@@ -130,18 +137,18 @@ the last slide must be conclusion slide in default template
 
   const validateAndParseJson = (text) => {
     try {
-      const jsonStartIndex = text.indexOf("[");
-      const jsonEndIndex = text.lastIndexOf("]");
+      const jsonStartIndex = text.indexOf("[")
+      const jsonEndIndex = text.lastIndexOf("]")
       if (jsonStartIndex === -1 || jsonEndIndex === -1) {
-        throw new Error("No valid JSON found in the response.");
+        throw new Error("No valid JSON found in the response.")
       }
-      const jsonString = text.substring(jsonStartIndex, jsonEndIndex + 1);
-      const slides = JSON.parse(jsonString);
-      return slides.map((slide) => ({ ...slide, id: uuidv4() })); // Add UUID
+      const jsonString = text.substring(jsonStartIndex, jsonEndIndex + 1)
+      const slides = JSON.parse(jsonString)
+      return slides.map((slide) => ({ ...slide, id: uuidv4() }))
     } catch (err) {
-      throw new Error("Invalid JSON structure or missing required fields.");
+      throw new Error("Invalid JSON structure or missing required fields.")
     }
-  };
+  }
 
   const generateResponse = async () => {
     setIsLoading(true)
@@ -158,8 +165,27 @@ the last slide must be conclusion slide in default template
 
       const aiText = response.data.candidates[0].content.parts[0].text
       const jsonSlides = validateAndParseJson(aiText)
-      setSlides(jsonSlides)
+      setSlidesState(jsonSlides)
       setEditableSlides(jsonSlides)
+
+      setSlidesPreview(
+        jsonSlides.map((slide, index) => ({
+          number: index + 1,
+          id: slide.id,
+          title: slide.title,
+          content: renderSlide(slide, index),
+          onClick: () => setCurrentSlide(index + 1),
+        })),
+      )
+
+      setSlides(
+        jsonSlides.map((slide) => ({
+          Slide: renderSlide(slide, slide.number - 1),
+          id: slide.id,
+        })),
+      )
+
+      setGenerateAi(false)
     } catch (err) {
       console.error("Error:", err)
       setError(err.message || "An unexpected error occurred.")
@@ -178,8 +204,8 @@ the last slide must be conclusion slide in default template
     })
   }
   const handleDelete = (id) => {
-    setEditableSlides((prevSlides) => prevSlides.filter((slide) => slide.id !== id));
-  };
+    setEditableSlides((prevSlides) => prevSlides.filter((slide) => slide.id !== id))
+  }
   const downloadPPT = async () => {
     try {
       const pptx = new pptxgen()
@@ -188,7 +214,6 @@ the last slide must be conclusion slide in default template
         const slide = editableSlides[index]
         const pptSlide = pptx.addSlide()
 
-        // Set background color
         pptSlide.background = { color: "#342c4e" }
 
         const addStyledText = (text, options) => {
@@ -404,118 +429,88 @@ the last slide must be conclusion slide in default template
     }
   }
 
-const addNewSlide = (insertIndex) => {
-  setEditableSlides((prevSlides) => {
-    // Create a new array to avoid mutation
-    const updatedSlides = [...prevSlides]
+  const addNewSlide = (insertIndex) => {
+    setEditableSlides((prevSlides) => {
+      const updatedSlides = [...prevSlides]
 
-    // Create the new slide
-    const newSlide = {
-      type: "default",
-      title: "Untitled Card",
-      description: "This is a new slide. Edit as needed.",
-      // Ensure unique ID and correct number
-      id: uuidv4(), // Use UUID for unique ID
-      number: insertIndex + 1,
-    }
+      const newSlide = {
+        type: "default",
+        title: "Untitled Card",
+        description: "This is a new slide. Edit as needed.",
+        id: uuidv4(),
+        number: insertIndex + 1,
+      }
 
-    // Insert the new slide at the correct position
-    updatedSlides.splice(insertIndex, 0, newSlide)
+      updatedSlides.splice(insertIndex, 0, newSlide)
 
-    // Re-index all slides with stable IDs
-    return updatedSlides.map((slide, idx) => ({
-      ...slide,
-      number: idx + 1,
-      // Preserve original ID if it exists, otherwise create new one
-      id: slide.id || `slide-${Date.now()}-${idx}`,
-    }))
-  })
-}
-
-const renderSlide = (slide, index) => {
-  const slideProps = {
-    ...slide,
-    index,
-    onEdit: (updatedSlide) => handleEdit(index, updatedSlide),
-    onDelete: () => handleDelete(slide.id), // Pass delete handler
-
+      return updatedSlides.map((slide, idx) => ({
+        ...slide,
+        number: idx + 1,
+        id: slide.id || `slide-${Date.now()}-${idx}`,
+      }))
+    })
   }
 
-  // Use stable key based on slide ID
-  // const slideKey = `slide-${slide.id}-${index}`
+  const renderSlide = (slide, index) => {
+    const slideProps = {
+      ...slide,
+      index,
+      onEdit: (updatedSlide) => handleEdit(index, updatedSlide),
+      onDelete: () => handleDelete(slide.id),
+    }
+
+    switch (slide.type) {
+      case "accentImage":
+        return <AccentImageAi generateAi={slideProps} />
+      case "twoColumn":
+        return <TwoColumnAi generateAi={slideProps} />
+      case "imageCardText":
+        return <ImageTextAi generateAi={slideProps} />
+      case "threeImgCard":
+        return <ThreeColumnAi generateAi={slideProps} />
+      default:
+        return <DefaultAi generateAi={slideProps} />
+    }
+  }
+
+  useEffect(() => {
+    if (prompt) {
+      setSlidesState([])
+      setEditableSlides([])
+      generateResponse()
+    }
+  }, [prompt])
 
   return (
-    <div key={slide.id} id={`slide-${index}`} className="slide-container">
-      {/* Render Slide Content */}
-      {(() => {
-        switch (slide.type) {
-          case "accentImage":
-            return <AccentImageAi generateAi={slideProps} />
-          case "twoColumn":
-            return <TwoColumnAi generateAi={slideProps} />
-          case "imageCardText":
-            return <ImageTextAi generateAi={slideProps} />
-          case "threeImgCard":
-            return <ThreeColumnAi generateAi={slideProps} />
-          default:
-            return <DefaultAi generateAi={slideProps} />
-        }
-      })()}
+    <div className="min-h-screen p-6">
+      <div className="max-w-4xl mx-auto">
+        {error && (
+          <Card className="mt-4 bg-red-500/10 border-red-500/20 text-red-200">
+            <CardContent className="p-4">Error: {error}</CardContent>
+          </Card>
+        )}
 
-      {/* Add Button */}
-      <div className="flex justify-center align-middle">
-        <AddButtonAi index={index} addNewSlide={addNewSlide} />
+        {editableSlides.length > 0 && (
+          <div className="mt-8 space-y-8">
+            {editableSlides.slice().map((slide, index) => renderSlide(slide, index))}
+            <Card className="bg-white/10 backdrop-blur-lg border-0">
+              <CardContent className="p-6 flex justify-center">
+                <Button onClick={downloadPPT} className="bg-green-600 hover:bg-green-700 text-white" size="lg">
+                  <Download className="mr-2 h-4 w-4" />
+                  Download Presentation
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {isLoading && (
+          <div className="flex justify-center mt-10">
+            <Loader2 className="h-6 w-6 animate-spin text-black" />
+          </div>
+        )}
       </div>
     </div>
   )
-}
-
-
-
-
-  useEffect(() => {
-  if (prompt) {
-    setSlides([]);
-    setEditableSlides([]); // Avoid resetting unnecessarily
-    generateResponse();
-  }
-}, [prompt]);
-
-
-  return (
-  <div className="min-h-screen p-6">
-    <div className="max-w-4xl mx-auto">
-      {error && (
-        <Card className="mt-4 bg-red-500/10 border-red-500/20 text-red-200">
-          <CardContent className="p-4">Error: {error}</CardContent>
-        </Card>
-      )}
-
-      {editableSlides.length > 0 && (
-        <div className="mt-8 space-y-8">
-            {editableSlides.slice().map((slide, index) => renderSlide(slide, index))}          
-            <Card className="bg-white/10 backdrop-blur-lg border-0">
-            <CardContent className="p-6 flex justify-center">
-              <Button
-                onClick={downloadPPT}
-                className="bg-green-600 hover:bg-green-700 text-white"
-                size="lg"
-              >
-                <Download className="mr-2 h-4 w-4" />
-                Download Presentation
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
-      )}
-
-      {isLoading && (
-        <div className="flex justify-center mt-10">
-          <Loader2 className="h-6 w-6 animate-spin text-black" />
-        </div>
-      )}
-    </div>
-  </div>
-);
 }
 

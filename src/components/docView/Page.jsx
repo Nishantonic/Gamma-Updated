@@ -1,14 +1,14 @@
-import React, { useState, useEffect } from "react";
-import { Header } from "@/components/docView/Header";
-import { ResizableSidebar } from "@/components/docView/ResizableSidebar";
-import CardTemplates from "./slidesView/CardTemplates";
-import { closestCorners, DndContext } from "@dnd-kit/core";
-import { arrayMove } from "@dnd-kit/sortable";
-import AddButton from "./slidesView/AddButton";
-import Home from "../Home/Home";
-import GenerateAi from "./GenerateAi/GenerateAi";
-import { Loader2, Send } from "lucide-react";
-import { Button } from "../ui/button";
+import React, { useState, useEffect } from "react"
+import { Header } from "@/components/docView/Header"
+import { ResizableSidebar } from "@/components/docView/ResizableSidebar"
+import CardTemplates from "./slidesView/CardTemplates"
+import { closestCorners, DndContext } from "@dnd-kit/core"
+import { arrayMove } from "@dnd-kit/sortable"
+import AddButton from "./slidesView/AddButton"
+import Home from "../Home/Home"
+import GenerateAi from "./GenerateAi/GenerateAi"
+import { Loader2, Send } from "lucide-react"
+import { Button } from "../ui/button"
 import {
   Dialog,
   DialogContent,
@@ -17,28 +17,28 @@ import {
   DialogDescription,
   DialogFooter,
   DialogClose,
-} from "../ui/dialog";
-import { Input } from "../ui/input";
-import { PresentationMode } from "./PresentationMode";
+} from "../ui/dialog"
+import { Input } from "../ui/input"
+import { PresentationMode } from "./PresentationMode"
 
 export default function Page() {
-  const [currentSlide, setCurrentSlide] = useState(1);
-  const [slidesPreview, setSlidesPreview] = useState([]);
-  const [slides, setSlides] = useState([]);
-  const [generateAi, setGenerateAi] = useState(false);
- const [isPresentationMode, setIsPresentationMode] = useState(false);
-  const [presentationStartIndex, setPresentationStartIndex] = useState(0);
+  const [currentSlide, setCurrentSlide] = useState(1)
+  const [slidesPreview, setSlidesPreview] = useState([])
+  const [slides, setSlides] = useState([])
+  const [generateAi, setGenerateAi] = useState(false)
+  const [isPresentationMode, setIsPresentationMode] = useState(false)
+  const [presentationStartIndex, setPresentationStartIndex] = useState(0)
 
-  const [isLoadingCopy, setIsLoadingCopy] = useState(false);
-  const [showPopup, setShowPopup] = useState(false);
-  const [aiInputData, setAiInputData] = useState("");
+  const [isLoadingCopy, setIsLoadingCopy] = useState(false)
+  const [showPopup, setShowPopup] = useState(false)
+  const [aiInputData, setAiInputData] = useState("")
 
   useEffect(() => {
-    const slideElement = document.getElementById(`at-${currentSlide}`);
+    const slideElement = document.getElementById(`at-${currentSlide}`)
     if (slideElement) {
-      slideElement.scrollIntoView({ behavior: "smooth" });
+      slideElement.scrollIntoView({ behavior: "smooth" })
     }
-  }, [currentSlide]);
+  }, [currentSlide])
 
   useEffect(() => {
     const initialSlides = [
@@ -58,58 +58,55 @@ export default function Page() {
         ),
         onClick: () => setCurrentSlide(1),
       },
-    ];
-    setSlidesPreview(initialSlides);
+    ]
+    setSlidesPreview(initialSlides)
     setSlides(
       initialSlides.map((slide) => ({
         Slide: slide.content,
         id: slide.id,
-      }))
-    );
-  }, []);
+      })),
+    )
+  }, [])
 
   const handleDragEnd = (e) => {
-    const { active, over } = e;
-    if (!over || active.id === over.id) return;
+    const { active, over } = e
+    if (!over || active.id === over.id) return
 
     setSlidesPreview((prev) => {
-      const originalPos = prev.findIndex((item) => item.id === active.id);
-      const currentPos = prev.findIndex((item) => item.id === over.id);
-      const updatedPreview = arrayMove(prev, originalPos, currentPos);
+      const originalPos = prev.findIndex((item) => item.id === active.id)
+      const currentPos = prev.findIndex((item) => item.id === over.id)
+      const updatedPreview = arrayMove(prev, originalPos, currentPos)
 
       // Sync main slides
       setSlides(
         updatedPreview.map((item) => ({
           Slide: item.content,
           id: item.id,
-        }))
-      );
+        })),
+      )
 
       return updatedPreview.map((item, index) => ({
         ...item,
         number: index + 1,
-      }));
-    });
-  };
+      }))
+    })
+  }
 
   const handleAiPopupSubmit = () => {
-  
-  setGenerateAi(true); // Show AI generation UI
-  setIsLoadingCopy(true); // Indicate loading state
-};
+    setGenerateAi(true) // Show AI generation UI
+    setIsLoadingCopy(true) // Indicate loading state
+    setAiInputData(aiInputData)
+  }
 
   const startPresentation = (fromBeginning = true) => {
-    setPresentationStartIndex(fromBeginning ? 0 : currentSlide - 1);
-    setIsPresentationMode(true);
-  };
+    setPresentationStartIndex(fromBeginning ? 0 : currentSlide - 1)
+    setIsPresentationMode(true)
+  }
   return (
     <div className="h-screen flex flex-col bg-background">
-      <Header 
-        setGenerateAi={() => setShowPopup(true)}
-        startPresentation={startPresentation}
-      />
+      <Header setGenerateAi={() => setShowPopup(true)} startPresentation={startPresentation} />
       {isPresentationMode && (
-        <PresentationMode 
+        <PresentationMode
           slides={slides}
           startIndex={presentationStartIndex}
           onClose={() => setIsPresentationMode(false)}
@@ -127,7 +124,15 @@ export default function Page() {
         </DndContext>
         <main className="flex-1 overflow-y-auto">
           {generateAi ? (
-            <GenerateAi key={`ai-${Date.now()}`} inputData={aiInputData} setShowPopup={setShowPopup} setIsLoadingCopy={setIsLoadingCopy} />
+            <GenerateAi
+              key={`ai-${Date.now()}`}
+              inputData={aiInputData}
+              setShowPopup={setShowPopup}
+              setIsLoadingCopy={setIsLoadingCopy}
+              setSlidesPreview={setSlidesPreview}
+              setSlides={setSlides}
+              setGenerateAi={setGenerateAi}
+            />
           ) : (
             <div>
               {slides.map(({ Slide, id }) => (
@@ -153,9 +158,7 @@ export default function Page() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Generate with Gemini AI</DialogTitle>
-            <DialogDescription>
-              Enter the prompt for AI generation:
-            </DialogDescription>
+            <DialogDescription>Enter the prompt for AI generation:</DialogDescription>
           </DialogHeader>
 
           <Input
@@ -168,8 +171,8 @@ export default function Page() {
           <DialogFooter>
             <Button
               onClick={() => {
-                handleAiPopupSubmit();
-                setShowPopup(false); // Close dialog after submission
+                handleAiPopupSubmit()
+                setShowPopup(false) // Close dialog after submission
               }}
               disabled={!aiInputData || isLoadingCopy}
             >
@@ -186,12 +189,13 @@ export default function Page() {
               )}
             </Button>
             <DialogClose asChild>
-              <Button variant="ghost" >Cancel</Button>
+              <Button variant="ghost">Cancel</Button>
             </DialogClose>
           </DialogFooter>
         </DialogContent>
       </Dialog>
       <Home />
     </div>
-  );
+  )
 }
+
