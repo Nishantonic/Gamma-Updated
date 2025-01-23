@@ -12,8 +12,8 @@ function App() {
   return (
    <Router>
        <Routes>
-          {/* <Route path="/" element={<Page/> }/>
-          <Route path="/generate-ai" element={<GenerateAi />} /> */}
+          <Route path="/page" element={<Page/>}/>
+          {/* <Route path="/generate-ai" element={<GenerateAi />} /> */}
           <Route path="/" element={<SignUp/>}/>
           <Route path="/login" element={<Login/>}/>
        </Routes>
