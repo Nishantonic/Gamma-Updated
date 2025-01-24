@@ -21,11 +21,14 @@ import {
 import { Input } from "../ui/input"
 import { PresentationMode } from "./PresentationMode"
 import AddButtonAi from "./GenerateAi/AiComponents/AddButtonAi"
+import html2canvas from "html2canvas"
+import { debounce } from "lodash"
 
 export default function Page() {
   const [currentSlide, setCurrentSlide] = useState(1)
   const [slidesPreview, setSlidesPreview] = useState([])
   const [slides, setSlides] = useState([])
+  const [slideImages, setSlideImages] = useState([])
   const [generateAi, setGenerateAi] = useState(false)
   const [isPresentationMode, setIsPresentationMode] = useState(false)
   const [presentationStartIndex, setPresentationStartIndex] = useState(0)
@@ -68,6 +71,7 @@ export default function Page() {
         id: slide.id,
       })),
     )
+    updateSlideImages()
   }, [])
 
   const handleDragEnd = (e) => {
@@ -105,7 +109,31 @@ export default function Page() {
     setIsPresentationMode(true)
   }
 
-  const addNewSlide = (index) => {
+  const generateSlidePreview = async (slideElement) => {
+    if (slideElement) {
+      const canvas = await html2canvas(slideElement, {
+        scale: 1, // Increased from 0.2 for better quality
+        logging: false,
+        useCORS: true,
+      })
+      return canvas.toDataURL("image/png", 1.0) // Use PNG format with max quality
+    }
+    return null
+  }
+
+  const updateSlideImages = async () => {
+    const newImages = await Promise.all(
+      slides.map(async (slide) => {
+        const element = document.getElementById(`at-${slide.id}`)
+        return element ? await generateSlidePreview(element) : null
+      }),
+    )
+    setSlideImages(newImages)
+  }
+
+  const debouncedUpdateSlideImages = debounce(updateSlideImages, 300)
+
+  const addNewSlide = async (index) => {
     const newSlide = {
       number: index + 1,
       id: Date.now(),
@@ -133,12 +161,29 @@ export default function Page() {
       return updatedSlides
     })
 
-    setSlides((prevSlides) => [
-      ...prevSlides.slice(0, index),
-      { Slide: newSlide.content, id: newSlide.id },
-      ...prevSlides.slice(index),
-    ])
+    setSlides((prevSlides) => {
+      const newSlides = [
+        ...prevSlides.slice(0, index),
+        { Slide: newSlide.content, id: newSlide.id },
+        ...prevSlides.slice(index),
+      ]
+      debouncedUpdateSlideImages()
+      return newSlides
+    })
   }
+
+  const deleteSlide = (id) => {
+    setSlidesPreview((prevSlides) => prevSlides.filter((slide) => slide.id !== id))
+    setSlides((prevSlides) => {
+      const newSlides = prevSlides.filter((slide) => slide.id !== id)
+      debouncedUpdateSlideImages()
+      return newSlides
+    })
+  }
+
+  useEffect(() => {
+    debouncedUpdateSlideImages()
+  }, [slides])
 
   return (
     <div className="h-screen flex flex-col bg-background">
@@ -146,6 +191,7 @@ export default function Page() {
       {isPresentationMode && (
         <PresentationMode
           slides={slides}
+          slideImages={slideImages}
           startIndex={presentationStartIndex}
           onClose={() => setIsPresentationMode(false)}
         />
@@ -157,6 +203,8 @@ export default function Page() {
               setCurrentSlide={setCurrentSlide}
               slidesPreview={slidesPreview}
               setSlidesPreview={setSlidesPreview}
+              deleteSlide={deleteSlide}
+              slideImages={slideImages}
             />
           )}
         </DndContext>
@@ -176,8 +224,8 @@ export default function Page() {
               {slides.map(({ Slide, id }, index) => (
                 <React.Fragment key={id}>
                   <div id={`at-${id}`}>{Slide}</div>
-                  <div className='flex justify-center align-middle justify-self-center '>
-                      <AddButtonAi index={index} addNewSlide={addNewSlide} />
+                  <div className="flex justify-center align-middle justify-self-center ">
+                    <AddButtonAi index={index} addNewSlide={addNewSlide} />
                   </div>
                 </React.Fragment>
               ))}

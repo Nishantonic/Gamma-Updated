@@ -1,36 +1,32 @@
-import React, { useContext, useState } from "react";
+import React, { useContext, useState, useCallback } from "react";
 import { Card } from "../../ui/card";
-import { Grid2X2, Sparkles } from "lucide-react";
+import { Grid2X2, Sparkles } from 'lucide-react';
 import CardTemplateTwoColumn from "./CardTempletTwoColumn";
 import CardTemplateImgHeadingThree from "./CardTemplateImgHeadingThree";
-import ImageCradText from "./ImageCardText";
-import TitleInput from "./CardComponents/TitleInput";
+import ImageCardText from "./ImageCardText";
 import { CardMenu } from "./Menu/CardMenu";
 import card1 from "./assets/card1.png";
 import card2 from "./assets/card2.png";
 import card3 from "./assets/card3.png";
 import card4 from "./assets/card4.png";
 import { DragContext } from "@/components/SidebarLeft/DragContext";
-import { TemplatesModal } from "./CardComponents/TempletModal"
-import AccentImage from "./AccentImage"
-import AddButton from "./AddButton";
-import ImageCardText from "./ImageCardText"
+import AccentImage from "./AccentImage";
 import TitleAi from "../GenerateAi/AiComponents/TitleAi";
 
-export default function CardTemplates({ children, slidesPreview, setSlidesPreview, id, setCurrentSlide,generateAi = {},setSlides, ...props }) {
+export default function CardTemplates({ children, slidesPreview, setSlidesPreview, id, setCurrentSlide, generateAi = {}, setSlides, ...props }) {
   const [showTwoColumn, setShowTwoColumn] = useState(false);
   const [showImageText, setShowImageText] = useState(false);
   const [title, setTitle] = useState(generateAi.title || "Untitled Card");
   const [showThreeColumn, setShowThreeColumn] = useState(false);
-  const [showAccentImage,setShowAccentImage] = useState(false);
+  const [showAccentImage, setShowAccentImage] = useState(false);
   const [replacedTemplate, setReplacedTemplate] = useState(null);
   const [droppedItems, setDroppedItems] = useState([]);
   const { draggedElement } = useContext(DragContext);
     
-  const handleDrop = (event) => {
+  const handleDrop = useCallback((event) => {
     event.preventDefault();
     if (draggedElement?.template && draggedElement.type === "CardTemplate") {
-      setReplacedTemplate(draggedElement.template); // Set the dropped template
+      setReplacedTemplate(draggedElement.template);
     } else if (draggedElement?.template) {
       const newElement = {
         id: Date.now(),
@@ -38,162 +34,113 @@ export default function CardTemplates({ children, slidesPreview, setSlidesPrevie
       };
       setDroppedItems((prev) => [...prev, newElement]);
     }
-  };
+  }, [draggedElement]);
 
-  const handleDragOver = (event) => {
+  const handleDragOver = useCallback((event) => {
     event.preventDefault();
-  };
+  }, []);
 
-  const handleDeleteDroppedItem = (id) => {
+  const handleDeleteDroppedItem = useCallback((id) => {
     setDroppedItems((prev) => prev.filter((item) => item.id !== id));
-  };
+  }, []);
 
-
-  const handleEdit = () => {
+  const handleEdit = useCallback(() => {
     console.log("Edit clicked");
-  };
+  }, []);
 
-  const handleDelete = () => {
+  const handleDelete = useCallback(() => {
     setSlides((prevSlides) => prevSlides.filter((slide) => slide.id !== id));
-  };
+  }, [id, setSlides]);
 
-  const handleDuplicate = () => {
+  const handleDuplicate = useCallback(() => {
     console.log("Duplicate clicked");
-  };
+  }, []);
 
-  const handleShare = () => {
+  const handleShare = useCallback(() => {
     console.log("Share clicked");
-  };
+  }, []);
 
-  const handleDownload = () => {
+  const handleDownload = useCallback(() => {
     console.log("Download clicked");
-  };
+  }, []);
 
-  if (showTwoColumn) {
-    // console.log(slidesPreview,setSlidesPreview);
-    
+  const updateSlidesPreview = useCallback((Component) => {
     setSlidesPreview(slidesPreview => {
       return slidesPreview.map(slide => {
-        const newSlideId = slidesPreview.length
         if (slide.id === id) {
           return {
             ...slide,
-            
-            content: <div className="flex justify-center"><CardTemplateTwoColumn slidesPreview={slidesPreview} setSlides={setSlides} id={newSlideId} setSlidesPreview={setSlidesPreview} /></div>,
+            content: <div className="flex justify-center"><Component slidesPreview={slidesPreview} setSlides={setSlides} id={slide.id} setSlidesPreview={setSlidesPreview} /></div>,
             onClick: () => setCurrentSlide(slide.id),
           }
         }
         return slide
       })
     })
+  }, [id, setCurrentSlide, setSlides, setSlidesPreview]);
+
+  if (showTwoColumn) {
+    updateSlidesPreview(CardTemplateTwoColumn);
     return <CardTemplateTwoColumn />;
   }
 
   if (showImageText) {
-
-    setSlidesPreview(slidesPreview => {
-      return slidesPreview.map(slide => {
-        const newSlideId = slidesPreview.length
-        if (slide.id === id) {
-          return {
-            ...slide,
-            content: <div className="flex justify-center"><ImageCardText setSlides={setSlides} slidesPreview={slidesPreview} id={newSlideId} setSlidesPreview={setSlidesPreview} /></div>,
-            onClick: () => setCurrentSlide(slide.id),
-          }
-        }
-        return slide
-      })
-    })
-    return <ImageCradText />;
+    updateSlidesPreview(ImageCardText);
+    return <ImageCardText />;
   }
 
   if (showAccentImage) {
-
-    setSlidesPreview(slidesPreview => {
-      return slidesPreview.map(slide => {
-        const newSlideId = slidesPreview.length
-        if (slide.id === id) {
-          return {
-            ...slide,
-            content: <div className="flex justify-center"><AccentImage setSlides={setSlides} slidesPreview={slidesPreview} id={newSlideId} setSlidesPreview={setSlidesPreview} /></div>,
-            onClick: () => setCurrentSlide(slide.id),
-          }
-        }
-        return slide
-      })
-    })
+    updateSlidesPreview(AccentImage);
     return <AccentImage />;
   }
 
   if (showThreeColumn) {
-
-    setSlidesPreview(slidesPreview => {
-      return slidesPreview.map(slide => {
-        const newSlideId = slidesPreview.length
-        if (slide.id === id) {
-          return {
-            ...slide,
-            content: <div className="flex justify-center"><CardTemplateImgHeadingThree setSlides={setSlides} slidesPreview={slidesPreview} id={newSlideId} setSlidesPreview={setSlidesPreview} /></div>,
-            onClick: () => setCurrentSlide(slide.id),
-          }
-        }
-        return slide
-      })
-    })
+    updateSlidesPreview(CardTemplateImgHeadingThree);
     return <CardTemplateImgHeadingThree />;
   }
 
-  // if(droppedItems.length > 0){
-  //   return <span>{droppedItems.map((item, index) => (
-  //     <span key={index}>{item.template}</span>
-  //   ))}</span>
-  // }
   if (replacedTemplate) {
     return <div>{replacedTemplate}</div>;
   }
 
-
   return (
-    <div onDragOver={handleDragOver} onDrop={handleDrop} >
-    
-        <div className="min-h-screen  w-full md:w-[60vw] md:min-h-[25vw] md:mt-[3vh] md:mb-[3vh] rounded-lg px-1 bg-[#342c4e] p-6 relative ">
-          <div className="absolute top-4 left-11">
-            <CardMenu
-              onEdit={handleEdit}
-              onDelete={handleDelete}
-              onDuplicate={handleDuplicate}
-              onShare={handleShare}
-              onDownload={handleDownload}
-            />
+    <div onDragOver={handleDragOver} onDrop={handleDrop}>
+      <div className="min-h-screen w-full md:w-[60vw] md:min-h-[25vw] md:mt-[3vh] md:mb-[3vh] rounded-lg px-1 bg-[#342c4e] p-6 relative">
+        <div className="absolute top-4 left-11">
+          <CardMenu
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+            onDuplicate={handleDuplicate}
+            onShare={handleShare}
+            onDownload={handleDownload}
+          />
+        </div>
+        <div className="mt-10">
+          <TitleAi initialData={title} onUpdate={(newTitle) => setTitle(newTitle)} />
+        </div>
+        {droppedItems.length > 0 ? (
+          <div className="mt-6 space-y-4">
+            {droppedItems.map((item) => (
+              <div key={item.id} className="relative">
+                {React.cloneElement(item.content, {
+                  onDelete: () => handleDeleteDroppedItem(item.id),
+                })}
+              </div>
+            ))}
           </div>
-          <div className="mt-10">
-            <TitleAi initialData={title} onUpdate={(newTitle) => setTitle(newTitle)} />
-          </div>
-          {droppedItems.length > 0 ? (
-            <div className="mt-6 space-y-4">
-              {droppedItems.map((item) => (
-                <div key={item.id} className="relative">
-                  {React.cloneElement(item.content, {
-                    onDelete: () => handleDeleteDroppedItem(item.id),
-                  })}
-                </div>
-              ))}
-            </div>
-      ) : (
+        ) : (
           <div className="space-y-3">
             <h2 className="text-[#9d8ba7] text-lg px-10">
               Or start with a template
             </h2>
-
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 px-10">
-
               <Card
                 className="p-4 bg-[#2a2438] border-[#3a3347] hover:border-[#4a4357] cursor-pointer transition-colors relative group"
                 onClick={() => setShowImageText(true)}
               >
                 <div className="h-24 flex items-center justify-center overflow-hidden">
                   <img
-                    src={card1}
+                    src={card1 || "/placeholder.svg"}
                     alt="Image And text"
                     className="w-full h-full object-contain rounded-lg"
                   />
@@ -211,7 +158,7 @@ export default function CardTemplates({ children, slidesPreview, setSlidesPrevie
               >
                 <div className="h-24 flex items-center justify-center overflow-hidden">
                   <img
-                    src={card2}
+                    src={card2 || "/placeholder.svg"}
                     alt="Two Column"
                     className="w-full h-full object-contain rounded-lg"
                   />
@@ -223,12 +170,13 @@ export default function CardTemplates({ children, slidesPreview, setSlidesPrevie
                 </div>
               </Card>
 
-              <Card className="p-4 bg-[#2a2438] border-[#3a3347] hover:border-[#4a4357] cursor-pointer transition-colors relative group"
+              <Card 
+                className="p-4 bg-[#2a2438] border-[#3a3347] hover:border-[#4a4357] cursor-pointer transition-colors relative group"
                 onClick={() => setShowAccentImage(true)}
               >
                 <div className="h-24 flex items-center justify-center overflow-hidden">
                   <img
-                    src={card3}
+                    src={card3 || "/placeholder.svg"}
                     alt="Accent right"
                     className="w-full h-full object-contain rounded-lg"
                   />
@@ -246,7 +194,7 @@ export default function CardTemplates({ children, slidesPreview, setSlidesPrevie
               >
                 <div className="h-24 flex items-center justify-center overflow-hidden">
                   <img
-                    src={card4}
+                    src={card4 || "/placeholder.svg"}
                     alt="3 Image Column"
                     className="w-full h-full object-contain rounded-lg"
                   />
@@ -273,9 +221,8 @@ export default function CardTemplates({ children, slidesPreview, setSlidesPrevie
               </Card>
             </div>
           </div>
-          )}
-        </div>
-      
+        )}
+      </div>
     </div>
   );
 }
