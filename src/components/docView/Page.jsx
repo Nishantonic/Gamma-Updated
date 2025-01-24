@@ -20,6 +20,7 @@ import {
 } from "../ui/dialog"
 import { Input } from "../ui/input"
 import { PresentationMode } from "./PresentationMode"
+import AddButtonAi from "./GenerateAi/AiComponents/AddButtonAi"
 
 export default function Page() {
   const [currentSlide, setCurrentSlide] = useState(1)
@@ -51,6 +52,7 @@ export default function Page() {
             <CardTemplates
               slidesPreview={slidesPreview}
               id={1}
+              setSlides={setSlides}
               setCurrentSlide={setCurrentSlide}
               setSlidesPreview={setSlidesPreview}
             />
@@ -93,8 +95,8 @@ export default function Page() {
   }
 
   const handleAiPopupSubmit = () => {
-    setGenerateAi(true) // Show AI generation UI
-    setIsLoadingCopy(true) // Indicate loading state
+    setGenerateAi(true)
+    setIsLoadingCopy(true)
     setAiInputData(aiInputData)
   }
 
@@ -102,6 +104,42 @@ export default function Page() {
     setPresentationStartIndex(fromBeginning ? 0 : currentSlide - 1)
     setIsPresentationMode(true)
   }
+
+  const addNewSlide = (index) => {
+    const newSlide = {
+      number: index + 1,
+      id: Date.now(),
+      title: "New Slide",
+      content: (
+        <div className="flex justify-center">
+          <CardTemplates
+            slidesPreview={slidesPreview}
+            id={Date.now()}
+            setSlides={setSlides}
+            setCurrentSlide={setCurrentSlide}
+            setSlidesPreview={setSlidesPreview}
+          />
+        </div>
+      ),
+      onClick: () => setCurrentSlide(index + 1),
+    }
+
+    setSlidesPreview((prevSlides) => {
+      const updatedSlides = [
+        ...prevSlides.slice(0, index),
+        newSlide,
+        ...prevSlides.slice(index).map((slide) => ({ ...slide, number: slide.number + 1 })),
+      ]
+      return updatedSlides
+    })
+
+    setSlides((prevSlides) => [
+      ...prevSlides.slice(0, index),
+      { Slide: newSlide.content, id: newSlide.id },
+      ...prevSlides.slice(index),
+    ])
+  }
+
   return (
     <div className="h-screen flex flex-col bg-background">
       <Header setGenerateAi={() => setShowPopup(true)} startPresentation={startPresentation} />
@@ -135,19 +173,14 @@ export default function Page() {
             />
           ) : (
             <div>
-              {slides.map(({ Slide, id }) => (
-                <div key={id} id={`at-${id}`}>
-                  {Slide}
-                </div>
+              {slides.map(({ Slide, id }, index) => (
+                <React.Fragment key={id}>
+                  <div id={`at-${id}`}>{Slide}</div>
+                  <div className='flex justify-center align-middle justify-self-center '>
+                      <AddButtonAi index={index} addNewSlide={addNewSlide} />
+                  </div>
+                </React.Fragment>
               ))}
-              <div className="flex w-full justify-center items-center relative mt-5">
-                <AddButton
-                  setCurrentSlide={setCurrentSlide}
-                  slidesPreview={slidesPreview}
-                  setSlidesPreview={setSlidesPreview}
-                  setSlides={setSlides}
-                />
-              </div>
             </div>
           )}
         </main>
@@ -172,7 +205,7 @@ export default function Page() {
             <Button
               onClick={() => {
                 handleAiPopupSubmit()
-                setShowPopup(false) // Close dialog after submission
+                setShowPopup(false)
               }}
               disabled={!aiInputData || isLoadingCopy}
             >

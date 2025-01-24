@@ -1,8 +1,8 @@
 import React from "react"
 
-const AddButtonAi = ({ index, addNewSlide }) => {
+const AddButton = ({ index, addNewSlide }) => {
   const handlePlusClick = () => {
-    // Simply pass the index where we want to insert the new slide
+    console.log("Add button clicked, index:", index)
     addNewSlide(index + 1)
   }
 
@@ -18,6 +18,8 @@ const AddButtonAi = ({ index, addNewSlide }) => {
         borderRadius: "4px",
         backgroundColor: "#342c4e",
         marginTop: "10px",
+        marginBottom: "10px",
+        width: "100%",
       }}
       onClick={handlePlusClick}
     >
@@ -26,5 +28,5 @@ const AddButtonAi = ({ index, addNewSlide }) => {
   )
 }
 
-export default AddButtonAi
+export default AddButton
 

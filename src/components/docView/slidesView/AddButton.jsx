@@ -18,6 +18,7 @@ const AddButton = ({ slidesPreview, setSlidesPreview, setSlides, setCurrentSlide
           <CardTemplates
             slidesPreview={slidesPreview}
             id={newSlideId}
+            setSlides = {setSlides}
             setSlidesPreview={setSlidesPreview}
           />
         </div>

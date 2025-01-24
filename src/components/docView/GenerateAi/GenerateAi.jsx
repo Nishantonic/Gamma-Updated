@@ -204,8 +204,22 @@ the last slide must be conclusion slide in default template
     })
   }
   const handleDelete = (id) => {
-    setEditableSlides((prevSlides) => prevSlides.filter((slide) => slide.id !== id))
-  }
+  // Update editableSlides
+  setEditableSlides((prevSlides) => {
+    const updatedSlides = prevSlides.filter((slide) => slide.id !== id);
+    console.log("Updated editableSlides:", updatedSlides); // Log here to ensure proper update
+    return updatedSlides;
+  });
+
+  // Update slides
+  setSlides((prevSlides) => {
+    const updatedSlides = prevSlides.filter((slide) => slide.id !== id);
+    console.log("Updated slides:", updatedSlides); // Log here to ensure proper update
+    return updatedSlides;
+  });
+};
+
+
   const downloadPPT = async () => {
     try {
       const pptx = new pptxgen()

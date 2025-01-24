@@ -8,6 +8,7 @@ import AddButton from "./AddButton"
 function AccentImage ({
   setSlidesPreview,
   slidesPreview,
+  setSlides,
   id,
   children,
   ...props
@@ -58,8 +59,8 @@ function AccentImage ({
     console.log("Edit clicked")
   }
 
-  const handleDelete = () => {
-    console.log("Delete clicked")
+  const handleDelete = (id) => {
+    setSlides((prevSlides) => prevSlides.filter((slide) => slide.id !== id));
   }
 
   const handleDuplicate = () => {

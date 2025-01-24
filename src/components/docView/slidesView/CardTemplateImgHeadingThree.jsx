@@ -10,6 +10,7 @@ function CardTemplateImgHeadingThree({
   setSlidesPreview,
   slidesPreview,
   id,
+  setSlides,
   children,
   ...props
 }) {
@@ -52,6 +53,10 @@ function CardTemplateImgHeadingThree({
     setDroppedItems((prev) => prev.filter((item) => item.id !== id));
   };
 
+  const handleDelete = () => {
+    setSlides((prevSlides) => prevSlides.filter((slide) => slide.id !== id));
+  };
+
   // If a new template is dropped, render it instead
   if (replacedTemplate) {
     return <div>{replacedTemplate}</div>;
@@ -67,7 +72,7 @@ function CardTemplateImgHeadingThree({
         <div className="absolute top-4 left-11">
           <CardMenu
             onEdit={() => console.log("Edit clicked")}
-            onDelete={() => console.log("Delete clicked")}
+            onDelete={() => {handleDelete}}
             onDuplicate={() => console.log("Duplicate clicked")}
             onShare={() => console.log("Share clicked")}
             onDownload={() => console.log("Download clicked")}

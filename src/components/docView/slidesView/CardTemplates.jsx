@@ -17,7 +17,7 @@ import AddButton from "./AddButton";
 import ImageCardText from "./ImageCardText"
 import TitleAi from "../GenerateAi/AiComponents/TitleAi";
 
-export default function CardTemplates({ children, slidesPreview, setSlidesPreview, id, setCurrentSlide,generateAi = {}, ...props }) {
+export default function CardTemplates({ children, slidesPreview, setSlidesPreview, id, setCurrentSlide,generateAi = {},setSlides, ...props }) {
   const [showTwoColumn, setShowTwoColumn] = useState(false);
   const [showImageText, setShowImageText] = useState(false);
   const [title, setTitle] = useState(generateAi.title || "Untitled Card");
@@ -54,7 +54,7 @@ export default function CardTemplates({ children, slidesPreview, setSlidesPrevie
   };
 
   const handleDelete = () => {
-    console.log("Delete clicked");
+    setSlides((prevSlides) => prevSlides.filter((slide) => slide.id !== id));
   };
 
   const handleDuplicate = () => {
@@ -79,7 +79,7 @@ export default function CardTemplates({ children, slidesPreview, setSlidesPrevie
           return {
             ...slide,
             
-            content: <div className="flex justify-center"><CardTemplateTwoColumn slidesPreview={slidesPreview} id={newSlideId} setSlidesPreview={setSlidesPreview} /></div>,
+            content: <div className="flex justify-center"><CardTemplateTwoColumn slidesPreview={slidesPreview} setSlides={setSlides} id={newSlideId} setSlidesPreview={setSlidesPreview} /></div>,
             onClick: () => setCurrentSlide(slide.id),
           }
         }
@@ -97,7 +97,7 @@ export default function CardTemplates({ children, slidesPreview, setSlidesPrevie
         if (slide.id === id) {
           return {
             ...slide,
-            content: <div className="flex justify-center"><ImageCardText slidesPreview={slidesPreview} id={newSlideId} setSlidesPreview={setSlidesPreview} /></div>,
+            content: <div className="flex justify-center"><ImageCardText setSlides={setSlides} slidesPreview={slidesPreview} id={newSlideId} setSlidesPreview={setSlidesPreview} /></div>,
             onClick: () => setCurrentSlide(slide.id),
           }
         }
@@ -115,7 +115,7 @@ export default function CardTemplates({ children, slidesPreview, setSlidesPrevie
         if (slide.id === id) {
           return {
             ...slide,
-            content: <div className="flex justify-center"><AccentImage slidesPreview={slidesPreview} id={newSlideId} setSlidesPreview={setSlidesPreview} /></div>,
+            content: <div className="flex justify-center"><AccentImage setSlides={setSlides} slidesPreview={slidesPreview} id={newSlideId} setSlidesPreview={setSlidesPreview} /></div>,
             onClick: () => setCurrentSlide(slide.id),
           }
         }
@@ -133,7 +133,7 @@ export default function CardTemplates({ children, slidesPreview, setSlidesPrevie
         if (slide.id === id) {
           return {
             ...slide,
-            content: <div className="flex justify-center"><CardTemplateImgHeadingThree slidesPreview={slidesPreview} id={newSlideId} setSlidesPreview={setSlidesPreview} /></div>,
+            content: <div className="flex justify-center"><CardTemplateImgHeadingThree setSlides={setSlides} slidesPreview={slidesPreview} id={newSlideId} setSlidesPreview={setSlidesPreview} /></div>,
             onClick: () => setCurrentSlide(slide.id),
           }
         }

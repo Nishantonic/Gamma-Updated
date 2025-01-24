@@ -8,6 +8,7 @@ function ImageCardText ({
   setSlidesPreview,
   slidesPreview,
   id,
+  setSlides,
   children,
   ...props
 }) {
@@ -58,7 +59,7 @@ function ImageCardText ({
   }
 
   const handleDelete = () => {
-    console.log("Delete clicked")
+    setSlides((prevSlides) => prevSlides.filter((slide) => slide.id !== id));
   }
 
   const handleDuplicate = () => {
