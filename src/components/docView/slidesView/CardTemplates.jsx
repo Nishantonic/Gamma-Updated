@@ -51,6 +51,7 @@ export default function CardTemplates({ children, slidesPreview, setSlidesPrevie
 
   const handleDelete = useCallback(() => {
     setSlides((prevSlides) => prevSlides.filter((slide) => slide.id !== id));
+    setSlidesPreview((prevSlidesPreview) => prevSlidesPreview.filter((slide) => slide.id !== id));
   }, [id, setSlides]);
 
   const handleDuplicate = useCallback(() => {
@@ -66,38 +67,67 @@ export default function CardTemplates({ children, slidesPreview, setSlidesPrevie
   }, []);
 
   const updateSlidesPreview = useCallback((Component) => {
-    setSlidesPreview(slidesPreview => {
-      return slidesPreview.map(slide => {
+    setSlidesPreview((slidesPreview) =>
+      slidesPreview.map((slide) => {
         if (slide.id === id) {
           return {
             ...slide,
-            content: <div className="flex justify-center"><Component slidesPreview={slidesPreview} setSlides={setSlides} id={slide.id} setSlidesPreview={setSlidesPreview} /></div>,
+            content: (
+              <div className="flex justify-center">
+                <Component
+                  slidesPreview={slidesPreview}
+                  setSlides={setSlides}
+                  id={slide.id} // Pass id explicitly
+                  setSlidesPreview={setSlidesPreview}
+                />
+              </div>
+            ),
             onClick: () => setCurrentSlide(slide.id),
-          }
+          };
         }
-        return slide
+        return slide;
       })
-    })
+    );
   }, [id, setCurrentSlide, setSlides, setSlidesPreview]);
-
+  
   if (showTwoColumn) {
     updateSlidesPreview(CardTemplateTwoColumn);
-    return <CardTemplateTwoColumn />;
+    return <CardTemplateTwoColumn 
+      id={id} // Pass id explicitly
+      slidesPreview={slidesPreview}
+      setSlidesPreview={setSlidesPreview}
+      setSlides={setSlides}
+    />;
   }
 
   if (showImageText) {
     updateSlidesPreview(ImageCardText);
-    return <ImageCardText />;
+    return <ImageCardText
+      id={id} // Pass id explicitly
+      slidesPreview={slidesPreview}
+      setSlidesPreview={setSlidesPreview}
+      setSlides={setSlides}
+    />;
   }
 
   if (showAccentImage) {
     updateSlidesPreview(AccentImage);
-    return <AccentImage />;
+    return <AccentImage 
+      id={id} // Pass id explicitly
+      slidesPreview={slidesPreview}
+      setSlidesPreview={setSlidesPreview}
+      setSlides={setSlides}
+    />;
   }
 
   if (showThreeColumn) {
     updateSlidesPreview(CardTemplateImgHeadingThree);
-    return <CardTemplateImgHeadingThree />;
+    return <CardTemplateImgHeadingThree 
+      id={id} // Pass id explicitly
+      slidesPreview={slidesPreview}
+      setSlidesPreview={setSlidesPreview}
+      setSlides={setSlides}
+    />;
   }
 
   if (replacedTemplate) {
