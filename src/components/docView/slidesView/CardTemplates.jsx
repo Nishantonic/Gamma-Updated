@@ -12,6 +12,7 @@ import card4 from "./assets/card4.png";
 import { DragContext } from "@/components/SidebarLeft/DragContext";
 import AccentImage from "./AccentImage";
 import TitleAi from "../GenerateAi/AiComponents/TitleAi";
+import TitleINput from "./CardComponents/TitleInput";
 
 export default function CardTemplates({ children, slidesPreview, setSlidesPreview, id, setCurrentSlide, generateAi = {}, setSlides, ...props }) {
   const [showTwoColumn, setShowTwoColumn] = useState(false);
@@ -104,7 +105,7 @@ export default function CardTemplates({ children, slidesPreview, setSlidesPrevie
   }
 
   return (
-    <div onDragOver={handleDragOver} onDrop={handleDrop}>
+    <div onDragOver={handleDragOver} onDrop={handleDrop} >
       <div className="min-h-screen w-full md:w-[60vw] md:min-h-[25vw] md:mt-[3vh] md:mb-[3vh] rounded-lg px-1 bg-[#342c4e] p-6 relative">
         <div className="absolute top-4 left-11">
           <CardMenu
@@ -116,7 +117,7 @@ export default function CardTemplates({ children, slidesPreview, setSlidesPrevie
           />
         </div>
         <div className="mt-10">
-          <TitleAi initialData={title} onUpdate={(newTitle) => setTitle(newTitle)} />
+          <TitleINput initialData={title} onUpdate={(newTitle) => setTitle(newTitle)} />
         </div>
         {droppedItems.length > 0 ? (
           <div className="mt-6 space-y-4">

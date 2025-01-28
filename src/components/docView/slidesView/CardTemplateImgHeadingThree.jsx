@@ -130,7 +130,7 @@ function CardTemplateImgHeadingThree({
                   onChange={(e) => handleImagePreview(e, index)}
                 />
               </div>
-
+                
               {/* Heading */}
               <Heading />
 

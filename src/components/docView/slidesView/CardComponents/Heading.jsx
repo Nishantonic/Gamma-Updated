@@ -1,5 +1,16 @@
-import { useRef, useState, useEffect } from 'react';
-import { Bold, Italic, Underline, Code, AlignLeft, AlignCenter, AlignRight, Type, Palette, Trash2 } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import {
+  Bold,
+  Italic,
+  Underline,
+  Code,
+  AlignLeft,
+  AlignCenter,
+  AlignRight,
+  Type,
+  Palette,
+  Trash2,
+} from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -29,20 +40,18 @@ const SIZES = [
   { name: 'Extra Large', value: '2.5rem' },
 ];
 
-export default function Heading({ onDragStart, onDelete }) {
+export default function Heading({ onDelete }) {
   const editorRef = useRef(null);
   const [alignment, setAlignment] = useState('left');
-
+  const [isHovering, setIsHovering] = useState(false); // State for hover functionality
   useEffect(() => {
     if (editorRef.current) {
       // Set default text content and style
-      editorRef.current.innerHTML = '<span>Heading 4</span>';
-      editorRef.current.style.fontSize = '1.4rem'; // Default size (Normal)
-      editorRef.current.style.color = 'text-white'; // Default color (Purple)
-      editorRef.current.style.textAlign = 'left'; // Default alignment
+      editorRef.current.style.fontSize = "1.4rem"; // Default size (Normal)
+      editorRef.current.style.color = "text-white"; // Default color (Purple)
+      editorRef.current.style.textAlign = "left"; // Default alignment
     }
-  }, []);
-
+  },[])
   const applyCommand = (command, value = null) => {
     document.execCommand(command, false, value);
     editorRef.current?.focus();
@@ -86,126 +95,147 @@ export default function Heading({ onDragStart, onDelete }) {
 
   return (
     <Card
-      className="w-full flex justify-start max-w-4xl flex-wrap mt-1 bg-[#2e294e] border-none shadow-xl">
-      <CardHeader className="flex flex-row justify-between space-y-0 px-1 py-1">
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="hover:bg-white/10 transition-colors"
-            >
-              <div className="flex items-center justify-center bg-white/90 hover:bg-white p-1 rounded-full transition-colors">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="20"
-                  height="20"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  className="text-gray-700"
-                >
-                  <circle cx="12" cy="6" r="2" fill="currentColor" />
-                  <circle cx="12" cy="12" r="2" fill="currentColor" />
-                  <circle cx="12" cy="18" r="2" fill="currentColor" />
-                </svg>
-              </div>
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-56 bg-white">
-            <DropdownMenuItem onClick={() => applyCommand('bold')}>
-              <Bold className="mr-2 h-4 w-4" />
-              <span>Bold</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => applyCommand('italic')}>
-              <Italic className="mr-2 h-4 w-4" />
-              <span>Italic</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => applyCommand('underline')}>
-              <Underline className="mr-2 h-4 w-4" />
-              <span>Underline</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => applyCommand('formatBlock', 'pre')}>
-              <Code className="mr-2 h-4 w-4" />
-              <span>Code</span>
-            </DropdownMenuItem>
-
-            <DropdownMenuSeparator />
-
-            <DropdownMenuSub>
-              <DropdownMenuSubTrigger>
-                <Type className="mr-2 h-4 w-4" />
-                <span>Font Size</span>
-              </DropdownMenuSubTrigger>
-              <DropdownMenuSubContent>
-                {SIZES.map((size) => (
-                  <DropdownMenuItem key={size.value} onClick={() => applyFontSize(size.value)}>
-                    <span style={{ fontSize: size.value }}>{size.name}</span>
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuSubContent>
-            </DropdownMenuSub>
-
-            <DropdownMenuSub>
-              <DropdownMenuSubTrigger>
-                <Palette className="mr-2 h-4 w-4" />
-                <span>Text Color</span>
-              </DropdownMenuSubTrigger>
-              <DropdownMenuSubContent>
-                {COLORS.map((color) => (
-                  <DropdownMenuItem
-                    key={color.value}
-                    onClick={() => applyColor(color.value)}
-                    className="flex items-center gap-2"
+      className="w-full flex justify-start max-w-4xl p-0 m-0 mt-5 bg-[#2e294e] flex-wrap border-none shadow-xl"
+      onMouseEnter={() => setIsHovering(true)} // Show header on hover
+      onMouseLeave={(e) => {
+        // Prevent hiding if hovering over the dropdown menu
+        if (e.relatedTarget?.closest('.dropdown-menu-content')) return;
+        setIsHovering(false);
+      }}
+    >
+      {(isHovering || editorRef.current?.contains(document.activeElement)) && (
+        // Show header when hovering or the editor is focused
+        <CardHeader className="flex flex-row justify-between space-y-0 px-1 py-1">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="hover:bg-white/10 transition-colors"
+              >
+                <div className="flex items-center justify-center bg-white/90 hover:bg-white p-1 rounded-full transition-colors">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    className="text-gray-700"
                   >
-                    <div
-                      className="w-4 h-4 rounded-full border border-gray-200"
-                      style={{ backgroundColor: color.value }}
-                    />
-                    <span>{color.name}</span>
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuSubContent>
-            </DropdownMenuSub>
+                    <circle cx="12" cy="6" r="2" fill="currentColor" />
+                    <circle cx="12" cy="12" r="2" fill="currentColor" />
+                    <circle cx="12" cy="18" r="2" fill="currentColor" />
+                  </svg>
+                </div>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+              align="end"
+              className="w-56 bg-white dropdown-menu-content"
+              onMouseLeave={(e) => {
+                // Ensure dropdown menu hides only when not interacting
+                if (!e.relatedTarget?.closest('.dropdown-menu-trigger')) {
+                  setIsHovering(false);
+                }
+              }}
+            >
+              <DropdownMenuItem onClick={() => applyCommand('bold')}>
+                <Bold className="mr-2 h-4 w-4" />
+                <span>Bold</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => applyCommand('italic')}>
+                <Italic className="mr-2 h-4 w-4" />
+                <span>Italic</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => applyCommand('underline')}>
+                <Underline className="mr-2 h-4 w-4" />
+                <span>Underline</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => applyCommand('formatBlock', 'pre')}>
+                <Code className="mr-2 h-4 w-4" />
+                <span>Code</span>
+              </DropdownMenuItem>
 
-            <DropdownMenuSeparator />
+              <DropdownMenuSeparator />
 
-            <DropdownMenuItem onClick={() => applyAlignment('left')}>
-              <AlignLeft className="mr-2 h-4 w-4" />
-              <span>Align Left</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => applyAlignment('center')}>
-              <AlignCenter className="mr-2 h-4 w-4" />
-              <span>Align Center</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => applyAlignment('right')}>
-              <AlignRight className="mr-2 h-4 w-4" />
-              <span>Align Right</span>
-            </DropdownMenuItem>
+              <DropdownMenuSub>
+                <DropdownMenuSubTrigger>
+                  <Type className="mr-2 h-4 w-4" />
+                  <span>Font Size</span>
+                </DropdownMenuSubTrigger>
+                <DropdownMenuSubContent>
+                  {SIZES.map((size) => (
+                    <DropdownMenuItem key={size.value} onClick={() => applyFontSize(size.value)}>
+                      <span style={{ fontSize: size.value }}>{size.name}</span>
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuSubContent>
+              </DropdownMenuSub>
 
-            
-            <DropdownMenuSeparator />
+              <DropdownMenuSub>
+                <DropdownMenuSubTrigger>
+                  <Palette className="mr-2 h-4 w-4" />
+                  <span>Text Color</span>
+                </DropdownMenuSubTrigger>
+                <DropdownMenuSubContent>
+                  {COLORS.map((color) => (
+                    <DropdownMenuItem
+                      key={color.value}
+                      onClick={() => applyColor(color.value)}
+                      className="flex items-center gap-2"
+                    >
+                      <div
+                        className="w-4 h-4 rounded-full border border-gray-200"
+                        style={{ backgroundColor: color.value }}
+                      />
+                      <span>{color.name}</span>
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuSubContent>
+              </DropdownMenuSub>
 
-            <DropdownMenuItem onClick={handleDelete}>
-              <Trash2 className="mr-2 h-4 w-4" />
-              <span>Delete</span>
-            </DropdownMenuItem>
+              <DropdownMenuSeparator />
 
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </CardHeader>
+              <DropdownMenuItem onClick={() => applyAlignment('left')}>
+                <AlignLeft className="mr-2 h-4 w-4" />
+                <span>Align Left</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => applyAlignment('center')}>
+                <AlignCenter className="mr-2 h-4 w-4" />
+                <span>Align Center</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => applyAlignment('right')}>
+                <AlignRight className="mr-2 h-4 w-4" />
+                <span>Align Right</span>
+              </DropdownMenuItem>
+
+              <DropdownMenuSeparator />
+
+              <DropdownMenuItem onClick={handleDelete}>
+                <Trash2 className="mr-2 h-4 w-4" />
+                <span>Delete</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </CardHeader>
+      )}
       <CardContent className="p-2 w-full">
         <div
-          className="min-h-[100px] w-full rounded-lg bg-white/10 p-6 text-white/90 focus:outline-none text-[15px]"
+          className="min-h-[100px] w-full rounded-lg bg-white/10 p-6 text-white/90 focus:outline-none text-xl"
           style={{
             textAlign: alignment,
           }}
           contentEditable
           suppressContentEditableWarning
           ref={editorRef}
-          onFocus={handlePlaceholder}
-          onBlur={handlePlaceholder}
+          onFocus={() => setIsHovering(true)} // Keep header visible on focus
+          onBlur={(e) => {
+            if (!e.relatedTarget?.closest('.dropdown-menu-content')) {
+              setIsHovering(false);
+            }
+          }}
         >
-          <span className="text-white/50 w-full text-[25px] bg-transparent">Start typing...</span>
+          <span className="text-white/90 w-full text-xl bg-transparent">Heading 4</span>
         </div>
       </CardContent>
     </Card>
