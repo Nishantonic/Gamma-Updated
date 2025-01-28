@@ -235,7 +235,7 @@ export default function Heading({ onDelete }) {
             }
           }}
         >
-          <span className="text-white/90 w-full text-xl bg-transparent">Heading 4</span>
+          <span className="text-white/50 w-full text-2xl bg-transparent">Heading 4</span>
         </div>
       </CardContent>
     </Card>

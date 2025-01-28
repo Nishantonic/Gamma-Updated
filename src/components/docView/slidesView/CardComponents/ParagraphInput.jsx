@@ -214,7 +214,7 @@ export default function TextEditor({ onDelete }) {
       )}
       <CardContent className="p-2 w-full">
         <div
-          className="min-h-[100px] w-full rounded-lg bg-white/10 p-6 text-white/90 focus:outline-none text-xl"
+          className="min-h-[100px] w-full rounded-lg bg-white/10 p-6 text-white/80 focus:outline-none text-xl"
           style={{
             textAlign: alignment,
           }}
@@ -228,7 +228,7 @@ export default function TextEditor({ onDelete }) {
             }
           }}
         >
-          <span className="text-white/50 w-full text-xl bg-transparent">Start typing...</span>
+          <span className="text-white/80 w-full text-xl bg-transparent">Start typing...</span>
         </div>
       </CardContent>
     </Card>

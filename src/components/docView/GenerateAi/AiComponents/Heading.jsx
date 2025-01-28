@@ -1,5 +1,5 @@
 "use client"
-
+ 
 import { useRef, useState, useEffect } from "react"
 import { Bold, Italic, Underline, Code, AlignLeft, AlignCenter, AlignRight, Type, Palette } from "lucide-react"
 import {
@@ -36,6 +36,7 @@ export default function Heading({ initialData, onUpdate, index }) {
   const [alignment, setAlignment] = useState("left")
   const [content, setContent] = useState(initialData)
   const [styles, setStyles] = useState({})
+  const [isHovering, setIsHovering] = useState(false); // State for hover functionality
 
   useEffect(() => {
     if (editorRef.current) {
@@ -100,9 +101,16 @@ export default function Heading({ initialData, onUpdate, index }) {
   return (
     <Card
       id={`heading-${index}`}
-      className="w-full flex justify-start max-w-4xl p-0 m-0 mt-5 bg-transparent flex-wrap border-none shadow-xl"
+      className="w-full flex justify-start max-w-4xl p-0 m-0 mt-5 bg-[#2e294e] flex-wrap border-none shadow-xl"
+      onMouseEnter={() => setIsHovering(true)} // Show header on hover
+      onMouseLeave={(e) => {
+        // Prevent hiding if hovering over the dropdown menu
+        if (e.relatedTarget?.closest('.dropdown-menu-content')) return;
+        setIsHovering(false);
+      }}
     >
-      <CardHeader className="flex flex-row justify-between space-y-0 px-1 py-1">
+      {(isHovering || editorRef.current?.contains(document.activeElement)) && (
+        <CardHeader className="flex flex-row justify-between space-y-0 px-1 py-1">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="icon" className="hover:bg-white/10 transition-colors">
@@ -194,7 +202,8 @@ export default function Heading({ initialData, onUpdate, index }) {
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
-      </CardHeader>
+        </CardHeader>
+      )}
       <CardContent className="p-2 w-full">
         <div
           className="min-h-[100px] w-full rounded-lg bg-white/10 p-6 text-white/90 focus:outline-none text-xl"
@@ -205,8 +214,12 @@ export default function Heading({ initialData, onUpdate, index }) {
           contentEditable
           suppressContentEditableWarning
           ref={editorRef}
-          onFocus={handlePlaceholder}
-          onBlur={handlePlaceholder}
+          onFocus={() => setIsHovering(true)}
+          onBlur={(e) => {
+            if (!e.relatedTarget?.closest('.dropdown-menu-content')) {
+              setIsHovering(false);
+            }
+          }}
           onInput={updateContent}
         >
           <span className="text-white/50 w-full text-2xl bg-transparent">{content}</span>

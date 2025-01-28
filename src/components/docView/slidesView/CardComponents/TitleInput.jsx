@@ -221,7 +221,7 @@ export default function TitleINput({ initialData, onUpdate, index,onDelete }) {
       )}
       <CardContent className="px-1 py-1 w-full">
         <div
-          className="min-h-[5px] w-full rounded-lg bg-transparent p-6 text-white/50 focus:outline-none text-3xl"
+          className="min-h-[5px] w-full rounded-lg bg-transparent p-6 text-white/90 focus:outline-none text-3xl"
           style={{
             textAlign: alignment,
           }}
