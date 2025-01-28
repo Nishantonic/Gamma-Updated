@@ -156,7 +156,11 @@ export default function CardTemplates({ children, slidesPreview, setSlidesPrevie
   return (
     <div onDragOver={handleDragOver} onDrop={handleDrop} >
     
-        <div className="min-h-screen  w-full md:w-[60vw] md:min-h-[25vw] md:mt-[3vh] md:mb-[3vh] rounded-lg px-1 bg-[#342c4e] p-6 relative ">
+        <div className="min-h-screen  w-full md:w-[60vw] md:min-h-[25vw] md:mt-[3vh] md:mb-[3vh] rounded-lg px-1 bg-[#342c4e] p-6 relative "
+          style={{
+        aspectRatio: '16/9'
+      }}
+        >
           <div className="absolute top-4 left-11">
             <CardMenu
               onEdit={handleEdit}
@@ -164,6 +168,7 @@ export default function CardTemplates({ children, slidesPreview, setSlidesPrevie
               onDuplicate={handleDuplicate}
               onShare={handleShare}
               onDownload={handleDownload}
+              
             />
           </div>
           <div className="mt-10">

@@ -68,6 +68,9 @@ function CardTemplateImgHeadingThree({
         className="min-h-screen w-full md:w-[60vw] md:min-h-[25vw] md:mt-[3vh] md:mb-[3vh] rounded-lg bg-[#342c4e] p-6 relative"
         onDragOver={handleDragOver}
         onDrop={handleDrop}
+        style={{
+        aspectRatio: '16/9'
+      }}
       >
         <div className="absolute top-4 left-11">
           <CardMenu
@@ -87,10 +90,10 @@ function CardTemplateImgHeadingThree({
           {[0, 1, 2].map((index) => (
             <div
               key={index}
-              className="flex flex-col bg-[#2a2438] rounded-lg p-4 shadow-lg"
+              className="flex flex-col bg-[#2a2438] rounded-lg p-3 shadow-lg"
             >
               {/* Image Upload Section */}
-              <div className="relative w-full h-40 bg-[#342c4e] rounded-lg overflow-hidden group mb-4 flex items-center justify-center">
+              <div className="relative w-full h-40 bg-[#342c4e] rounded-lg overflow-hidden group  flex items-center justify-center">
                 {previews[index] ? (
                   <img
                     src={previews[index]}
@@ -132,7 +135,7 @@ function CardTemplateImgHeadingThree({
               </div>
 
               {/* Heading */}
-              <Heading />
+             
 
               {/* Subheading */}
               <ParagraphInput />

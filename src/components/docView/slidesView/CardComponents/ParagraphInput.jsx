@@ -183,7 +183,7 @@ export default function TextEditor({onDelete}) {
       </CardHeader>
       <CardContent className="p-2 w-full">
         <div 
-          className="min-h-[100px] w-full rounded-lg bg-white/10 p-6 text-white/90 focus:outline-none text-xl"
+          className="min-h-[100px] w-full rounded-lg bg-white/10 p-2   text-white/90 focus:outline-none text-xl"
           style={{
             textAlign: alignment
           }}
