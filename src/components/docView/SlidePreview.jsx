@@ -1,39 +1,75 @@
-import { cn } from "@/lib/utils"
-import { useSortable } from "@dnd-kit/sortable"
-import { CSS } from "@dnd-kit/utilities"
+import { cn } from "@/lib/utils";
+import { useSortable } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import { useEffect, useState, useRef } from "react";
 
-export function SlidePreview({ number, title, content, isActive, onClick, id, previewImage }) {
-  const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id })
+export function SlidePreview({ number, title, isActive, onClick, id, previewImage }) {
+  const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id });
+
+  const [scale, setScale] = useState(1);
+  const imgRef = useRef(null);
+
+  useEffect(() => {
+    if (!imgRef.current) return;
+
+    const updateScale = () => {
+      const parentHeight = imgRef.current.parentElement.clientHeight;
+      const imgHeight = imgRef.current.clientHeight;
+      if (imgHeight > parentHeight) {
+        setScale(parentHeight / imgHeight);
+      } else {
+        setScale(1); // Reset if no scaling needed
+      }
+    };
+
+    updateScale();
+    window.addEventListener("resize", updateScale);
+
+    return () => window.removeEventListener("resize", updateScale);
+  }, [previewImage]);
+
   const style = {
     transition,
     transform: CSS.Transform.toString(transform),
-  }
+  };
+
   return (
     <div
       onClick={onClick}
-      className={cn("p-2 cursor-pointer hover:bg-accent/50 rounded-lg transition-colors", isActive && "bg-accent")}
+      className={cn(
+        "p-3 cursor-pointer hover:bg-accent/50 rounded-lg transition-all border border-gray-200 shadow-md bg-white",
+        isActive && "bg-accent"
+      )}
       {...attributes}
       {...listeners}
       ref={setNodeRef}
       style={style}
     >
-      <div className="aspect-[16/9] bg-background border rounded-lg overflow-hidden">
+      {/* Image Container with Auto-Scaling */}
+      <div className="relative w-full aspect-[16/9] overflow-hidden rounded-lg border bg-gray-100 flex justify-center items-center">
         {previewImage ? (
           <img
-            src={previewImage || "/placeholder.svg"}
+            ref={imgRef}
+            src={previewImage}
             alt={`Slide ${number}`}
-            className="w-full h-full object-cover"
+            className="object-contain transition-transform"
+            style={{ transform: `scale(${scale})` }}
             loading="lazy"
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center text-muted-foreground">No preview</div>
+          <div className="flex items-center justify-center w-full h-full text-gray-500">
+            No Preview
+          </div>
         )}
       </div>
-      <div className="flex items-center gap-2 mt-2">
-        <span className="text-xs font-medium bg-primary/10 text-primary px-1.5 py-0.5 rounded-full">{number}</span>
-        <span className="text-sm font-medium truncate flex-1">{title}</span>
+
+      {/* Slide Number & Title */}
+      <div className="flex items-center gap-2 mt-3">
+        <span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-primary/10 text-primary">
+          {number}
+        </span>
+        <span className="flex-1 text-sm font-medium truncate text-gray-800">{title}</span>
       </div>
     </div>
-  )
+  );
 }
-
