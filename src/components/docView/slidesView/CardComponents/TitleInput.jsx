@@ -105,7 +105,7 @@ export default function TitleINput({ initialData, onUpdate, index,onDelete }) {
     >
       {(isHovering || editorRef.current?.contains(document.activeElement)) && (
         // Show header when hovering or the editor is focused
-        <CardHeader className="flex flex-row justify-between space-y-0 px-1 py-1">
+        <CardHeader className="flex flex-row justify-between space-y-0 px-1 py-1 relative top-0 left-0">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button

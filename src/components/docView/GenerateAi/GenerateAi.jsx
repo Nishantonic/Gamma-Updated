@@ -506,15 +506,8 @@ the last slide must be conclusion slide in default template
 
         {editableSlides.length > 0 && (
           <div className="mt-8 space-y-8">
-            {editableSlides.slice().map((slide, index) => renderSlide(slide, index))}
-            <Card className="bg-white/10 backdrop-blur-lg border-0">
-              <CardContent className="p-6 flex justify-center">
-                <Button onClick={downloadPPT} className="bg-green-600 hover:bg-green-700 text-white" size="lg">
-                  <Download className="mr-2 h-4 w-4" />
-                  Download Presentation
-                </Button>
-              </CardContent>
-            </Card>
+            {editableSlides.slice().map((slide, index) => renderSlide(slide, index,))}
+            
           </div>
         )}
 
