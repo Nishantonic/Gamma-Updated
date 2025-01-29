@@ -204,243 +204,26 @@ the last slide must be conclusion slide in default template
     })
   }
   const handleDelete = (id) => {
-  // Update editableSlides
-  setEditableSlides((prevSlides) => {
-    const updatedSlides = prevSlides.filter((slide) => slide.id !== id);
-    console.log("Updated editableSlides:", updatedSlides); // Log here to ensure proper update
-    return updatedSlides;
-  });
+    // Update editableSlides
+    setEditableSlides((prevSlides) => {
+      const updatedSlides = prevSlides.filter((slide) => slide.id !== id)
+      console.log("Updated editableSlides:", updatedSlides)
+      return updatedSlides
+    })
 
-  // Update slides
-  setSlides((prevSlides) => {
-    const updatedSlides = prevSlides.filter((slide) => slide.id !== id);
-    console.log("Updated slides:", updatedSlides); // Log here to ensure proper update
-    return updatedSlides;
-  });
-};
+    // Update slides
+    setSlides((prevSlides) => {
+      const updatedSlides = prevSlides.filter((slide) => slide.id !== id)
+      console.log("Updated slides:", updatedSlides)
+      return updatedSlides
+    })
 
-
-  const downloadPPT = async () => {
-    try {
-      const pptx = new pptxgen()
-
-      for (let index = 0; index < editableSlides.length; index++) {
-        const slide = editableSlides[index]
-        const pptSlide = pptx.addSlide()
-
-        pptSlide.background = { color: "#342c4e" }
-
-        const addStyledText = (text, options) => {
-          if (text && typeof text === "string") {
-            pptSlide.addText(text, {
-              ...options,
-              color: options.color || "#FFFFFF",
-              fontFace: options.fontFace || "Arial",
-              fontSize: options.fontSize || 12,
-              bold: options.bold,
-              italic: options.italic,
-              underline: options.underline,
-              align: options.align,
-            })
-          }
-        }
-
-        switch (slide.type) {
-          case "accentImage": {
-            const titleElement = document.querySelector(`#slide-${index} .title`)
-            const descriptionElement = document.querySelector(`#slide-${index} .description`)
-
-            addStyledText(slide.title, {
-              x: 0.5,
-              y: 0.5,
-              w: "50%",
-              h: 1,
-              ...getComputedStyle(titleElement),
-            })
-
-            addStyledText(slide.description, {
-              x: 0.5,
-              y: 1.5,
-              w: "50%",
-              h: 3,
-              ...getComputedStyle(descriptionElement),
-            })
-
-            if (slide.image) {
-              try {
-                const base64Image = await getBase64FromImgElement(slide.image)
-                if (base64Image) {
-                  pptSlide.addImage({
-                    data: base64Image,
-                    x: 5.5,
-                    y: 1.5,
-                    w: 4,
-                    h: 3,
-                  })
-                }
-              } catch (error) {
-                console.error("Failed to add image to slide:", error)
-              }
-            }
-            break
-          }
-
-          case "twoColumn": {
-            const titleElement = document.querySelector(`#slide-${index} .title`)
-            const contentElements = document.querySelectorAll(`#slide-${index} .content`)
-
-            addStyledText(slide.title, {
-              x: 0.5,
-              y: 0.5,
-              w: "90%",
-              h: 1,
-              ...getComputedStyle(titleElement),
-            })
-
-            if (slide.columns?.[0]?.content) {
-              addStyledText(slide.columns[0].content, {
-                x: 0.5,
-                y: 1.5,
-                w: "45%",
-                h: 3,
-                ...getComputedStyle(contentElements[0]),
-              })
-            }
-
-            if (slide.columns?.[1]?.content) {
-              addStyledText(slide.columns[1].content, {
-                x: 5.5,
-                y: 1.5,
-                w: "45%",
-                h: 3,
-                ...getComputedStyle(contentElements[1]),
-              })
-            }
-            break
-          }
-
-          case "imageCardText": {
-            const titleElement = document.querySelector(`#slide-${index} .title`)
-            const descriptionElement = document.querySelector(`#slide-${index} .description`)
-
-            if (slide.image) {
-              try {
-                const base64Image = await getBase64FromImgElement(slide.image)
-                if (base64Image) {
-                  pptSlide.addImage({
-                    data: base64Image,
-                    x: 0.5,
-                    y: 0.5,
-                    w: 4,
-                    h: 3,
-                  })
-                }
-              } catch (error) {
-                console.error("Failed to add image to slide:", error)
-              }
-            }
-
-            addStyledText(slide.title, {
-              x: 5.5,
-              y: 0.5,
-              w: "45%",
-              h: 1,
-              ...getComputedStyle(titleElement),
-            })
-
-            addStyledText(slide.description, {
-              x: 5.5,
-              y: 1.5,
-              w: "45%",
-              h: 3,
-              ...getComputedStyle(descriptionElement),
-            })
-            break
-          }
-
-          case "threeImgCard": {
-            const titleElement = document.querySelector(`#slide-${index} .title`)
-            const headingElements = document.querySelectorAll(`#slide-${index} .heading`)
-            const descriptionElements = document.querySelectorAll(`#slide-${index} .description`)
-
-            addStyledText(slide.title, {
-              x: 0.5,
-              y: 0.5,
-              w: "90%",
-              h: 1,
-              ...getComputedStyle(titleElement),
-            })
-
-            if (slide.cards) {
-              for (let i = 0; i < slide.cards.length; i++) {
-                const card = slide.cards[i]
-                const xOffset = i * 3.3
-
-                if (card.image) {
-                  try {
-                    const base64Image = await getBase64FromImgElement(card.image)
-                    if (base64Image) {
-                      pptSlide.addImage({
-                        data: base64Image,
-                        x: 0.5 + xOffset,
-                        y: 1.5,
-                        w: 3,
-                        h: 2,
-                      })
-                    }
-                  } catch (error) {
-                    console.error("Failed to add card image to slide:", error)
-                  }
-                }
-
-                addStyledText(card.heading, {
-                  x: 0.5 + xOffset,
-                  y: 3.5,
-                  w: 3,
-                  h: 0.5,
-                  ...getComputedStyle(headingElements[i]),
-                })
-
-                addStyledText(card.description, {
-                  x: 0.5 + xOffset,
-                  y: 4,
-                  w: 3,
-                  h: 1,
-                  ...getComputedStyle(descriptionElements[i]),
-                })
-              }
-            }
-            break
-          }
-
-          default: {
-            const titleElement = document.querySelector(`#slide-${index} .title`)
-            const descriptionElement = document.querySelector(`#slide-${index} .description`)
-
-            addStyledText(slide.title, {
-              x: 0.5,
-              y: 0.5,
-              w: "90%",
-              h: 1,
-              ...getComputedStyle(titleElement),
-            })
-
-            addStyledText(slide.description, {
-              x: 0.5,
-              y: 1.5,
-              w: "90%",
-              h: 4,
-              ...getComputedStyle(descriptionElement),
-            })
-          }
-        }
-      }
-
-      await pptx.writeFile({ fileName: "generated_presentation.pptx" })
-    } catch (error) {
-      console.error("Error generating PowerPoint:", error)
-      setError("Failed to generate PowerPoint presentation. Please try again.")
-    }
+    // Update slidesPreview
+    setSlidesPreview((prevSlides) => {
+      const updatedSlides = prevSlides.filter((slide) => slide.id !== id)
+      console.log("Updated slidesPreview:", updatedSlides)
+      return updatedSlides
+    })
   }
 
   const addNewSlide = (insertIndex) => {

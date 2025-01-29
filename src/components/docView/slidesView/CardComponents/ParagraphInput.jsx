@@ -88,7 +88,7 @@ export default function TextEditor({ onDelete }) {
 
   return (
     <Card
-      className="w-full flex justify-start max-w-4xl p-0 m-0 mt-5 bg-[#2e294e] flex-wrap border-none shadow-xl"
+      className="w-full flex justify-start max-w-4xl p-0 m-0 mt-5 bg-[#2e294e] relative flex-wrap border-none shadow-xl"
       onMouseEnter={() => setIsHovering(true)} // Show header on hover
       onMouseLeave={(e) => {
         // Prevent hiding if hovering over the dropdown menu
@@ -98,7 +98,7 @@ export default function TextEditor({ onDelete }) {
     >
       {(isHovering || editorRef.current?.contains(document.activeElement)) && (
         // Show header when hovering or the editor is focused
-        <CardHeader className="flex flex-row justify-between space-y-0 px-1 py-1">
+        <CardHeader className="flex flex-row justify-between space-y-0 absolute px-1 py-1">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button

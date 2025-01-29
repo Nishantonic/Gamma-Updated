@@ -101,7 +101,7 @@ export default function TitleAi({ initialData, onUpdate, index }) {
   return (
     <Card
       id={`title-${index}`}
-      className="w-full flex justify-start w-2xl mx-auto bg-transparent border-transparent mb-2"
+      className="w-full flex justify-start w-2xl mx-auto bg-transparent relative border-transparent mb-2"
       onMouseEnter={() => setIsHovering(true)} // Show header on hover
       onMouseLeave={(e) => {
         // Prevent hiding if hovering over the dropdown menu
@@ -110,7 +110,7 @@ export default function TitleAi({ initialData, onUpdate, index }) {
       }}
     >
       {(isHovering || editorRef.current?.contains(document.activeElement)) && (
-        <CardHeader className="flex flex-row justify-between space-y-0 px-4 py-3">
+        <CardHeader className="flex flex-row absolute justify-between space-y-0 px-4 py-3">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon" className="hover:bg-white/10 transition-colors">

@@ -25,6 +25,7 @@ import html2canvas from "html2canvas"
 import { debounce } from "lodash"
 import { Card, CardContent } from "../ui/card"
 import pptxgen from "pptxgenjs"
+import { v4 as uuidv4 } from "uuid"
 
 const getComputedStyle = (element) => {
   if (element) {
@@ -573,4 +574,3 @@ const downloadPPT = async () => {
     </div>
   )
 }
-

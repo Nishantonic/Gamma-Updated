@@ -95,7 +95,7 @@ export default function TitleINput({ initialData, onUpdate, index,onDelete }) {
 
   return (
     <Card
-      className="w-full flex  justify-start w-2xl max-auto mb-2 bg-transparent  border-transparent "
+      className="w-full flex  justify-start w-2xl max-auto mb-2 bg-transparent relative border-transparent "
       onMouseEnter={() => setIsHovering(true)} // Show header on hover
       onMouseLeave={(e) => {
         // Prevent hiding if hovering over the dropdown menu
@@ -105,7 +105,7 @@ export default function TitleINput({ initialData, onUpdate, index,onDelete }) {
     >
       {(isHovering || editorRef.current?.contains(document.activeElement)) && (
         // Show header when hovering or the editor is focused
-        <CardHeader className="flex flex-row justify-between space-y-0 px-1 py-1 relative top-0 left-0">
+        <CardHeader className="flex flex-row justify-between space-y-0 px-1 py-1 absolute  top-0 left-0">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
