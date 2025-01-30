@@ -5,7 +5,8 @@ import GenerateAi from "./components/docView/GenerateAi/GenerateAi"
 import Home from "./components/Home/Home";
 import SignUp from "./components/docView/SignUp";
 import Login from "./components/docView/Login";
-
+import Dashboard from "./components/dashboard/Dashboard";
+// import GenerateAi from "./components/docView/GenerateAi/GenerateAi";
 // imort Home
 function App() {
 
@@ -15,6 +16,7 @@ function App() {
           <Route path="/page" element={<Page/>}/>
           {/* <Route path="/generate-ai" element={<GenerateAi />} /> */}
           <Route path="/" element={<SignUp/>}/>
+          <Route path="/home" element={<Dashboard/>}/>
           <Route path="/login" element={<Login/>}/>
        </Routes>
    </Router>
@@ -22,4 +24,5 @@ function App() {
 }
 
 export default App
+
 
