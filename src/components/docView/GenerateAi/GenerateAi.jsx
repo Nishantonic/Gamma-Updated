@@ -286,7 +286,6 @@ the last slide must be conclusion slide in default template
             <CardContent className="p-4">Error: {error}</CardContent>
           </Card>
         )}
-
         {editableSlides.length > 0 && (
           <div className="mt-8 space-y-8">
             {editableSlides.slice().map((slide, index) => renderSlide(slide, index,))}
@@ -303,4 +302,3 @@ the last slide must be conclusion slide in default template
     </div>
   )
 }
-

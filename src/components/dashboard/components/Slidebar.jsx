@@ -1,7 +1,7 @@
 import React from "react";
 
 const Slidebar = ({ activeComponent, setActiveComponent }) => {
-  const menuItems = ["Gammas", "Share", "Settings", "Contact", "Feedback"];
+  const menuItems = ["Gammas", "Share","Ai Images", "Settings", "Contact", "Feedback"];
 
   return (
     <div className="w-64 bg-white text-black p-4 min-h-screen">

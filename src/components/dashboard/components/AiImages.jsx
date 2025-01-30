@@ -1,0 +1,226 @@
+"use client"
+import axios from "axios"
+import { useState } from "react"
+import { Button } from "@/components/ui/button"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Textarea } from "@/components/ui/textarea"
+import { Download, Expand, Sparkle, Trash2, Loader2 } from "lucide-react"
+import { v4 as uuidv4 } from "uuid"
+import Masonry from "react-masonry-css"
+
+export default function AiImages() {
+  const [isOpen, setIsOpen] = useState(false)
+  const [images, setImages] = useState([])
+  const [prompt, setPrompt] = useState("")
+  const [aspectRatio, setAspectRatio] = useState("square")
+  const [isGenerating, setIsGenerating] = useState(false)
+  const [error, setError] = useState("")
+
+  const handleGenerate = async () => {
+    if (!prompt.trim()) {
+      setError("Please enter a description")
+      return
+    }
+    setIsGenerating(true)
+    setError("")
+
+    try {
+      const response = await axios.post(
+        "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=AIzaSyCzVOUDgpnieFh5lJ1vY2sRImrVuZkM5zY",
+        {
+          contents: [{
+            parts: [{
+              text: `Generate a ${aspectRatio} aspect ratio image based on: ${prompt}`
+            }]
+          }]
+        },
+        { headers: { "Content-Type": "application/json" } }
+      )
+
+      const imageUrl = response.data?.candidates?.[0]?.content?.parts?.[0]?.text
+      if (!imageUrl) {
+        throw new Error("No image URL returned from API")
+      }
+
+      setImages(prev => [...prev, {
+        id: uuidv4(),
+        url: imageUrl,
+        prompt,
+        aspectRatio
+      }])
+    } catch (err) {
+      console.error("Error generating image:", err)
+      setError("Failed to generate image. Please try again.")
+    } finally {
+      setIsGenerating(false)
+      setIsOpen(false)
+      setPrompt("")
+    }
+  }
+
+  const handleDelete = (id) => {
+    setImages(prev => prev.filter(img => img.id !== id))
+  }
+
+  const handleDownload = async (url) => {
+    try {
+      const response = await fetch(url)
+      const blob = await response.blob()
+      const link = document.createElement('a')
+      link.href = URL.createObjectURL(blob)
+      link.download = `ai-image-${Date.now()}.jpg`
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+    } catch (err) {
+      console.error("Download failed:", err)
+    }
+  }
+  const breakpointColumnsObj = {
+    default: 3,
+    1280: 3,
+    1024: 2,
+    768: 1
+  };
+  return (
+    <div className="p-4 md:p-6 lg:p-8 max-w-7xl mx-auto ">
+      <div className="flex items-center mb-8">
+        <Sparkle className="h-5 w-5 text-purple-600" />
+        <h1 className="pl-2 font-bold text-xl lg:text-2xl">AI Images</h1>
+      </div>
+
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+        <Button 
+          onClick={() => setIsOpen(true)}
+          className="bg-purple-600 hover:bg-purple-700 w-full sm:w-auto"
+        >
+          <Sparkle className="mr-2 h-4 w-4" />
+          Generate New Image
+        </Button>
+      </div>
+
+      <Dialog open={isOpen} onOpenChange={setIsOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle className="text-lg">Generate AI Image</DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-6">
+            <div>
+              <Textarea
+                placeholder="Describe the image you want to generate..."
+                value={prompt}
+                onChange={(e) => setPrompt(e.target.value)}
+                className="min-h-[120px] text-base"
+              />
+              {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium mb-2">Aspect Ratio</label>
+                <Select 
+                  value={aspectRatio} 
+                  onValueChange={setAspectRatio}
+                  defaultValue="square"
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select ratio" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="square">Square (1:1)</SelectItem>
+                    <SelectItem value="portrait">Portrait (3:4)</SelectItem>
+                    <SelectItem value="landscape">Landscape (4:3)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <Button
+              onClick={handleGenerate}
+              disabled={isGenerating}
+              className="w-full bg-purple-600 hover:bg-purple-700"
+            >
+              {isGenerating ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Generating...
+                </>
+              ) : 'Generate Image'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+      {/* Keep header and dialog the same */}
+
+      {images.length === 0 ? (
+        <div className="text-center py-12 text-gray-500">
+          No images generated yet. Start creating with the button above!
+        </div>
+      ) : (
+        <Masonry
+          breakpointCols={breakpointColumnsObj}
+          className="flex gap-4 md:gap-6"
+          columnClassName="masonry-column"
+        >
+          {images.map((image) => (
+            <div 
+              key={image.id} 
+              className="mb-4 md:mb-6 relative group rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition-shadow bg-white dark:bg-gray-800"
+            >
+              <div className={`
+                ${image.aspectRatio === 'square' ? 'aspect-square' : 
+                  image.aspectRatio === 'portrait' ? 'aspect-[3/4]' : 'aspect-[4/3]'}
+                relative bg-gray-100 dark:bg-gray-700
+              `}>
+                <img
+                  src={image.url}
+                  alt={image.prompt}
+                  className="w-full h-full object-cover transition-opacity"
+                  loading="lazy"
+                />
+                
+                <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3 p-2">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="text-white hover:bg-white/20 backdrop-blur-sm"
+                    onClick={() => handleDownload(image.url)}
+                    aria-label="Download"
+                  >
+                    <Download className="h-5 w-5" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="text-white hover:bg-white/20 backdrop-blur-sm"
+                    onClick={() => handleDelete(image.id)}
+                    aria-label="Delete"
+                  >
+                    <Trash2 className="h-5 w-5" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="text-white hover:bg-white/20 backdrop-blur-sm"
+                    onClick={() => window.open(image.url, '_blank')}
+                    aria-label="Expand"
+                  >
+                    <Expand className="h-5 w-5" />
+                  </Button>
+                </div>
+              </div>
+              
+              <div className="p-3">
+                <p className="text-sm text-gray-600 dark:text-gray-300 line-clamp-2">
+                  {image.prompt}
+                </p>
+              </div>
+            </div>
+          ))}
+        </Masonry>
+      )}
+    </div>
+  )
+}

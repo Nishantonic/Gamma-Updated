@@ -4,6 +4,7 @@ import Content from "./components/Content";
 // import Share from "./components/Share";
 import Settings from "./components/Settings";
 import Gammas from "./components/Gammas";
+import AiImages from "./components/AiImages";
 // import Contact from "./components/Contact";
 // import Feedback from "./components/Feedback";
 
@@ -12,9 +13,10 @@ const Dashboard = () => {
 
   // Mapping component names to actual components
   const componentMap = {
-    Gammas: <Gammas />,
+    "Gammas": <Gammas />,
     // Share: <Share />,
-    Settings: <Settings />,
+    "Settings": <Settings />,
+    "Ai Images" : <AiImages />
     // Contact: <Contact />,
     // Feedback: <Feedback />,
   };
