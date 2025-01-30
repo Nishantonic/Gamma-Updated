@@ -11,11 +11,11 @@ import Masonry from "react-masonry-css"
 import { toast } from "sonner"
 import { Toaster } from "@/components/ui/sonner"
 
-export default function AiImages() {
+export default function AiImages({ credits, setCradit }) {
   const aspectRatioMap = {
     square: "square_hd",
     portrait: "portrait_4_3",
-    landscape: "landscape_4_3"
+    landscape: "landscape_16_9"
   };
   const [isOpen, setIsOpen] = useState(false)
   const [images, setImages] = useState([])
@@ -25,6 +25,12 @@ export default function AiImages() {
   const [error, setError] = useState("")
 
   const handleGenerate = async () => {
+    if (credits < 10) {
+      setError("Insufficient credits. You need at least 10 credits.")
+      toast.error("Insufficient credits. Please purchase more.")
+      return
+    }
+    
     if (!prompt.trim()) {
       setError("Please enter a description")
       return
@@ -58,6 +64,7 @@ export default function AiImages() {
         prompt,
         aspectRatio
       }])
+      setCradit(prev => prev - 10) // Deduct credits
       toast.success("Image generated successfully!")
     } catch (err) {
       console.error("Error generating image:", err)
@@ -101,32 +108,34 @@ export default function AiImages() {
   return (
     <div className="p-4 md:p-6 lg:p-8 max-w-7xl mx-auto ">
       <Toaster
-  position="top-right"
-  richColors
-  toastOptions={{
-    duration: 5000,
-    style: {
-      backgroundColor: '#fff',  // Change to your desired background color
-      color: '#000',  // Set text color to white
-      borderRadius: '8px',  // Rounded corners
-      padding: '12px',  // Padding inside the toast
-      fontSize: '14px',  // Font size
-      boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.1)',  // Soft shadow
-    },
-  }}
-/>
+        position="top-right"
+        richColors
+        toastOptions={{
+          duration: 5000,
+          style: {
+            backgroundColor: '#fff',
+            color: '#000',
+            borderRadius: '8px',
+            padding: '12px',
+            fontSize: '14px',
+            boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.1)',
+          },
+        }}
+      />
       <div className="flex items-center mb-8">
         <Sparkle className="h-5 w-5 text-purple-600" />
         <h1 className="pl-2 font-bold text-xl lg:text-2xl">AI Images</h1>
+        <span className="ml-auto text-sm text-gray-600">Credits: {credits}</span>
       </div>
 
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
         <Button 
           onClick={() => setIsOpen(true)}
           className="bg-purple-600 hover:bg-purple-700 w-full sm:w-auto"
+          disabled={credits < 10}
         >
           <Sparkle className="mr-2 h-4 w-4" />
-          Generate New Image
+          Generate New Image (10 credits)
         </Button>
       </div>
 

@@ -11,12 +11,12 @@ import Navbar from "./components/Slidebar";
 
 const Dashboard = () => {
   const [activeComponent, setActiveComponent] = useState("Gammas");
-
+  const [credits,setCradits] = useState(50)
   // Mapping component names to actual components
   const componentMap = {
     "Gammas": <Gammas />,
     "Settings & Members": <Settings />,
-    "Ai Images" : <AiImages />,
+    "Ai Images" : <AiImages credits={credits} setCradit={setCradits} />,
     // "Contact Support": <Contact /> ,
   };
 
