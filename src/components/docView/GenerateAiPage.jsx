@@ -25,47 +25,57 @@ import html2canvas from "html2canvas"
 import { debounce } from "lodash"
 import { Card, CardContent } from "../ui/card"
 import pptxgen from "pptxgenjs"
-import { v4 as uuidv4 } from "uuid"
+import { useLocation } from "react-router-dom";
+import { toast } from "sonner"
+import {   Sparkles } from "lucide-react";
+// import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Toaster } from "sonner"
 
-const getComputedStyle = (element) => {
-  if (element) {
-    const styles = window.getComputedStyle(element)
-    return {
-      fontSize: Number.parseInt(styles.fontSize),
-      color: styles.color,
-      bold: styles.fontWeight === "bold",
-      italic: styles.fontStyle === "italic",
-      underline: styles.textDecoration.includes("underline"),
-      align: styles.textAlign,
-    }
-  }
-  return {
-    fontSize: 12,
-    color: "#FFFFFF",
-    bold: false,
-    italic: false,
-    underline: false,
-    align: "left",
-  }
-}
+// const getComputedStyle = (element) => {
+//   if (element) {
+//     const styles = window.getComputedStyle(element)
+//     return {
+//       fontSize: Number.parseInt(styles.fontSize),
+//       color: styles.color,
+//       bold: styles.fontWeight === "bold",
+//       italic: styles.fontStyle === "italic",
+//       underline: styles.textDecoration.includes("underline"),
+//       align: styles.textAlign,
+//     }
+//   }
+//   return {
+//     fontSize: 12,
+//     color: "#FFFFFF",
+//     bold: false,
+//     italic: false,
+//     underline: false,
+//     align: "left",
+//   }
+// }
 
-const getBase64FromImgElement = async (imgUrl) => {
-  try {
-    const response = await fetch(imgUrl)
-    const blob = await response.blob()
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader()
-      reader.onloadend = () => resolve(reader.result)
-      reader.onerror = reject
-      reader.readAsDataURL(blob)
-    })
-  } catch (error) {
-    console.error("Error converting image to base64:", error)
-    return null
-  }
-}
+// const getBase64FromImgElement = async (imgUrl) => {
+//   try {
+//     const response = await fetch(imgUrl)
+//     const blob = await response.blob()
+//     return new Promise((resolve, reject) => {
+//       const reader = new FileReader()
+//       reader.onloadend = () => resolve(reader.result)
+//       reader.onerror = reject
+//       reader.readAsDataURL(blob)
+//     })
+//   } catch (error) {
+//     console.error("Error converting image to base64:", error)
+//     return null
+//   }
+// }
 
-export default function Page() {
+export default function GenerateAiPage() {
   const [currentSlide, setCurrentSlide] = useState(1)
   const [slidesPreview, setSlidesPreview] = useState([])
   const [slides, setSlides] = useState([])
@@ -73,11 +83,17 @@ export default function Page() {
   const [generateAi, setGenerateAi] = useState(false)
   const [isPresentationMode, setIsPresentationMode] = useState(false)
   const [presentationStartIndex, setPresentationStartIndex] = useState(0)
-
+  const [isGenerating, setIsGenerating] = useState(false); // Add this state
   const [isLoadingCopy, setIsLoadingCopy] = useState(false)
   const [showPopup, setShowPopup] = useState(false)
   const [aiInputData, setAiInputData] = useState("")
   const [isAiGenerated, setIsAiGenerated] = useState(false)
+  const [credits, setCradits] = useState(() => {
+    // Initialize from localStorage or default to 50
+    const savedCredits = localStorage.getItem('credits');
+    return savedCredits !== null ? parseInt(savedCredits) : 50;
+  });
+  
   useEffect(() => {
     const slideElement = document.getElementById(`at-${currentSlide}`)
     if (slideElement) {
@@ -85,35 +101,35 @@ export default function Page() {
     }
   }, [currentSlide])
 
-  useEffect(() => {
-    const initialSlides = [
-      {
-        number: 1,
-        id: 1,
-        title: "Customer Targeting Strategy",
-        content: (
-          <div className="flex justify-center">
-            <CardTemplates
-              slidesPreview={slidesPreview}
-              id={1}
-              setSlides={setSlides}
-              setCurrentSlide={setCurrentSlide}
-              setSlidesPreview={setSlidesPreview}
-            />
-          </div>
-        ),
-        onClick: () => setCurrentSlide(1),
-      },
-    ]
-    setSlidesPreview(initialSlides)
-    setSlides(
-      initialSlides.map((slide) => ({
-        Slide: slide.content,
-        id: slide.id,
-      })),
-    )
-    updateSlideImages()
-  }, [])
+  // useEffect(() => {
+  //   const initialSlides = [
+  //     {
+  //       number: 1,
+  //       id: 1,
+  //       title: "Customer Targeting Strategy",
+  //       content: (
+  //         <div className="flex justify-center">
+  //           <CardTemplates
+  //             slidesPreview={slidesPreview}
+  //             id={1}
+  //             setSlides={setSlides}
+  //             setCurrentSlide={setCurrentSlide}
+  //             setSlidesPreview={setSlidesPreview}
+  //           />
+  //         </div>
+  //       ),
+  //       onClick: () => setCurrentSlide(1),
+  //     },
+  //   ]
+  //   setSlidesPreview(initialSlides)
+  //   setSlides(
+  //     initialSlides.map((slide) => ({
+  //       Slide: slide.content,
+  //       id: slide.id,
+  //     })),
+  //   )
+  //   updateSlideImages()
+  // }, [])
 
   const handleDragEnd = (e) => {
     const { active, over } = e
@@ -138,13 +154,22 @@ export default function Page() {
       }))
     })
   }
-
   const handleAiPopupSubmit = () => {
-    setGenerateAi(true)
-    setIsLoadingCopy(true)
-    setAiInputData(aiInputData)
-    setIsAiGenerated(true)
-  }
+    // if (isGenerating) return;
+    const currentCredits = parseInt(localStorage.getItem('credits') || '50');
+    if (currentCredits >= 40) {
+      setIsGenerating(true);
+      setIsLoadingCopy(true);
+      setGenerateAi(true);
+      const newCredits = currentCredits - 40;
+      setCradits(newCredits);
+      localStorage.setItem('credits', newCredits);
+    toast.success("Presentation generated successfully!");
+    } else {
+      toast.error("Insufficient credits. Please purchase more.");
+    }
+  };
+
 
   const startPresentation = (fromBeginning = true) => {
     setPresentationStartIndex(fromBeginning ? 0 : currentSlide - 1)
@@ -465,14 +490,36 @@ const downloadPPT = async () => {
       return newSlides
     })
   }
-
+  
   useEffect(() => {
     debouncedUpdateSlideImages()
   }, [slides])
 
   return (
     <div className="h-screen flex flex-col bg-background">
-      <Header setGenerateAi={() => setShowPopup(true)} startPresentation={startPresentation} />
+       {/* <header className="flex items-center justify-between px-4 py-2 border-b"> */}
+    <Toaster position="top-right" richColors />
+       <div className="h-auto flex items-center gap-2 m-auto">
+        <DropdownMenu >
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" className='outline-none border-none p-2' size="md">
+              <Sparkles className="h-6 w-6 mr-2" />
+              Generate with AI
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent>
+            <DropdownMenuItem 
+              onClick={() => {
+                setShowPopup(true)
+              }}
+            >
+              Generate with Gemini AI
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+    {/* </header> */}
+      {/* <Header setGenerateAi={() => setShowPopup(true)} startPresentation={startPresentation} /> */}
       {isPresentationMode && (
         <PresentationMode
           slides={slides}
@@ -494,16 +541,21 @@ const downloadPPT = async () => {
           )}
         </DndContext>
         <main className="flex-1 overflow-y-auto">
-          {generateAi ? (
-            <GenerateAi
-              key={`ai-${Date.now()}`}
-              inputData={aiInputData}
-              setShowPopup={setShowPopup}
-              setIsLoadingCopy={setIsLoadingCopy}
-              setSlidesPreview={setSlidesPreview}
-              setSlides={setSlides}
-              setGenerateAi={setGenerateAi}
-            />
+        {generateAi ? (
+          <GenerateAi
+            key={`ai-${aiInputData}-${Date.now()}`}
+            inputData={aiInputData}
+            setShowPopup={setShowPopup}
+            setIsLoadingCopy={setIsLoadingCopy}
+            setSlidesPreview={setSlidesPreview}
+            setSlides={setSlides}
+            setGenerateAi={setGenerateAi}
+            onError={() => {
+              setIsGenerating(false);
+              setIsLoadingCopy(false);
+              toast.error("Generation failed. Please try again.");
+            }}
+          />
           ) : (
             <div>
               {slides.map(({ Slide, id }, index) => (
@@ -515,15 +567,19 @@ const downloadPPT = async () => {
                 </React.Fragment>
               ))}
               {isAiGenerated && (
-                <Card className="bg-white/10 backdrop-blur-lg border-0">
-                  <CardContent className="p-6 flex justify-center">
-                    <Button onClick={downloadPPT} className="bg-green-600 hover:bg-green-700 text-white" size="lg">
-                      <Download className="mr-2 h-4 w-4" />
-                      Download Presentation
-                    </Button>
-                  </CardContent>
-                </Card>
-              )}
+              <Card className="bg-white/10 backdrop-blur-lg border-0">
+                <CardContent className="p-6 flex justify-center">
+                  <Button 
+                    onClick={downloadPPT} 
+                    className="bg-green-600 hover:bg-green-700 text-white" 
+                    size="lg"
+                  >
+                    <Download className="mr-2 h-4 w-4" />
+                    Download Presentation
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
             </div>
           )}
         </main>

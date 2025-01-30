@@ -35,7 +35,7 @@ const SignUp = () => {
     
     toast.success("Account created Successfully!")
     setTimeout(()=>{
-        navigate("/login")
+        navigate("/home")
     },3000)
   };
 

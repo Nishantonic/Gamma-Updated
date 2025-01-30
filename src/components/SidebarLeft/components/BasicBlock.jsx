@@ -9,12 +9,12 @@ const BasicBlock = () => {
   const [isCardVisible, setIsCardVisible] = useState(false);
   const [isNameVisible, setIsNameVisible] = useState(false);
   const { setDraggedElement } = useContext(DragContext);
-  const cardRef = useRef(null);
+  const layoutRef = useRef(null);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (cardRef.current && !cardRef.current.contains(event.target)) {
-        setIsDropdownVisible(false);
+      if (layoutRef.current && !layoutRef.current.contains(event.target)) {
+        setIsCardVisible(false); // Close the dropdown when clicking outside
       }
     };
 
@@ -31,7 +31,7 @@ const BasicBlock = () => {
   };
 
   return (
-    <div className="relative group" ref={cardRef}>
+    <div className="relative group" ref={layoutRef}>
       <div
         className={`relative group cursor-pointer p-2 rounded transition-all duration-300 ${
           isCardVisible ? "bg-gray-200" : "hover:bg-gray-100"
@@ -54,13 +54,9 @@ const BasicBlock = () => {
               className="col-span-1 border-b pb-2 last:border-b-0 bg-gray-100 rounded transform transition-all duration-300 hover:scale-105 hover:shadow-xl p-2 flex flex-col items-center"
               draggable
               onDragStart={(e) =>
-                handleDragStart(
-                  e,
-                  {template : <TitleInput/>}
-                )
+                handleDragStart(e, { template: <TitleInput /> })
               }
             >
-              
               <Type className="text-red-500 w-5 h-5 mr-2" />
               <h1 className="text-black">Add Title</h1>
             </div>
@@ -69,10 +65,7 @@ const BasicBlock = () => {
               className="col-span-1 border-b pb-2 last:border-b-0 bg-gray-100 rounded transform transition-all duration-300 hover:scale-105 hover:shadow-xl p-2 flex flex-col items-center"
               draggable
               onDragStart={(e) =>
-                handleDragStart(
-                  e,
-                  {template : <Headings/>}
-                )
+                handleDragStart(e, { template: <Headings /> })
               }
             >
               <Heading className="text-blue-500 w-5 h-5 mr-2" />
@@ -83,10 +76,7 @@ const BasicBlock = () => {
               className="col-span-1 border-b pb-2 last:border-b-0 bg-gray-100 rounded transform transition-all duration-300 hover:scale-105 hover:shadow-xl p-2 flex flex-col items-center"
               draggable
               onDragStart={(e) =>
-                handleDragStart(
-                  e,
-                  {template : <ParagraphInput/>}
-                )
+                handleDragStart(e, { template: <ParagraphInput /> })
               }
             >
               <AlignJustify className="text-green-500 w-5 h-5 mr-2" />
@@ -105,4 +95,4 @@ const BasicBlock = () => {
   );
 };
 
-export default BasicBlock;
+export default BasicBlock;

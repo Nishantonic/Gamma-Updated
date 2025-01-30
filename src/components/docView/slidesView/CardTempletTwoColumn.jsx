@@ -1,4 +1,4 @@
-import React, { useState, useContext } from "react";
+import React, { useState, useContext, useCallback } from "react";
 import TitleInput from "./CardComponents/TitleInput";
 import ParagraphInput from "./CardComponents/ParagraphInput";
 import { CardMenu } from "./Menu/CardMenu";
@@ -45,9 +45,12 @@ function CardTemplateTwoColumn({
     console.log("Edit clicked");
   };
 
-  const handleDelete = () => {
+  const handleDelete = useCallback(() => {
     setSlides((prevSlides) => prevSlides.filter((slide) => slide.id !== id));
-  }
+    
+    setSlidesPreview((prevSlidesPreview) => prevSlidesPreview.filter((slide) => slide.id !== id));
+
+  }, [id, setSlides]);
 
   const handleDuplicate = () => {
     console.log("Duplicate clicked");

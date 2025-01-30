@@ -36,6 +36,8 @@ export default function ParagraphAi({ initialData, onUpdate, index }) {
   const [alignment, setAlignment] = useState("left")
   const [content, setContent] = useState(initialData)
   const [styles, setStyles] = useState({})
+  const [isHovering, setIsHovering] = useState(false); // State for hover functionality
+
 
   useEffect(() => {
     if (editorRef.current) {
@@ -100,101 +102,109 @@ export default function ParagraphAi({ initialData, onUpdate, index }) {
   return (
     <Card
       id={`paragraph-${index}`}
-      className="w-full flex justify-start max-w-4xl p-0 m-0 mt-5 bg-[#2e294e] flex-wrap border-none shadow-xl"
+      className="w-full flex justify-start max-w-4xl p-0 m-0 mt-5 bg-[#2e294e] flex-wrap relative border-none shadow-xl"
+      onMouseEnter={() => setIsHovering(true)} // Show header on hover
+      onMouseLeave={(e) => {
+        // Prevent hiding if hovering over the dropdown menu
+        if (e.relatedTarget?.closest('.dropdown-menu-content')) return;
+        setIsHovering(false);
+      }}
     >
-      <CardHeader className="flex flex-row justify-between space-y-0 px-1 py-1">
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="hover:bg-white/10 transition-colors">
-              <div className="flex items-center justify-center bg-white/90 hover:bg-white p-1 rounded-full transition-colors">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="20"
-                  height="20"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  className="text-gray-700"
-                >
-                  <circle cx="12" cy="6" r="2" fill="currentColor" />
-                  <circle cx="12" cy="12" r="2" fill="currentColor" />
-                  <circle cx="12" cy="18" r="2" fill="currentColor" />
-                </svg>
-              </div>
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-56 bg-white">
-            <DropdownMenuItem onClick={() => applyCommand("bold")}>
-              <Bold className="mr-2 h-4 w-4" />
-              <span>Bold</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => applyCommand("italic")}>
-              <Italic className="mr-2 h-4 w-4" />
-              <span>Italic</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => applyCommand("underline")}>
-              <Underline className="mr-2 h-4 w-4" />
-              <span>Underline</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => applyCommand("formatBlock", "pre")}>
-              <Code className="mr-2 h-4 w-4" />
-              <span>Code</span>
-            </DropdownMenuItem>
-
-            <DropdownMenuSeparator />
-
-            <DropdownMenuSub>
-              <DropdownMenuSubTrigger>
-                <Type className="mr-2 h-4 w-4" />
-                <span>Font Size</span>
-              </DropdownMenuSubTrigger>
-              <DropdownMenuSubContent>
-                {SIZES.map((size) => (
-                  <DropdownMenuItem key={size.value} onClick={() => applyFontSize(size.value)}>
-                    <span style={{ fontSize: size.value }}>{size.name}</span>
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuSubContent>
-            </DropdownMenuSub>
-
-            <DropdownMenuSub>
-              <DropdownMenuSubTrigger>
-                <Palette className="mr-2 h-4 w-4" />
-                <span>Text Color</span>
-              </DropdownMenuSubTrigger>
-              <DropdownMenuSubContent>
-                {COLORS.map((color) => (
-                  <DropdownMenuItem
-                    key={color.value}
-                    onClick={() => applyColor(color.value)}
-                    className="flex items-center gap-2"
+      {(isHovering || editorRef.current?.contains(document.activeElement)) && (
+        <CardHeader className="flex flex-row justify-between space-y-0 absolute px-1 py-1">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="hover:bg-white/10 transition-colors">
+                <div className="flex items-center justify-center bg-white/90 hover:bg-white p-1 rounded-full transition-colors">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    className="text-gray-700"
                   >
-                    <div
-                      className="w-4 h-4 rounded-full border border-gray-200"
-                      style={{ backgroundColor: color.value }}
-                    />
-                    <span>{color.name}</span>
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuSubContent>
-            </DropdownMenuSub>
+                    <circle cx="12" cy="6" r="2" fill="currentColor" />
+                    <circle cx="12" cy="12" r="2" fill="currentColor" />
+                    <circle cx="12" cy="18" r="2" fill="currentColor" />
+                  </svg>
+                </div>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56 bg-white">
+              <DropdownMenuItem onClick={() => applyCommand("bold")}>
+                <Bold className="mr-2 h-4 w-4" />
+                <span>Bold</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => applyCommand("italic")}>
+                <Italic className="mr-2 h-4 w-4" />
+                <span>Italic</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => applyCommand("underline")}>
+                <Underline className="mr-2 h-4 w-4" />
+                <span>Underline</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => applyCommand("formatBlock", "pre")}>
+                <Code className="mr-2 h-4 w-4" />
+                <span>Code</span>
+              </DropdownMenuItem>
 
-            <DropdownMenuSeparator />
+              <DropdownMenuSeparator />
 
-            <DropdownMenuItem onClick={() => applyAlignment("left")}>
-              <AlignLeft className="mr-2 h-4 w-4" />
-              <span>Align Left</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => applyAlignment("center")}>
-              <AlignCenter className="mr-2 h-4 w-4" />
-              <span>Align Center</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => applyAlignment("right")}>
-              <AlignRight className="mr-2 h-4 w-4" />
-              <span>Align Right</span>
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </CardHeader>
+              <DropdownMenuSub>
+                <DropdownMenuSubTrigger>
+                  <Type className="mr-2 h-4 w-4" />
+                  <span>Font Size</span>
+                </DropdownMenuSubTrigger>
+                <DropdownMenuSubContent>
+                  {SIZES.map((size) => (
+                    <DropdownMenuItem key={size.value} onClick={() => applyFontSize(size.value)}>
+                      <span style={{ fontSize: size.value }}>{size.name}</span>
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuSubContent>
+              </DropdownMenuSub>
+
+              <DropdownMenuSub>
+                <DropdownMenuSubTrigger>
+                  <Palette className="mr-2 h-4 w-4" />
+                  <span>Text Color</span>
+                </DropdownMenuSubTrigger>
+                <DropdownMenuSubContent>
+                  {COLORS.map((color) => (
+                    <DropdownMenuItem
+                      key={color.value}
+                      onClick={() => applyColor(color.value)}
+                      className="flex items-center gap-2"
+                    >
+                      <div
+                        className="w-4 h-4 rounded-full border border-gray-200"
+                        style={{ backgroundColor: color.value }}
+                      />
+                      <span>{color.name}</span>
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuSubContent>
+              </DropdownMenuSub>
+
+              <DropdownMenuSeparator />
+
+              <DropdownMenuItem onClick={() => applyAlignment("left")}>
+                <AlignLeft className="mr-2 h-4 w-4" />
+                <span>Align Left</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => applyAlignment("center")}>
+                <AlignCenter className="mr-2 h-4 w-4" />
+                <span>Align Center</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => applyAlignment("right")}>
+                <AlignRight className="mr-2 h-4 w-4" />
+                <span>Align Right</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </CardHeader>
+      )}
       <CardContent className="p-2 w-full">
         <div
           className="min-h-[100px] w-full rounded-lg bg-white/10 p-6 text-white/80 focus:outline-none text-xl"
@@ -205,8 +215,12 @@ export default function ParagraphAi({ initialData, onUpdate, index }) {
           contentEditable
           suppressContentEditableWarning
           ref={editorRef}
-          onFocus={handlePlaceholder}
-          onBlur={handlePlaceholder}
+          onFocus={() => setIsHovering(true)} 
+          onBlur={(e) => {
+            if (!e.relatedTarget?.closest('.dropdown-menu-content')) {
+              setIsHovering(false);
+            }
+          }}
           onInput={updateContent}
         >
           <span className="text-white/80 w-full text-xl bg-transparent">{content}</span>

@@ -1,4 +1,4 @@
-import React, { useState, useContext } from "react"
+import React, { useState, useContext, useCallback } from "react"
 import { CardMenu } from "./Menu/CardMenu"
 import TitleInput from "./CardComponents/TitleInput"
 import ParagraphInput from "./CardComponents/ParagraphInput"
@@ -59,9 +59,12 @@ function AccentImage ({
     console.log("Edit clicked")
   }
 
-  const handleDelete = (id) => {
+  const handleDelete = useCallback(() => {
     setSlides((prevSlides) => prevSlides.filter((slide) => slide.id !== id));
-  }
+    
+    setSlidesPreview((prevSlidesPreview) => prevSlidesPreview.filter((slide) => slide.id !== id));
+
+  }, [id, setSlides]);
 
   const handleDuplicate = () => {
     console.log("Duplicate clicked")

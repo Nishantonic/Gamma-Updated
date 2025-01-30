@@ -1,4 +1,4 @@
-import React, { useContext, useState } from "react";
+import React, { useContext, useState, useCallback } from "react";
 import { CardMenu } from "./Menu/CardMenu";
 import TitleInput from "./CardComponents/TitleInput";
 import Heading from "./CardComponents/Heading";
@@ -53,9 +53,12 @@ function CardTemplateImgHeadingThree({
     setDroppedItems((prev) => prev.filter((item) => item.id !== id));
   };
 
-  const handleDelete = () => {
+  const handleDelete = useCallback(() => {
     setSlides((prevSlides) => prevSlides.filter((slide) => slide.id !== id));
-  };
+    
+    setSlidesPreview((prevSlidesPreview) => prevSlidesPreview.filter((slide) => slide.id !== id));
+
+  }, [id, setSlides]);
 
   // If a new template is dropped, render it instead
   if (replacedTemplate) {
@@ -75,7 +78,7 @@ function CardTemplateImgHeadingThree({
         <div className="absolute top-4 left-11">
           <CardMenu
             onEdit={() => console.log("Edit clicked")}
-            onDelete={() => {handleDelete}}
+            onDelete={handleDelete}
             onDuplicate={() => console.log("Duplicate clicked")}
             onShare={() => console.log("Share clicked")}
             onDownload={() => console.log("Download clicked")}
@@ -133,7 +136,7 @@ function CardTemplateImgHeadingThree({
                   onChange={(e) => handleImagePreview(e, index)}
                 />
               </div>
-
+                
               {/* Heading */}
              
 
