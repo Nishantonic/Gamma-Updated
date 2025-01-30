@@ -8,12 +8,14 @@ import { Textarea } from "@/components/ui/textarea"
 import { Download, Expand, Sparkle, Trash2, Loader2 } from "lucide-react"
 import { v4 as uuidv4 } from "uuid"
 import Masonry from "react-masonry-css"
+import { toast } from "sonner"
+import { Toaster } from "@/components/ui/sonner"
 
 export default function AiImages() {
   const aspectRatioMap = {
     square: "square_hd",
-    portrait: "portrait_4_3",
-    landscape: "landscape_4_3"
+    portrait: "portrait",
+    landscape: "landscape"
   };
   const [isOpen, setIsOpen] = useState(false)
   const [images, setImages] = useState([])
@@ -56,9 +58,11 @@ export default function AiImages() {
         prompt,
         aspectRatio
       }])
+      toast.success("Image generated successfully!")
     } catch (err) {
       console.error("Error generating image:", err)
-      setError(err.response?.data?.detail || "Failed to generate image. Please try again.")
+      const errorMessage = err.response?.data?.detail || "Failed to generate image. Please try again."
+      toast.error(errorMessage)
     } finally {
       setIsGenerating(false)
       setIsOpen(false)
@@ -68,6 +72,7 @@ export default function AiImages() {
 
   const handleDelete = (id) => {
     setImages(prev => prev.filter(img => img.id !== id))
+    toast.success("Image deleted successfully!")
   }
 
   const handleDownload = async (url) => {
@@ -80,10 +85,13 @@ export default function AiImages() {
       document.body.appendChild(link)
       link.click()
       document.body.removeChild(link)
+      toast.success("Download started successfully!")
     } catch (err) {
       console.error("Download failed:", err)
+      toast.error("Failed to download image")
     }
   }
+
   const breakpointColumnsObj = {
     default: 3,
     1280: 3,
@@ -92,6 +100,21 @@ export default function AiImages() {
   };
   return (
     <div className="p-4 md:p-6 lg:p-8 max-w-7xl mx-auto ">
+      <Toaster
+  position="top-right"
+  richColors
+  toastOptions={{
+    duration: 5000,
+    style: {
+      backgroundColor: '#fff',  // Change to your desired background color
+      color: '#000',  // Set text color to white
+      borderRadius: '8px',  // Rounded corners
+      padding: '12px',  // Padding inside the toast
+      fontSize: '14px',  // Font size
+      boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.1)',  // Soft shadow
+    },
+  }}
+/>
       <div className="flex items-center mb-8">
         <Sparkle className="h-5 w-5 text-purple-600" />
         <h1 className="pl-2 font-bold text-xl lg:text-2xl">AI Images</h1>
