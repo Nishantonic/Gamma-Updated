@@ -14,8 +14,8 @@ import { Toaster } from "@/components/ui/sonner"
 export default function AiImages() {
   const aspectRatioMap = {
     square: "square_hd",
-    portrait: "portrait",
-    landscape: "landscape"
+    portrait: "portrait_4_3",
+    landscape: "landscape_4_3"
   };
   const [isOpen, setIsOpen] = useState(false)
   const [images, setImages] = useState([])
