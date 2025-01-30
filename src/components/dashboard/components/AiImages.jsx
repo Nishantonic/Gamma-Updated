@@ -10,6 +10,11 @@ import { v4 as uuidv4 } from "uuid"
 import Masonry from "react-masonry-css"
 
 export default function AiImages() {
+  const aspectRatioMap = {
+    square: "square_hd",
+    portrait: "portrait",
+    landscape: "landscape"
+  };
   const [isOpen, setIsOpen] = useState(false)
   const [images, setImages] = useState([])
   const [prompt, setPrompt] = useState("")
@@ -22,36 +27,38 @@ export default function AiImages() {
       setError("Please enter a description")
       return
     }
+    
     setIsGenerating(true)
     setError("")
 
     try {
       const response = await axios.post(
-        "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=AIzaSyCzVOUDgpnieFh5lJ1vY2sRImrVuZkM5zY",
+        "https://fal.run/fal-ai/fast-sdxl",
         {
-          contents: [{
-            parts: [{
-              text: `Generate a ${aspectRatio} aspect ratio image based on: ${prompt}`
-            }]
-          }]
+          prompt: prompt,
+          image_size: aspectRatioMap[aspectRatio]
         },
-        { headers: { "Content-Type": "application/json" } }
+        { 
+          headers: { 
+            "Authorization": "Key 695211bf-74de-4864-9e7a-9eb254f63508:bc32a1373fd24dc225b7d0955f5e1ac6",
+            "Content-Type": "application/json"
+          } 
+        }
       )
 
-      const imageUrl = response.data?.candidates?.[0]?.content?.parts?.[0]?.text
-      if (!imageUrl) {
+      if (!response.data?.images?.[0]?.url) {
         throw new Error("No image URL returned from API")
       }
 
       setImages(prev => [...prev, {
         id: uuidv4(),
-        url: imageUrl,
+        url: response.data.images[0].url,
         prompt,
         aspectRatio
       }])
     } catch (err) {
       console.error("Error generating image:", err)
-      setError("Failed to generate image. Please try again.")
+      setError(err.response?.data?.detail || "Failed to generate image. Please try again.")
     } finally {
       setIsGenerating(false)
       setIsOpen(false)
