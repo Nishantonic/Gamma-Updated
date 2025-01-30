@@ -113,9 +113,6 @@ function AccentImage ({
       onMouseLeave={handleMouseUp}
       onDragOver={handleDragOver}
       onDrop={handleDrop}
-      style={{
-        aspectRatio: '16/9'
-      }}
     >
       <div className="absolute top-4 left-11">
         <CardMenu

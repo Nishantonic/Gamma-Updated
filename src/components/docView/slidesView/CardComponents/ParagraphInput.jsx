@@ -213,13 +213,8 @@ export default function TextEditor({ onDelete }) {
         </CardHeader>
       )}
       <CardContent className="p-2 w-full">
-<<<<<<< HEAD
-        <div 
-          className="min-h-[100px] w-full rounded-lg bg-white/10 p-2   text-white/90 focus:outline-none text-xl"
-=======
         <div
           className="min-h-[100px] w-full rounded-lg bg-white/10 p-6 text-white/80 focus:outline-none text-xl"
->>>>>>> bhautik
           style={{
             textAlign: alignment,
           }}

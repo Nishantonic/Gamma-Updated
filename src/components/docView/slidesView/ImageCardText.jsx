@@ -114,9 +114,7 @@ function ImageCardText ({
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
-        style={{
-        aspectRatio: '16/9'
-      }}
+
       >
         <div className="absolute top-4 left-11">
           <CardMenu

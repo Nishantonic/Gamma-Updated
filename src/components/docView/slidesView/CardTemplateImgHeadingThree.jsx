@@ -71,9 +71,6 @@ function CardTemplateImgHeadingThree({
         className="min-h-screen w-full md:w-[60vw] md:min-h-[25vw] md:mt-[3vh] md:mb-[3vh] rounded-lg bg-[#342c4e] p-6 relative"
         onDragOver={handleDragOver}
         onDrop={handleDrop}
-        style={{
-        aspectRatio: '16/9'
-      }}
       >
         <div className="absolute top-4 left-11">
           <CardMenu
@@ -138,7 +135,7 @@ function CardTemplateImgHeadingThree({
               </div>
                 
               {/* Heading */}
-             
+              <Heading />
 
               {/* Subheading */}
               <ParagraphInput />
