@@ -3,11 +3,12 @@ import React, { useState } from "react";
 import Content from "./components/Content";
 // import Share from "./components/Share";
 import Settings from "./components/Settings";
-import Gammas from "./components/Gammas";
+// import Gammas from "./components/Gammas";
 import AiImages from "./components/AiImages";
 import Navbar from "./components/Slidebar";
 // import Contact from "./components/Contact";
 // import Feedback from "./components/Feedback";
+import Gammas from "./components/Gammas/Gammas";
 
 const Dashboard = () => {
   const [activeComponent, setActiveComponent] = useState("Gammas");
