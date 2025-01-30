@@ -11,12 +11,13 @@ import Masonry from "react-masonry-css"
 import { toast } from "sonner"
 import { Toaster } from "@/components/ui/sonner"
 
-export default function AiImages({ credits, setCradit }) {
+export default function AiImages({ credits, setCradits }) {
   const aspectRatioMap = {
     square: "square_hd",
     portrait: "portrait_4_3",
     landscape: "landscape_16_9"
   };
+  
   const [isOpen, setIsOpen] = useState(false)
   const [images, setImages] = useState([])
   const [prompt, setPrompt] = useState("")
@@ -64,7 +65,9 @@ export default function AiImages({ credits, setCradit }) {
         prompt,
         aspectRatio
       }])
-      setCradit(prev => prev - 10) // Deduct credits
+      const newCredits = credits - 10;
+      setCradits(newCredits);
+      localStorage.setItem('credits', newCredits);
       toast.success("Image generated successfully!")
     } catch (err) {
       console.error("Error generating image:", err)
