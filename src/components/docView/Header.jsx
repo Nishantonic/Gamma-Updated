@@ -6,16 +6,21 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useNavigate } from "react-router-dom";
 
 export function Header({ setGenerateAi, startPresentation }) {
+  const navigate = useNavigate() ;
   const handleGenerateAiClick = () => {
     setGenerateAi(true);
   };
-
+  const handelHome = (e) =>{
+    e.preventDefault();
+    navigate('/home');
+  }
   return (
     <header className="flex items-center justify-between px-4 py-2 border-b">
       <div className="flex items-center gap-2">
-        <Button variant="ghost" size="icon">
+        <Button variant="ghost" onClick={handelHome} size="icon">
           <Home className="h-5 w-5" />
         </Button>
         <span className="text-sm text-muted-foreground">/</span>
