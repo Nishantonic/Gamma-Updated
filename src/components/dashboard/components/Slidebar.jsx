@@ -37,7 +37,7 @@ function Navbar({setActiveComponent,activeComponent}) {
           <div className="w-8 h-8 flex items-center justify-center rounded-full bg-purple-600 text-white text-lg">
             S
           </div>
-          <span className="text-gray-800 font-semibold">Sau Workspace</span>
+          <span className="text-gray-800 font-semibold">MY Workspace</span>
         </div>
         <div className="flex items-center border border-gray-300 rounded px-2 py-1">
           <FontAwesomeIcon icon={faMagnifyingGlass} className="text-gray-500" />
