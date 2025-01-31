@@ -135,10 +135,11 @@ the last slide must be conclusion slide in default template
         })),
       )
 
-      setGenerateAi(false)
+      setGenerateAi(true)
     } catch (err) {
       console.error("Error:", err)
       setError(err.message || "An unexpected error occurred.")
+      setGenerateAi(false)
     } finally {
       setIsLoading(false)
       setShowPopup(false)

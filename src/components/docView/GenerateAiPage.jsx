@@ -7,7 +7,7 @@ import { arrayMove } from "@dnd-kit/sortable"
 import AddButton from "./slidesView/AddButton"
 import Home from "../Home/Home"
 import GenerateAi from "./GenerateAi/GenerateAi"
-import { Download, Loader2, Send } from "lucide-react"
+import { ChevronDown, Download, Loader2, Send } from "lucide-react"
 import { Button } from "../ui/button"
 import {
   Dialog,
@@ -93,7 +93,10 @@ export default function GenerateAiPage() {
     const savedCredits = localStorage.getItem('credits');
     return savedCredits !== null ? parseInt(savedCredits) : 50;
   });
-  
+  const [isPresentLoading, setIsPresentLoading] = useState(false);
+  const location = useLocation();
+  const hasSlides = slides.length > 0;
+
   useEffect(() => {
     const slideElement = document.getElementById(`at-${currentSlide}`)
     if (slideElement) {
@@ -171,10 +174,26 @@ export default function GenerateAiPage() {
   };
 
 
-  const startPresentation = (fromBeginning = true) => {
-    setPresentationStartIndex(fromBeginning ? 0 : currentSlide - 1)
-    setIsPresentationMode(true)
-  }
+  const startPresentation = async (fromBeginning = true) => {
+    if (!hasSlides) return;
+    
+    setIsPresentLoading(true);
+    try {
+      // Force immediate update of slide images
+      await debouncedUpdateSlideImages.flush();
+      
+      if (fromBeginning) {
+        setCurrentSlide(1);
+      }
+      setPresentationStartIndex(fromBeginning ? 0 : currentSlide - 1);
+      setIsPresentationMode(true);
+    } catch (error) {
+      console.error("Error starting presentation:", error);
+      toast.error("Failed to start presentation");
+    } finally {
+      setIsPresentLoading(false);
+    }
+  };
 
 
 const getBase64FromImgElement = async (imgElement) => {
@@ -498,8 +517,16 @@ const downloadPPT = async () => {
   return (
     <div className="h-screen flex flex-col bg-background">
        {/* <header className="flex items-center justify-between px-4 py-2 border-b"> */}
-    <Toaster position="top-right" richColors />
-       <div className="h-auto flex items-center gap-2 m-auto">
+      <Toaster position="top-right" richColors />
+      {isPresentationMode && (
+      <PresentationMode
+        slides={slides}
+        slideImages={slideImages}
+        startIndex={presentationStartIndex}
+        onClose={() => setIsPresentationMode(false)}
+      />
+    )}
+       <div className="h-auto flex justify-end items-center gap-2 m-auto w-full mr-[20px]">
         <DropdownMenu >
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className='outline-none border-none p-2' size="md">
@@ -517,17 +544,46 @@ const downloadPPT = async () => {
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
-      </div>
-    {/* </header> */}
-      {/* <Header setGenerateAi={() => setShowPopup(true)} startPresentation={startPresentation} /> */}
-      {isPresentationMode && (
-        <PresentationMode
-          slides={slides}
-          slideImages={slideImages}
-          startIndex={presentationStartIndex}
-          onClose={() => setIsPresentationMode(false)}
-        />
-      )}
+        <DropdownMenu>
+        
+    <DropdownMenuTrigger asChild>
+      <Button  className='text-xl font-serif'
+        variant="primary" 
+        disabled={!hasSlides || isPresentLoading}
+      >
+        {isPresentLoading ? (
+          <>
+            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            Preparing...
+          </>
+        ) : (
+          <>
+            Present
+            <ChevronDown className="h-4 w-4 ml-2" />
+          </>
+        )}
+      </Button>
+    </DropdownMenuTrigger>
+    <DropdownMenuContent>
+      <DropdownMenuItem 
+        onClick={() => startPresentation(true)}
+        disabled={!hasSlides}
+      >
+        From beginning
+      </DropdownMenuItem>
+      <DropdownMenuItem 
+        onClick={() => startPresentation(false)}
+        disabled={!hasSlides}
+      >
+        From current slide
+      </DropdownMenuItem>
+    </DropdownMenuContent>
+  </DropdownMenu>
+  <h1 className="p-0 m-0 px-0 py-0 mr-5 font-serif">Credits : {credits >= 40 ? <span className="text-yellow-500 font-serif text-xl">{credits}</span> : <span className="text-red-500 font-serif text-xl">{credits}</span>}</h1>
+    </div>
+
+
+    
       <div className="flex flex-1 overflow-hidden">
         <DndContext collisionDetection={closestCorners} onDragEnd={handleDragEnd}>
           {slidesPreview.length > 0 && (
@@ -541,7 +597,7 @@ const downloadPPT = async () => {
           )}
         </DndContext>
         <main className="flex-1 overflow-y-auto">
-        {generateAi ? (
+        {generateAi ? 
           <GenerateAi
             key={`ai-${aiInputData}-${Date.now()}`}
             inputData={aiInputData}
@@ -556,7 +612,7 @@ const downloadPPT = async () => {
               toast.error("Generation failed. Please try again.");
             }}
           />
-          ) : (
+          : 
             <div>
               {slides.map(({ Slide, id }, index) => (
                 <React.Fragment key={id}>
@@ -566,8 +622,8 @@ const downloadPPT = async () => {
                   </div>
                 </React.Fragment>
               ))}
-              {isAiGenerated && (
-              <Card className="bg-white/10 backdrop-blur-lg border-0">
+              
+              {slides.length>0 && (<Card className="bg-white/10 backdrop-blur-lg border-0">
                 <CardContent className="p-6 flex justify-center">
                   <Button 
                     onClick={downloadPPT} 
@@ -578,10 +634,10 @@ const downloadPPT = async () => {
                     Download Presentation
                   </Button>
                 </CardContent>
-              </Card>
-            )}
+              </Card>)}
+            
             </div>
-          )}
+          }
         </main>
       </div>
 
