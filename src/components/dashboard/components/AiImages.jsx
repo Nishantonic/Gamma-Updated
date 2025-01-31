@@ -28,7 +28,7 @@ export default function AiImages({ credits, setCradits }) {
   const handleGenerate = async () => {
     if (credits < 10) {
       setError("Insufficient credits. You need at least 10 credits.")
-      toast.error("Insufficient credits. Please purchase more.")
+      toast.error("Insufficient credits. You need at least 10 credits. Please purchase more.")
       return
     }
     
@@ -132,14 +132,33 @@ export default function AiImages({ credits, setCradits }) {
       </div>
 
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
-        <Button 
-          onClick={() => setIsOpen(true)}
-          className="bg-purple-600 hover:bg-purple-700 w-full sm:w-auto"
-          disabled={credits < 10}
-        >
-          <Sparkle className="mr-2 h-4 w-4" />
-          Generate New Image (10 credits)
-        </Button>
+        {credits >= 10 ?
+        (
+          <Button 
+            onClick={() => setIsOpen(true)}
+            className="bg-purple-600 hover:bg-purple-700 w-full sm:w-auto"
+            disabled={credits < 10}
+          >
+            <Sparkle className="mr-2 h-4 w-4" />
+            Generate New Image (10 credits)
+          </Button>
+        ):(
+          <div className="group relative inline-block">
+              <Button 
+              onClick={() => setIsOpen(true)}
+              className="bg-purple-600 hover:bg-purple-700 w-full sm:w-auto"
+              disabled={credits < 10}
+              >
+                <Sparkle className="mr-2 h-4 w-4" />
+                Generate New Image (10 credits)
+              </Button>
+              <div className="absolute  z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-200 top-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 text-sm text-red-600 bg-red-50 border border-red-100 rounded-lg shadow-sm w-max">
+                Insufficient credits. You need at least 10 credits.
+                <div className="absolute top-full left-1/2 -translate-x-1/2 w-3 h-2 bg-red-50 border-b border-r border-red-100 rotate-45"></div>
+              </div>
+          </div>
+        )
+        }
       </div>
 
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
