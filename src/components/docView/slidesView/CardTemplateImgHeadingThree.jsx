@@ -90,10 +90,10 @@ function CardTemplateImgHeadingThree({
           {[0, 1, 2].map((index) => (
             <div
               key={index}
-              className="flex flex-col bg-[#2a2438] rounded-lg p-4 shadow-lg"
+              className="flex flex-col bg-[#2a2438] rounded-lg p-3 shadow-lg"
             >
               {/* Image Upload Section */}
-              <div className="relative w-full h-40 bg-[#342c4e] rounded-lg overflow-hidden group mb-4 flex items-center justify-center">
+              <div className="relative w-full h-40 bg-[#342c4e] rounded-lg overflow-hidden group  flex items-center justify-center">
                 {previews[index] ? (
                   <img
                     src={previews[index]}
