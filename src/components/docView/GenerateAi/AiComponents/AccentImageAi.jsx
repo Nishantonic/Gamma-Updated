@@ -20,7 +20,8 @@ function AccentImageAi({ generateAi = {}, ...props }) {
   const [droppedItems, setDroppedItems] = useState([]); // To store dropped items
   const { draggedElement } = useContext(DragContext); // Access the dragged element context
   const imageRef = useRef(null);
-
+  console.log(preview);
+  
   useEffect(() => {
     if (generateAi.image && isValidImageUrl(generateAi.image)) {
       setPreview(generateAi.image);
