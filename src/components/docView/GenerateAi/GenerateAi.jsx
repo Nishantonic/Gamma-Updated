@@ -15,57 +15,7 @@ import AddButtonAi from "./AiComponents/AddButtonAi"
 import PreviewBar from "./PreviewBar"
 import { v4 as uuidv4 } from "uuid"
 
-const getBase64FromImgElement = async (imgUrl) => {
-  try {
-    const canvas = document.createElement("canvas")
-    const ctx = canvas.getContext("2d")
-    const img = new Image()
 
-    return new Promise((resolve, reject) => {
-      img.onload = () => {
-        canvas.width = img.width
-        canvas.height = img.height
-        ctx.drawImage(img, 0, 0)
-        try {
-          const base64 = canvas.toDataURL("image/png")
-          resolve(base64)
-        } catch (err) {
-          reject(new Error("Failed to convert image to base64"))
-        }
-      }
-      img.onerror = () => {
-        reject(new Error("Failed to load image"))
-      }
-      img.crossOrigin = "anonymous"
-      img.src = imgUrl
-    })
-  } catch (error) {
-    console.error("Error converting image to base64:", error)
-    return null
-  }
-}
-
-const getComputedStyle = (element) => {
-  if (element) {
-    const styles = window.getComputedStyle(element)
-    return {
-      fontSize: Number.parseInt(styles.fontSize),
-      color: styles.color,
-      bold: styles.fontWeight === "bold",
-      italic: styles.fontStyle === "italic",
-      underline: styles.textDecoration.includes("underline"),
-      align: styles.textAlign,
-    }
-  }
-  return {
-    fontSize: 12,
-    color: "#FFFFFF",
-    bold: false,
-    italic: false,
-    underline: false,
-    align: "left",
-  }
-}
 
 export default function GenerateAi({
   inputData,
@@ -167,7 +117,6 @@ the last slide must be conclusion slide in default template
       const jsonSlides = validateAndParseJson(aiText)
       setSlidesState(jsonSlides)
       setEditableSlides(jsonSlides)
-      console.log(jsonSlides);
       
       setSlidesPreview(
         jsonSlides.map((slide, index) => ({

@@ -89,8 +89,8 @@ const Gammas = ({credits,setCradits}) => {
             + Generate With AI
           </button>
           {/* Tooltip with transition */}
-          <div className="absolute  z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-200 bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 text-sm text-red-600 bg-red-50 border border-red-100 rounded-lg shadow-sm">
-            Insufficient credits (40 required)
+          <div className="absolute  z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-200 top-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 text-sm text-red-600 bg-red-50 border border-red-100 rounded-lg shadow-sm w-max">
+            Insufficient credits. You need at least 40 credits.
             <div className="absolute top-full left-1/2 -translate-x-1/2 w-3 h-2 bg-red-50 border-b border-r border-red-100 rotate-45"></div>
           </div>
         </div>
