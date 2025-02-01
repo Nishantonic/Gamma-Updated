@@ -7,7 +7,7 @@ import { arrayMove } from "@dnd-kit/sortable"
 import AddButton from "./slidesView/AddButton"
 import Home from "../Home/Home"
 import GenerateAi from "./GenerateAi/GenerateAi"
-import { Download, Loader2, Send } from "lucide-react"
+import { Download, Loader2, Save, Send } from "lucide-react"
 import { Button } from "../ui/button"
 import {
   Dialog,
@@ -26,45 +26,10 @@ import { debounce } from "lodash"
 import { Card, CardContent } from "../ui/card"
 import pptxgen from "pptxgenjs"
 import { v4 as uuidv4 } from "uuid"
+import js from "@eslint/js"
 import { toast, Toaster } from "sonner"
 
-const getComputedStyle = (element) => {
-  if (element) {
-    const styles = window.getComputedStyle(element)
-    return {
-      fontSize: Number.parseInt(styles.fontSize),
-      color: styles.color,
-      bold: styles.fontWeight === "bold",
-      italic: styles.fontStyle === "italic",
-      underline: styles.textDecoration.includes("underline"),
-      align: styles.textAlign,
-    }
-  }
-  return {
-    fontSize: 12,
-    color: "#FFFFFF",
-    bold: false,
-    italic: false,
-    underline: false,
-    align: "left",
-  }
-}
-
-const getBase64FromImgElement = async (imgUrl) => {
-  try {
-    const response = await fetch(imgUrl)
-    const blob = await response.blob()
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader()
-      reader.onloadend = () => resolve(reader.result)
-      reader.onerror = reject
-      reader.readAsDataURL(blob)
-    })
-  } catch (error) {
-    console.error("Error converting image to base64:", error)
-    return null
-  }
-}
+import {  useLocation, useNavigate } from "react-router-dom"
 
 export default function Page() {
   const [currentSlide, setCurrentSlide] = useState(1)
@@ -74,12 +39,42 @@ export default function Page() {
   const [generateAi, setGenerateAi] = useState(false)
   const [isPresentationMode, setIsPresentationMode] = useState(false)
   const [presentationStartIndex, setPresentationStartIndex] = useState(0)
+  const navigate = useNavigate();
+
+ 
+
+
+
   const [isGenerating, setIsGenerating] = useState(false); // Add this state
   
   const [isLoadingCopy, setIsLoadingCopy] = useState(false)
   const [showPopup, setShowPopup] = useState(false)
   const [aiInputData, setAiInputData] = useState("")
   const [isAiGenerated, setIsAiGenerated] = useState(false)
+
+  const [ArraySlides, setArraySlides] = useState(() => {
+    const savedSlides = JSON.parse(localStorage.getItem("slides")) || [];
+    return savedSlides;
+});
+const location = useLocation();
+  const { slide } = location.state || {};
+
+
+  
+
+  // useEffect(() => {
+  //   if (slide && slide.length > 0) { // Ensure slide is not empty
+  //     setSlides(slide);
+  //     console.log("Slide updated:", slide);
+  //     alert("Slide updated successfully!");
+  //   }
+  // }, [slide]); 
+
+  // useEffect(() => {
+  //   console.log("Slides state updated:", slides);
+  // }, [slides]);
+  
+
     const [credits, setCradits] = useState(() => {
       // Initialize from localStorage or default to 50
       const savedCredits = localStorage.getItem('credits');
@@ -92,6 +87,18 @@ export default function Page() {
     }
   }, [currentSlide])
 
+  const handleSaveSlide = () => {
+    if (slides.length > 0) {
+      const newEntry =  {key: Date.now(), slides} ; // Create a new slide group with a unique key
+      const updatedSlides = [...ArraySlides, newEntry]; // Append the new group
+      setArraySlides(updatedSlides);
+      setSlides(updatedSlides)
+      localStorage.setItem("slides", JSON.stringify(updatedSlides));
+  }
+  navigate("/home");
+  };
+
+ 
   useEffect(() => {
     const initialSlides = [
       {
@@ -489,6 +496,8 @@ const downloadPPT = async () => {
   return (
     <div className="h-screen flex flex-col bg-background">
       <Header setGenerateAi={() => setShowPopup(true)} startPresentation={startPresentation} />
+      
+
       <Toaster position="top-right" richColors />
       {isPresentationMode && (
         <PresentationMode
@@ -534,20 +543,27 @@ const downloadPPT = async () => {
                   <div className="flex justify-center align-middle justify-self-center ">
                     <AddButtonAi index={index} addNewSlide={addNewSlide} />
                   </div>
-                </React.Fragment>
-              ))}
-              {isAiGenerated && (
+                </React.Fragment >
+              )) }
+              {/* {isAiGenerated && ( */}
                 <Card className="bg-white/10 backdrop-blur-lg border-0">
                   <CardContent className="p-6 flex justify-center">
                     <Button onClick={downloadPPT} className="bg-green-600 hover:bg-green-700 text-white" size="lg">
                       <Download className="mr-2 h-4 w-4" />
                       Download Presentation
                     </Button>
+
+                    <Button onClick={handleSaveSlide} className="bg-green-600 hover:bg-green-700 ml-2 text-white" size="lg" 
+
+                    >
+                      <Save className="mr-2 h-4 w-4" />
+                      Save
+                    </Button>
                   </CardContent>
                 </Card>
-              )}
+              {/* )} */}
             </div>
-          )}
+           )} 
         </main>
       </div>
 

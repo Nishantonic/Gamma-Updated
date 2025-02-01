@@ -7,7 +7,7 @@ import { arrayMove } from "@dnd-kit/sortable"
 import AddButton from "./slidesView/AddButton"
 import Home from "../Home/Home"
 import GenerateAi from "./GenerateAi/GenerateAi"
-import { ChevronDown, Download, Loader2, Send } from "lucide-react"
+import { ChevronDown, Download, Loader2, Send, Save } from "lucide-react"
 import { Button } from "../ui/button"
 import {
   Dialog,
@@ -25,7 +25,7 @@ import html2canvas from "html2canvas"
 import { debounce } from "lodash"
 import { Card, CardContent } from "../ui/card"
 import pptxgen from "pptxgenjs"
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { toast } from "sonner"
 import {   Sparkles } from "lucide-react";
 // import { Button } from "@/components/ui/button";
@@ -96,6 +96,8 @@ export default function GenerateAiPage() {
   const [isPresentLoading, setIsPresentLoading] = useState(false);
   const location = useLocation();
   const hasSlides = slides.length > 0;
+  const navigate = useNavigate();
+
 
   useEffect(() => {
     const slideElement = document.getElementById(`at-${currentSlide}`)
@@ -450,6 +452,23 @@ const downloadPPT = async () => {
     return null
   }
 
+
+  const [ArraySlides, setArraySlides] = useState(() => {
+    const savedSlides = JSON.parse(localStorage.getItem("slides")) || [];
+    return savedSlides;
+});
+
+  const handleSaveSlide = () => {
+    if (slides.length > 0) {
+      const newEntry =  {key: Date.now(), slides} ; // Create a new slide group with a unique key
+      const updatedSlides = [...ArraySlides, newEntry]; // Append the new group
+      setArraySlides(updatedSlides);
+      setSlides(updatedSlides)
+      localStorage.setItem("slides", JSON.stringify(updatedSlides));
+  }
+  navigate("/home");
+  };
+
   const updateSlideImages = async () => {
     const newImages = await Promise.all(
       slides.map(async (slide) => {
@@ -633,6 +652,13 @@ const downloadPPT = async () => {
                     <Download className="mr-2 h-4 w-4" />
                     Download Presentation
                   </Button>
+
+                  <Button onClick={handleSaveSlide} className="bg-green-600 hover:bg-green-700 ml-2 text-white" size="lg" 
+
+                    >
+                      <Save className="mr-2 h-4 w-4" />
+                      Save
+                    </Button>
                 </CardContent>
               </Card>)}
             

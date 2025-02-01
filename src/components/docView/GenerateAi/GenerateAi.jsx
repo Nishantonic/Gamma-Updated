@@ -239,7 +239,7 @@ the last slide must be conclusion slide in default template
         )}
         {editableSlides.length > 0 && (
           <div className="mt-8 space-y-8">
-            {editableSlides.slice().map((slide, index) => renderSlide(slide, index,))}
+            {editableSlides.slice().map((slide, index) => renderSlide(slide, index))}
             
           </div>
         )}
