@@ -30,12 +30,6 @@ import js from "@eslint/js"
 import { toast, Toaster } from "sonner"
 
 import {  useLocation, useNavigate } from "react-router-dom"
-import AccentImageAi from "./GenerateAi/AiComponents/AccentImageAi"
-import TwoColumnAi from  "./GenerateAi/AiComponents/AccentImageAi"
-import ImageTextAi from  "./GenerateAi/AiComponents/AccentImageAi"
-import ThreeColumnAi from  "./GenerateAi/AiComponents/AccentImageAi"
-import DefaultAi from  "./GenerateAi/AiComponents/AccentImageAi"
-
 
 export default function Page() {
   const [currentSlide, setCurrentSlide] = useState(1)
@@ -46,6 +40,11 @@ export default function Page() {
   const [isPresentationMode, setIsPresentationMode] = useState(false)
   const [presentationStartIndex, setPresentationStartIndex] = useState(0)
   const navigate = useNavigate();
+
+ 
+
+
+
   const [isGenerating, setIsGenerating] = useState(false); // Add this state
   
   const [isLoadingCopy, setIsLoadingCopy] = useState(false)
@@ -58,11 +57,10 @@ export default function Page() {
     return savedSlides;
 });
 const location = useLocation();
-// const { slidesArray } = location.state || {}; // Extract slidesArray
-// useEffect(() => {
-//   console.log(slidesArray)
-// },[])
+  const { slide } = location.state || {};
 
+
+  
 
   // useEffect(() => {
   //   if (slide && slide.length > 0) { // Ensure slide is not empty
@@ -99,42 +97,9 @@ const location = useLocation();
   }
   navigate("/home");
   };
-  const renderSlideComponent = (slideData) => {
-  const commonProps = {
-    generateAi: slideData,
-    key: slideData.id,
-    onEdit: (updated) => handleSlideUpdate(slideData.id, updated),
-    onDelete: () => deleteSlide(slideData.id)
-  };
 
-  switch (slideData.type) {
-    case 'accentImage':
-      return <AccentImageAi {...commonProps} />;
-    case 'twoColumn':
-      return <TwoColumnAi {...commonProps} />;
-    case 'imageCardText':
-      return <ImageTextAi {...commonProps} />;
-    case 'threeImgCard':
-      return <ThreeColumnAi {...commonProps} />;
-    default:
-      return <DefaultAi {...commonProps} />;
-  }
-};
+ 
   useEffect(() => {
-  if (location.state?.slidesArray) {
-    // Load saved presentation
-    const savedSlides = location.state.slidesArray;
-    setSlidesPreview(savedSlides.map(slide => ({
-      number: slide.number,
-      id: slide.id,
-      title: slide.title,
-      content: renderSlideComponent(slide),
-      onClick: () => setCurrentSlide(slide.number)
-    })));
-    
-    setSlides(savedSlides);
-  } else {
-    // Default initialization
     const initialSlides = [
       {
         number: 1,
@@ -154,15 +119,16 @@ const location = useLocation();
         onClick: () => setCurrentSlide(1),
       },
     ]
-    setSlidesPreview(initialSlides);
-    setSlides(initialSlides.map(slide => ({
-      Slide: slide.content,
-      id: slide.id
-    })));
+    setSlidesPreview(initialSlides)
+    setSlides(
+      initialSlides.map((slide) => ({
+        Slide: slide.content,
+        id: slide.id,
+      })),
+    )
     updateSlideImages()
-  }
-}, [location.state]);
- 
+  }, [])
+
   const handleDragEnd = (e) => {
     const { active, over } = e
     if (!over || active.id === over.id) return
@@ -573,7 +539,7 @@ const downloadPPT = async () => {
             <div>
               {slides.map(({ Slide, id }, index) => (
                 <React.Fragment key={id}>
-                  <div id={`at-${id}`}>{renderSlideComponent(Slide)}</div>
+                  <div id={`at-${id}`}>{Slide}</div>
                   <div className="flex justify-center align-middle justify-self-center ">
                     <AddButtonAi index={index} addNewSlide={addNewSlide} />
                   </div>
