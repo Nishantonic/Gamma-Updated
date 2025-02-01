@@ -27,6 +27,7 @@ import { Card, CardContent } from "../ui/card"
 import pptxgen from "pptxgenjs"
 import { v4 as uuidv4 } from "uuid"
 import js from "@eslint/js"
+import { toast, Toaster } from "sonner"
 
 import {  useLocation, useNavigate } from "react-router-dom"
 
@@ -44,6 +45,8 @@ export default function Page() {
 
 
 
+  const [isGenerating, setIsGenerating] = useState(false); // Add this state
+  
   const [isLoadingCopy, setIsLoadingCopy] = useState(false)
   const [showPopup, setShowPopup] = useState(false)
   const [aiInputData, setAiInputData] = useState("")
@@ -72,6 +75,11 @@ const location = useLocation();
   // }, [slides]);
   
 
+    const [credits, setCradits] = useState(() => {
+      // Initialize from localStorage or default to 50
+      const savedCredits = localStorage.getItem('credits');
+      return savedCredits !== null ? parseInt(savedCredits) : 50;
+    });
   useEffect(() => {
     const slideElement = document.getElementById(`at-${currentSlide}`)
     if (slideElement) {
@@ -146,11 +154,20 @@ const location = useLocation();
   }
 
   const handleAiPopupSubmit = () => {
-    setGenerateAi(true)
-    setIsLoadingCopy(true)
-    setAiInputData(aiInputData)
-    setIsAiGenerated(true)
-  }
+    // if (isGenerating) return;
+    const currentCredits = parseInt(localStorage.getItem('credits') || '50');
+    if (currentCredits >= 40) {
+      setIsGenerating(true);
+      setIsLoadingCopy(true);
+      setGenerateAi(true);
+      const newCredits = currentCredits - 40;
+      setCradits(newCredits);
+      localStorage.setItem('credits', newCredits);
+      toast.success("Presentation generated successfully!");
+    } else {
+      toast.error("Insufficient credits. Please purchase more.");
+    }
+  };
 
   const startPresentation = (fromBeginning = true) => {
     setPresentationStartIndex(fromBeginning ? 0 : currentSlide - 1)
@@ -481,6 +498,7 @@ const downloadPPT = async () => {
       <Header setGenerateAi={() => setShowPopup(true)} startPresentation={startPresentation} />
       
 
+      <Toaster position="top-right" richColors />
       {isPresentationMode && (
         <PresentationMode
           slides={slides}
@@ -502,17 +520,22 @@ const downloadPPT = async () => {
           )}
         </DndContext>
         <main className="flex-1 overflow-y-auto">
-          {/* {generateAi ? (
+          {generateAi ? (
             <GenerateAi
-              key={`ai-${Date.now()}`}
+              key={`ai-${aiInputData}-${Date.now()}`}
               inputData={aiInputData}
               setShowPopup={setShowPopup}
               setIsLoadingCopy={setIsLoadingCopy}
               setSlidesPreview={setSlidesPreview}
               setSlides={setSlides}
               setGenerateAi={setGenerateAi}
+              onError={() => {
+                setIsGenerating(false);
+                setIsLoadingCopy(false);
+                toast.error("Generation failed. Please try again.");
+              }}
             />
-          ) : ( */}
+          ) : (
             <div>
               {slides.map(({ Slide, id }, index) => (
                 <React.Fragment key={id}>
@@ -540,7 +563,7 @@ const downloadPPT = async () => {
                 </Card>
               {/* )} */}
             </div>
-          {/* // )} */}
+           )} 
         </main>
       </div>
 

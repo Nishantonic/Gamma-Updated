@@ -20,7 +20,8 @@ function AccentImageAi({ generateAi = {}, ...props }) {
   const [droppedItems, setDroppedItems] = useState([]); // To store dropped items
   const { draggedElement } = useContext(DragContext); // Access the dragged element context
   const imageRef = useRef(null);
-
+  console.log(preview);
+  
   useEffect(() => {
     if (generateAi.image && isValidImageUrl(generateAi.image)) {
       setPreview(generateAi.image);
@@ -106,6 +107,7 @@ function AccentImageAi({ generateAi = {}, ...props }) {
       className="min-h-screen w-full md:min-h-[25vw] my-8 bg-[#342c4e] relative overflow-hidden max-w-4xl mx-auto outline-none border-none"
       onDragOver={handleDragOver} // Enable drag-over functionality
       onDrop={handleDrop} // Enable drop functionality
+      
     >
       <CardContent className="p-6">
         <div className="absolute top-4 left-11">

@@ -15,57 +15,7 @@ import AddButtonAi from "./AiComponents/AddButtonAi"
 import PreviewBar from "./PreviewBar"
 import { v4 as uuidv4 } from "uuid"
 
-const getBase64FromImgElement = async (imgUrl) => {
-  try {
-    const canvas = document.createElement("canvas")
-    const ctx = canvas.getContext("2d")
-    const img = new Image()
 
-    return new Promise((resolve, reject) => {
-      img.onload = () => {
-        canvas.width = img.width
-        canvas.height = img.height
-        ctx.drawImage(img, 0, 0)
-        try {
-          const base64 = canvas.toDataURL("image/png")
-          resolve(base64)
-        } catch (err) {
-          reject(new Error("Failed to convert image to base64"))
-        }
-      }
-      img.onerror = () => {
-        reject(new Error("Failed to load image"))
-      }
-      img.crossOrigin = "anonymous"
-      img.src = imgUrl
-    })
-  } catch (error) {
-    console.error("Error converting image to base64:", error)
-    return null
-  }
-}
-
-const getComputedStyle = (element) => {
-  if (element) {
-    const styles = window.getComputedStyle(element)
-    return {
-      fontSize: Number.parseInt(styles.fontSize),
-      color: styles.color,
-      bold: styles.fontWeight === "bold",
-      italic: styles.fontStyle === "italic",
-      underline: styles.textDecoration.includes("underline"),
-      align: styles.textAlign,
-    }
-  }
-  return {
-    fontSize: 12,
-    color: "#FFFFFF",
-    bold: false,
-    italic: false,
-    underline: false,
-    align: "left",
-  }
-}
 
 export default function GenerateAi({
   inputData,
@@ -123,8 +73,8 @@ Generate a JSON response for ${prompt} for a presentation using the following pr
    - Purpose: General content for slide  note that it contains title and description it use as giving conclusion.
    - Fields:
      - **type**: "default".
-     - **title**: Slide title.
-     -**description**:slide description.
+     - **title**: Slide 
+     -**description**:slide description.title.
 
 Return 8-10 slides in JSON format, ensuring each slide adheres to one of these templates. Do not include extra explanations or non-JSON text Note that the description's size 6 to 8 sentences and also don't bold any text just give normal text for title and description and also must note that provide only must available and apropreate to the topic image url reuired
 the images must related to the topic and image is must availabele 
@@ -167,7 +117,7 @@ the last slide must be conclusion slide in default template
       const jsonSlides = validateAndParseJson(aiText)
       setSlidesState(jsonSlides)
       setEditableSlides(jsonSlides)
-
+      
       setSlidesPreview(
         jsonSlides.map((slide, index) => ({
           number: index + 1,
@@ -185,10 +135,11 @@ the last slide must be conclusion slide in default template
         })),
       )
 
-      setGenerateAi(false)
+      setGenerateAi(true)
     } catch (err) {
       console.error("Error:", err)
       setError(err.message || "An unexpected error occurred.")
+      setGenerateAi(false)
     } finally {
       setIsLoading(false)
       setShowPopup(false)
