@@ -55,7 +55,7 @@ export function Header({ setGenerateAi, startPresentation }) {
           <DropdownMenuItem onClick={() => startPresentation(true)}>
             From beginning
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => startPresentation(false)}>
+          <DropdownMenuItem onClick={() => startPresentation(true)}>
             From current slide
           </DropdownMenuItem>
         </DropdownMenuContent>

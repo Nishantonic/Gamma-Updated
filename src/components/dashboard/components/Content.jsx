@@ -11,7 +11,7 @@
 import React from "react";
 
 const Content = ({ children }) => {
-  return <div className="p-6 min-h-screen bg-[#f7f2f2] shadow-lg rounded-lg">{children}</div>;
+  return <div className="p-6 min-h-screen flex-wrap bg-[#f7f2f2] shadow-lg rounded-lg">{children}</div>;
 };
 
 export default Content;

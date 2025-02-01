@@ -135,10 +135,11 @@ the last slide must be conclusion slide in default template
         })),
       )
 
-      setGenerateAi(false)
+      setGenerateAi(true)
     } catch (err) {
       console.error("Error:", err)
       setError(err.message || "An unexpected error occurred.")
+      setGenerateAi(false)
     } finally {
       setIsLoading(false)
       setShowPopup(false)
@@ -238,7 +239,7 @@ the last slide must be conclusion slide in default template
         )}
         {editableSlides.length > 0 && (
           <div className="mt-8 space-y-8">
-            {editableSlides.slice().map((slide, index) => renderSlide(slide, index,))}
+            {editableSlides.slice().map((slide, index) => renderSlide(slide, index))}
             
           </div>
         )}

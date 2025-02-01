@@ -105,10 +105,13 @@ export default function ParagraphAi({ initialData, onUpdate, index }) {
       className="w-full flex justify-start max-w-4xl p-0 m-0 mt-5 bg-[#2e294e] flex-wrap relative border-none shadow-xl"
       onMouseEnter={() => setIsHovering(true)} // Show header on hover
       onMouseLeave={(e) => {
-        // Prevent hiding if hovering over the dropdown menu
-        if (e.relatedTarget?.closest('.dropdown-menu-content')) return;
+        const relatedTarget = e.relatedTarget;
+        
+        // Ensure relatedTarget exists before calling closest()
+        if (relatedTarget && relatedTarget.closest(".dropdown-menu-content")) return;
+        
         setIsHovering(false);
-      }}
+    }}
     >
       {(isHovering || editorRef.current?.contains(document.activeElement)) && (
         <CardHeader className="flex flex-row justify-between space-y-0 absolute px-1 py-1">
