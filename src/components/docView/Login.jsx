@@ -33,7 +33,7 @@ const Login = () => {
 
     toast.success("Login Successful!");
     setTimeout(() => {
-      navigate('/page');  
+      navigate('/home');  
     }, 3000);
   };
 

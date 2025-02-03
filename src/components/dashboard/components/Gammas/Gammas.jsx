@@ -1,26 +1,25 @@
-import { useState, useEffect } from "react";
-import { Folders, Coins, Bell } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
-import GammaFunction from "./GammaFunction";
-import Card from "./Card";
-import React from "react";
+import { useState, useEffect } from "react"
+import { Folders, Coins, Bell } from "lucide-react"
+import { Link, useNavigate } from "react-router-dom"
+import GammaFunction from "./GammaFunction"
+import Card from "./Card"
 
 const Gammas = ({ credits, setCredits }) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const [ArraySlides, setArraySlides] = useState([]);
-  const navigate = useNavigate();
+  const [isOpen, setIsOpen] = useState(false)
+  const [ArraySlides, setArraySlides] = useState([])
+  const navigate = useNavigate()
 
   // Load slides from localStorage on component mount
   useEffect(() => {
-    const savedSlides = localStorage.getItem("slides");
+    const savedSlides = localStorage.getItem("slides")
     if (savedSlides) {
-      setArraySlides(JSON.parse(savedSlides));
+      setArraySlides(JSON.parse(savedSlides))
     }
-  }, []);
+  }, [])
 
   // Handle clicking a card to navigate with slide data
   const handleCardClick = (slides) => {
-    if (!slides || slides.length === 0) return;
+    if (!slides || slides.length === 0) return
     navigate("/page", {
       state: {
         slidesArray: slides.map((slide) => ({
@@ -30,23 +29,23 @@ const Gammas = ({ credits, setCredits }) => {
           Slide: slide?.Slide,
         })),
       },
-    });
-  };
+    })
+  }
 
   // Handle deleting a slide
   const handleDeleteSlide = (id) => {
-    const updatedSlides = ArraySlides.filter((slide) => slide.key !== id);
-    setArraySlides(updatedSlides);
-    localStorage.setItem("slides", JSON.stringify(updatedSlides));
-  };
+    const updatedSlides = ArraySlides.filter((slide) => slide.key !== id)
+    setArraySlides(updatedSlides)
+    localStorage.setItem("slides", JSON.stringify(updatedSlides))
+  }
 
   // Handle AI Generation navigation
   const handleAIGenerate = (e) => {
-    e.preventDefault();
+    e.preventDefault()
     if (credits >= 40) {
-      navigate("/generate-ai");
+      navigate("/generate-ai")
     }
-  };
+  }
 
   return (
     <div className="w-full">
@@ -79,9 +78,7 @@ const Gammas = ({ credits, setCredits }) => {
 
             {isOpen && (
               <div className="absolute right-0 mt-2 w-64 bg-white border border-gray-300 rounded-lg shadow-lg p-4">
-                <p className="text-gray-500 text-sm text-center">
-                  No notifications
-                </p>
+                <p className="text-gray-500 text-sm text-center">No notifications</p>
               </div>
             )}
           </div>
@@ -146,12 +143,13 @@ const Gammas = ({ credits, setCredits }) => {
                 onClick={() => handleCardClick(slideGroup.slides)}
                 onDelete={() => handleDeleteSlide(slideGroup.key)}
               />
-            ) : null
+            ) : null,
           )
         )}
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default Gammas;
+export default Gammas
+
