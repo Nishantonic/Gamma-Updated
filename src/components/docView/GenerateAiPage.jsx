@@ -458,16 +458,34 @@ const downloadPPT = async () => {
     return savedSlides;
 });
 
-  const handleSaveSlide = () => {
-    if (slides.length > 0) {
-      const newEntry =  {key: Date.now(), slides} ; // Create a new slide group with a unique key
-      const updatedSlides = [...ArraySlides, newEntry]; // Append the new group
-      setArraySlides(updatedSlides);
-      setSlides(updatedSlides)
+const handleSaveSlide = () => {
+  if (location.state) {
+    let storedSlides = JSON.parse(localStorage.getItem("slides")) || [];
+    storedSlides = storedSlides.filter((slide) => slide.key !== location.state.key);
+    localStorage.setItem("slides", JSON.stringify(storedSlides));
+  }
+
+  if (slides.length > 0) {
+    const newEntry = {
+      key: Date.now(),
+      slides: slides.map(slide => ({
+        id: slide.id,
+        type: slide.type || 'custom', // Preserve type information
+        ...slide
+      }))
+    };
+
+    let existingSlides = JSON.parse(localStorage.getItem("slides")) || [];
+
+    const updatedSlides = [...existingSlides, newEntry];
+
+    setArraySlides(updatedSlides);
+    setSlides([]); 
       localStorage.setItem("slides", JSON.stringify(updatedSlides));
   }
+
   navigate("/home");
-  };
+};
 
   const updateSlideImages = async () => {
     const newImages = await Promise.all(
