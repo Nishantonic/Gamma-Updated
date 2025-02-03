@@ -85,7 +85,14 @@ export default function Page() {
 
   const handleSaveSlide = () => {
     if (slides.length > 0) {
-      const newEntry = { key: Date.now(), slides } // Create a new slide group with a unique key
+      const newEntry = {
+        key: Date.now(),
+        slides: slides.map(slide => ({
+          id: slide.id,
+          type: slide.type || 'custom', // Preserve type information
+          ...slide
+        }))
+      };
       const updatedSlides = [...ArraySlides, newEntry] // Append the new group
       setArraySlides(updatedSlides)
       setSlides(updatedSlides)
@@ -94,12 +101,26 @@ export default function Page() {
     navigate("/home")
   }
   const renderSlideComponent = (slideData) => {
-    const commonProps = {
-      generateAi: slideData,
-      key: slideData.id,
-      onEdit: (updated) => handleSlideUpdate(slideData.id, updated),
-      onDelete: () => deleteSlide(slideData.id),
-    }
+    if (slideData.type === 'custom') { // Manual slides
+    return (
+      <CardTemplates
+        key={slideData.id}
+        slidesPreview={slidesPreview}
+        id={slideData.id}
+        setSlides={setSlides}
+        setCurrentSlide={setCurrentSlide}
+        setSlidesPreview={setSlidesPreview}
+      />
+    );
+  }
+
+  // AI-generated slides
+  const commonProps = {
+    generateAi: slideData,
+    key: slideData.id,
+    onEdit: (updated) => handleSlideUpdate(slideData.id, updated),
+    onDelete: () => deleteSlide(slideData.id),
+  };
 
     switch (slideData.type) {
       case "accentImage":
@@ -141,6 +162,7 @@ export default function Page() {
               <CardTemplates
                 slidesPreview={slidesPreview}
                 id={1}
+                type= 'custom'
                 setSlides={setSlides}
                 setCurrentSlide={setCurrentSlide}
                 setSlidesPreview={setSlidesPreview}
@@ -473,22 +495,23 @@ export default function Page() {
 
   const addNewSlide = async (index) => {
     const newSlide = {
-      number: index + 1,
-      id: Date.now(),
-      title: "New Slide",
-      content: (
-        <div className="flex justify-center">
-          <CardTemplates
-            slidesPreview={slidesPreview}
-            id={Date.now()}
-            setSlides={setSlides}
-            setCurrentSlide={setCurrentSlide}
-            setSlidesPreview={setSlidesPreview}
-          />
-        </div>
-      ),
-      onClick: () => setCurrentSlide(index + 1),
-    }
+    number: index + 1,
+    id: Date.now(),
+    type: 'custom', // Add type identifier
+    title: "New Slide",
+    content: (
+      <div className="flex justify-center">
+        <CardTemplates
+          slidesPreview={slidesPreview}
+          id={Date.now()}
+          setSlides={setSlides}
+          setCurrentSlide={setCurrentSlide}
+          setSlidesPreview={setSlidesPreview}
+        />
+      </div>
+    ),
+    onClick: () => setCurrentSlide(index + 1),
+  };
 
     setSlidesPreview((prevSlides) => {
       const updatedSlides = [
@@ -523,6 +546,16 @@ export default function Page() {
     debouncedUpdateSlideImages()
   }, [slides])
 
+  useEffect(() => {
+  const savedSlides = JSON.parse(localStorage.getItem("slides")) || [];
+  setArraySlides(savedSlides.map(slideGroup => ({
+    ...slideGroup,
+    slides: slideGroup.slides.map(slide => ({
+      type: slide.type || 'custom', // Handle legacy slides
+      ...slide
+    }))
+  })));
+}, []);
   return (
     <div className="h-screen flex flex-col bg-background">
       <Header setGenerateAi={() => setShowPopup(true)} startPresentation={startPresentation} />

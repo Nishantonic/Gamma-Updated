@@ -23,7 +23,7 @@ export default function CardTemplates({ children, slidesPreview, setSlidesPrevie
   const [replacedTemplate, setReplacedTemplate] = useState(null);
   const [droppedItems, setDroppedItems] = useState([]);
   const { draggedElement } = useContext(DragContext);
-    
+
   const handleDrop = useCallback((event) => {
     event.preventDefault();
     if (draggedElement?.template && draggedElement.type === "CardTemplate") {
@@ -32,6 +32,7 @@ export default function CardTemplates({ children, slidesPreview, setSlidesPrevie
       const newElement = {
         id: Date.now(),
         content: draggedElement.template,
+        type: 'customElement'
       };
       setDroppedItems((prev) => [...prev, newElement]);
     }
@@ -50,50 +51,83 @@ export default function CardTemplates({ children, slidesPreview, setSlidesPrevie
   }, []);
 
   const handleDelete = useCallback(() => {
-    setSlides((prevSlides) => prevSlides.filter((slide) => slide.id !== id));
-    setSlidesPreview((prevSlidesPreview) => prevSlidesPreview.filter((slide) => slide.id !== id));
-  }, [id, setSlides]);
+    // Update main slides state
+    setSlides((prevSlides) => {
+      const updatedSlides = prevSlides.filter((slide) => slide.id !== id);
+      localStorage.setItem('slides', JSON.stringify(updatedSlides));
+      return updatedSlides;
+    });
 
-  const handleDuplicate = useCallback(() => {
-    console.log("Duplicate clicked");
-  }, []);
+    // Update slides preview
+    setSlidesPreview((prevSlidesPreview) => {
+      const updatedPreview = prevSlidesPreview.filter((slide) => slide.id !== id);
+      return updatedPreview.map((slide, index) => ({
+        ...slide,
+        number: index + 1
+      }));
+    });
+  }, [id, setSlides, setSlidesPreview]);
 
-  const handleShare = useCallback(() => {
-    console.log("Share clicked");
-  }, []);
-
-  const handleDownload = useCallback(() => {
-    console.log("Download clicked");
-  }, []);
-
-  const updateSlidesPreview = useCallback((Component) => {
-    setSlidesPreview((slidesPreview) =>
-      slidesPreview.map((slide) => {
+  const updateSlidesPreview = useCallback((Component, templateType) => {
+    setSlidesPreview((prevSlidesPreview) =>
+      prevSlidesPreview.map((slide) => {
         if (slide.id === id) {
-          return {
+          const updatedSlide = {
             ...slide,
+            type: templateType,
             content: (
               <div className="flex justify-center">
                 <Component
-                  slidesPreview={slidesPreview}
+                  {...props}
+                  slidesPreview={prevSlidesPreview}
                   setSlides={setSlides}
-                  id={slide.id} // Pass id explicitly
+                  id={slide.id}
                   setSlidesPreview={setSlidesPreview}
                 />
               </div>
             ),
-            onClick: () => setCurrentSlide(slide.id),
+            onClick: () => setCurrentSlide(slide.id)
           };
+
+          // Update main slides state with type
+          setSlides(prevSlides => 
+            prevSlides.map(s => 
+              s.id === id ? {...s, type: templateType} : s
+            )
+          );
+
+          return updatedSlide;
         }
         return slide;
       })
     );
-  }, [id, setCurrentSlide, setSlides, setSlidesPreview]);
-  
+  }, [id, setCurrentSlide, setSlides, setSlidesPreview, props]);
+
+  // Template handlers with type management
+  const handleTwoColumn = useCallback(() => {
+    setShowTwoColumn(true);
+    updateSlidesPreview(CardTemplateTwoColumn, 'twoColumnManual');
+  }, [updateSlidesPreview]);
+
+  const handleImageText = useCallback(() => {
+    setShowImageText(true);
+    updateSlidesPreview(ImageCardText, 'imageTextManual');
+  }, [updateSlidesPreview]);
+
+  const handleAccentImage = useCallback(() => {
+    setShowAccentImage(true);
+    updateSlidesPreview(AccentImage, 'accentImageManual');
+  }, [updateSlidesPreview]);
+
+  const handleThreeColumn = useCallback(() => {
+    setShowThreeColumn(true);
+    updateSlidesPreview(CardTemplateImgHeadingThree, 'threeColumnManual');
+  }, [updateSlidesPreview]);
+
   if (showTwoColumn) {
-    updateSlidesPreview(CardTemplateTwoColumn);
     return <CardTemplateTwoColumn 
-      id={id} // Pass id explicitly
+      {...props}
+      id={id}
       slidesPreview={slidesPreview}
       setSlidesPreview={setSlidesPreview}
       setSlides={setSlides}
@@ -101,9 +135,9 @@ export default function CardTemplates({ children, slidesPreview, setSlidesPrevie
   }
 
   if (showImageText) {
-    updateSlidesPreview(ImageCardText);
     return <ImageCardText
-      id={id} // Pass id explicitly
+      {...props}
+      id={id}
       slidesPreview={slidesPreview}
       setSlidesPreview={setSlidesPreview}
       setSlides={setSlides}
@@ -111,9 +145,9 @@ export default function CardTemplates({ children, slidesPreview, setSlidesPrevie
   }
 
   if (showAccentImage) {
-    updateSlidesPreview(AccentImage);
     return <AccentImage 
-      id={id} // Pass id explicitly
+      {...props}
+      id={id}
       slidesPreview={slidesPreview}
       setSlidesPreview={setSlidesPreview}
       setSlides={setSlides}
@@ -121,9 +155,9 @@ export default function CardTemplates({ children, slidesPreview, setSlidesPrevie
   }
 
   if (showThreeColumn) {
-    updateSlidesPreview(CardTemplateImgHeadingThree);
     return <CardTemplateImgHeadingThree 
-      id={id} // Pass id explicitly
+      {...props}
+      id={id}
       slidesPreview={slidesPreview}
       setSlidesPreview={setSlidesPreview}
       setSlides={setSlides}
@@ -135,7 +169,7 @@ export default function CardTemplates({ children, slidesPreview, setSlidesPrevie
   }
 
   return (
-    <div onDragOver={handleDragOver} onDrop={handleDrop} >
+    <div onDragOver={handleDragOver} onDrop={handleDrop}>
       <div className="min-h-screen w-full md:w-[60vw] md:min-h-[25vw] md:mt-[3vh] md:mb-[3vh] rounded-lg px-1 bg-[#342c4e] p-6 relative">
         <div className="absolute top-4 left-11">
           <CardMenu
@@ -147,7 +181,16 @@ export default function CardTemplates({ children, slidesPreview, setSlidesPrevie
           />
         </div>
         <div className="mt-10">
-          <TitleINput initialData={title} onUpdate={(newTitle) => setTitle(newTitle)} />
+          <TitleINput 
+            initialData={title} 
+            onUpdate={(newTitle) => {
+              setTitle(newTitle);
+              // Update title in slides state
+              setSlides(prev => prev.map(slide => 
+                slide.id === id ? {...slide, title: newTitle} : slide
+              ));
+            }}
+          />
         </div>
         {droppedItems.length > 0 ? (
           <div className="mt-6 space-y-4">
@@ -155,6 +198,7 @@ export default function CardTemplates({ children, slidesPreview, setSlidesPrevie
               <div key={item.id} className="relative">
                 {React.cloneElement(item.content, {
                   onDelete: () => handleDeleteDroppedItem(item.id),
+                  type: item.type
                 })}
               </div>
             ))}
@@ -165,13 +209,14 @@ export default function CardTemplates({ children, slidesPreview, setSlidesPrevie
               Or start with a template
             </h2>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 px-10">
+              {/* Updated template cards with type handling */}
               <Card
                 className="p-4 bg-[#2a2438] border-[#3a3347] hover:border-[#4a4357] cursor-pointer transition-colors relative group"
-                onClick={() => setShowImageText(true)}
+                onClick={handleImageText}
               >
                 <div className="h-24 flex items-center justify-center overflow-hidden">
                   <img
-                    src={card1 || "/placeholder.svg"}
+                    src={card1}
                     alt="Image And text"
                     className="w-full h-full object-contain rounded-lg"
                   />
@@ -185,11 +230,11 @@ export default function CardTemplates({ children, slidesPreview, setSlidesPrevie
 
               <Card
                 className="p-4 bg-[#2a2438] border-[#3a3347] hover:border-[#4a4357] cursor-pointer transition-colors relative group"
-                onClick={() => setShowTwoColumn(true)}
+                onClick={handleTwoColumn}
               >
                 <div className="h-24 flex items-center justify-center overflow-hidden">
                   <img
-                    src={card2 || "/placeholder.svg"}
+                    src={card2}
                     alt="Two Column"
                     className="w-full h-full object-contain rounded-lg"
                   />
@@ -203,11 +248,11 @@ export default function CardTemplates({ children, slidesPreview, setSlidesPrevie
 
               <Card 
                 className="p-4 bg-[#2a2438] border-[#3a3347] hover:border-[#4a4357] cursor-pointer transition-colors relative group"
-                onClick={() => setShowAccentImage(true)}
+                onClick={handleAccentImage}
               >
                 <div className="h-24 flex items-center justify-center overflow-hidden">
                   <img
-                    src={card3 || "/placeholder.svg"}
+                    src={card3}
                     alt="Accent right"
                     className="w-full h-full object-contain rounded-lg"
                   />
@@ -221,11 +266,11 @@ export default function CardTemplates({ children, slidesPreview, setSlidesPrevie
 
               <Card
                 className="p-4 bg-[#2a2438] border-[#3a3347] hover:border-[#4a4357] cursor-pointer transition-colors relative group"
-                onClick={() => setShowThreeColumn(true)}
+                onClick={handleThreeColumn}
               >
                 <div className="h-24 flex items-center justify-center overflow-hidden">
                   <img
-                    src={card4 || "/placeholder.svg"}
+                    src={card4}
                     alt="3 Image Column"
                     className="w-full h-full object-contain rounded-lg"
                   />

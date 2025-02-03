@@ -1,6 +1,6 @@
-import { useState, useRef } from "react"
+import { useState } from "react"
 import axios from "axios"
-import { Send, Loader2, Download } from "lucide-react"
+import { Send, Loader2 } from "lucide-react"
 import { Button } from "../../ui/button"
 import { Textarea } from "../../ui/textarea"
 import { Card, CardContent } from "../../ui/card"
@@ -8,14 +8,9 @@ import AccentImageAi from "./AiComponents/AccentImageAi"
 import TwoColumnAi from "./AiComponents/TwoColumnAi"
 import ImageTextAi from "./AiComponents/ImageTextAi"
 import ThreeColumnAi from "./AiComponents/ThreeColumnAi"
-import pptxgen from "pptxgenjs"
 import DefaultAi from "./AiComponents/DefaultAi"
 import { useEffect } from "react"
-import AddButtonAi from "./AiComponents/AddButtonAi"
-import PreviewBar from "./PreviewBar"
 import { v4 as uuidv4 } from "uuid"
-
-
 
 export default function GenerateAi({
   inputData,
@@ -30,6 +25,7 @@ export default function GenerateAi({
   const [error, setError] = useState(null)
   const [prompt, setPrompt] = useState(inputData)
   const [editableSlides, setEditableSlides] = useState([])
+  const [currentSlide, setCurrentSlide] = useState(null) // Added state for current slide
   const enhancedPrompt = `
 ${prompt}
 
@@ -114,28 +110,36 @@ the last slide must be conclusion slide in default template
       )
 
       const aiText = response.data.candidates[0].content.parts[0].text
-      const jsonSlides = validateAndParseJson(aiText)
-      setSlidesState(jsonSlides)
-      setEditableSlides(jsonSlides)
-      
-      setSlidesPreview(
-        jsonSlides.map((slide, index) => ({
-          number: index + 1,
-          id: slide.id,
-          title: slide.title,
-          content: renderSlide(slide, index),
-          onClick: () => setCurrentSlide(index + 1),
-        })),
-      )
+      // In generateResponse function:
+        const jsonSlides = validateAndParseJson(aiText);
+        if (jsonSlides.length > 0) {
+          const enhancedSlides = jsonSlides.map(slide => ({
+            ...slide,
+            type: slide.type || 'default', // Ensure type exists
+            id: uuidv4()
+          }));
+          
+          setSlidesState(enhancedSlides);
+          setEditableSlides(enhancedSlides);
 
-      setSlides(
-        jsonSlides.map((slide) => ({
-          Slide: renderSlide(slide, slide.number - 1),
-          id: slide.id,
-        })),
-      )
+      setSlidesPreview(enhancedSlides.map((slide, index) => ({
+        number: index + 1,
+        id: slide.id,
+        type: slide.type,
+        title: slide.title,
+        content: renderSlide(slide, index),
+        onClick: () => setCurrentSlide(index + 1),
+      })));
 
-      setGenerateAi(true)
+      setSlides(enhancedSlides.map((slide) => ({
+        ...slide,
+        Slide: renderSlide(slide, slide.number - 1),
+      })));
+
+        setGenerateAi(true) // Set this to false to keep showing the GenerateAi component
+      } else {
+        throw new Error("No valid slides generated.")
+      }
     } catch (err) {
       console.error("Error:", err)
       setError(err.message || "An unexpected error occurred.")
@@ -222,16 +226,45 @@ the last slide must be conclusion slide in default template
   }
 
   useEffect(() => {
-    if (prompt) {
+    if (prompt && inputData) {
       setSlidesState([])
       setEditableSlides([])
       generateResponse()
     }
-  }, [prompt])
-
+  }, [])
+  const [hasGenerated, setHasGenerated] = useState(false);
+  useEffect(() => {
+  if (prompt && inputData && !hasGenerated) {
+    generateResponse();
+    setHasGenerated(true);
+  }
+}, [prompt, inputData, hasGenerated]);
   return (
     <div className="min-h-screen p-6">
       <div className="max-w-4xl mx-auto">
+        <Card className="mb-6">
+          <CardContent className="p-4">
+            <Textarea
+              value={prompt}
+              onChange={(e) => setPrompt(e.target.value)}
+              placeholder="Enter your presentation topic..."
+              className="mb-4"
+            />
+            <Button onClick={generateResponse} disabled={isLoading}>
+              {isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Generating...
+                </>
+              ) : (
+                <>
+                  <Send className="mr-2 h-4 w-4" />
+                  Generate Slides
+                </>
+              )}
+            </Button>
+          </CardContent>
+        </Card>
         {error && (
           <Card className="mt-4 bg-red-500/10 border-red-500/20 text-red-200">
             <CardContent className="p-4">Error: {error}</CardContent>
@@ -240,7 +273,6 @@ the last slide must be conclusion slide in default template
         {editableSlides.length > 0 && (
           <div className="mt-8 space-y-8">
             {editableSlides.slice().map((slide, index) => renderSlide(slide, index))}
-            
           </div>
         )}
 
@@ -253,3 +285,4 @@ the last slide must be conclusion slide in default template
     </div>
   )
 }
+
