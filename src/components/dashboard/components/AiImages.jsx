@@ -1,6 +1,6 @@
 "use client"
 import axios from "axios"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -19,11 +19,23 @@ export default function AiImages({ credits, setCradits }) {
   };
   
   const [isOpen, setIsOpen] = useState(false)
-  const [images, setImages] = useState([])
+  const [images, setImages] = useState(() => {
+    // Load images from localStorage on initial load
+    if (typeof window !== 'undefined') {
+      const savedImages = localStorage.getItem('aiImages');
+      return savedImages ? JSON.parse(savedImages) : [];
+    }
+    return [];
+  })
   const [prompt, setPrompt] = useState("")
   const [aspectRatio, setAspectRatio] = useState("square")
   const [isGenerating, setIsGenerating] = useState(false)
   const [error, setError] = useState("")
+
+  // Save images to localStorage whenever they change
+  useEffect(() => {
+    localStorage.setItem('aiImages', JSON.stringify(images));
+  }, [images]);
 
   const handleGenerate = async () => {
     if (credits < 10) {
@@ -59,12 +71,15 @@ export default function AiImages({ credits, setCradits }) {
         throw new Error("No image URL returned from API")
       }
 
-      setImages(prev => [...prev, {
+      const newImage = {
         id: uuidv4(),
         url: response.data.images[0].url,
         prompt,
-        aspectRatio
-      }])
+        aspectRatio,
+        createdAt: new Date().toISOString()
+      }
+
+      setImages(prev => [...prev, newImage])
       const newCredits = credits - 10;
       setCradits(newCredits);
       localStorage.setItem('credits', newCredits);
@@ -108,6 +123,7 @@ export default function AiImages({ credits, setCradits }) {
     1024: 2,
     768: 1
   };
+
   return (
     <div className="p-4 md:p-6 lg:p-8 max-w-7xl mx-auto ">
       <Toaster
@@ -213,7 +229,6 @@ export default function AiImages({ credits, setCradits }) {
           </div>
         </DialogContent>
       </Dialog>
-      {/* Keep header and dialog the same */}
 
       {images.length === 0 ? (
         <div className="text-center py-12 text-gray-500">
@@ -276,6 +291,9 @@ export default function AiImages({ credits, setCradits }) {
               <div className="p-3">
                 <p className="text-sm text-gray-600 dark:text-gray-300 line-clamp-2">
                   {image.prompt}
+                </p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  {new Date(image.createdAt).toLocaleDateString()}
                 </p>
               </div>
             </div>
