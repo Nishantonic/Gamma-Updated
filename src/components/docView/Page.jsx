@@ -84,6 +84,12 @@ export default function Page() {
   }, [currentSlide])
 
   const handleSaveSlide = () => {
+    if (location.state) {
+      let storedSlides = JSON.parse(localStorage.getItem("slides")) || [];
+      storedSlides = storedSlides.filter((slide) => slide.key !== location.state.key);
+      localStorage.setItem("slides", JSON.stringify(storedSlides));
+    }
+  
     if (slides.length > 0) {
       const newEntry = {
         key: Date.now(),
@@ -93,13 +99,19 @@ export default function Page() {
           ...slide
         }))
       };
-      const updatedSlides = [...ArraySlides, newEntry] // Append the new group
-      setArraySlides(updatedSlides)
-      setSlides(updatedSlides)
-      localStorage.setItem("slides", JSON.stringify(updatedSlides))
+  
+      let existingSlides = JSON.parse(localStorage.getItem("slides")) || [];
+  
+      const updatedSlides = [...existingSlides, newEntry];
+  
+      setArraySlides(updatedSlides);
+      setSlides([]); 
+        localStorage.setItem("slides", JSON.stringify(updatedSlides));
     }
-    navigate("/home")
-  }
+  
+    navigate("/home");
+  };
+  
   const renderSlideComponent = (slideData) => {
     if (slideData.type === 'custom') { // Manual slides
     return (
@@ -208,7 +220,6 @@ export default function Page() {
   }
 
   const handleAiPopupSubmit = () => {
-    // if (isGenerating) return;
     const currentCredits = Number.parseInt(localStorage.getItem("credits") || "50")
     if (currentCredits >= 40) {
       setIsGenerating(true)

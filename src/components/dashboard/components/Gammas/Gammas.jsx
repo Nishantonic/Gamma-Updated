@@ -18,7 +18,7 @@ const Gammas = ({ credits, setCredits }) => {
   }, [])
 
   // Handle clicking a card to navigate with slide data
-  const handleCardClick = (slides) => {
+  const handleCardClick = (slides, key) => {
     if (!slides || slides.length === 0) return
     navigate("/page", {
       state: {
@@ -28,6 +28,7 @@ const Gammas = ({ credits, setCredits }) => {
           id: slide?.id,
           Slide: slide?.Slide,
         })),
+        key:key,
       },
     })
   }
@@ -140,7 +141,7 @@ const Gammas = ({ credits, setCredits }) => {
               <Card
                 key={slideGroup.key}
                 slide={slideGroup.slides[0]?.Slide?.props?.generateAi}
-                onClick={() => handleCardClick(slideGroup.slides)}
+                onClick={() => handleCardClick(slideGroup.slides, slideGroup.key)}
                 onDelete={() => handleDeleteSlide(slideGroup.key)}
               />
             ) : null,
