@@ -8,7 +8,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useNavigate } from "react-router-dom";
 
-export function Header({ setGenerateAi, startPresentation }) {
+export function Header({ setGenerateAi, startPresentation, startImpress }) {
   const navigate = useNavigate() ;
   const handleGenerateAiClick = () => {
     setGenerateAi(true);
@@ -57,6 +57,9 @@ export function Header({ setGenerateAi, startPresentation }) {
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => startPresentation(true)}>
             From current slide
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={startImpress}>
+            Present with Impress
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
