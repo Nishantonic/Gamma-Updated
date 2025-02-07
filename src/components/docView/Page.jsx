@@ -19,7 +19,6 @@ import {
 } from "../ui/dialog"
 import { Input } from "../ui/input"
 import { PresentationMode } from "./PresentationMode"
-import ImpressPresentation from "./ImpressPresentation"
 import AddButtonAi from "./GenerateAi/AiComponents/AddButtonAi"
 import html2canvas from "html2canvas"
 import { debounce } from "lodash"
@@ -49,7 +48,6 @@ export default function Page() {
   const [showPopup, setShowPopup] = useState(false)
   const [aiInputData, setAiInputData] = useState("")
   const [isAiGenerated, setIsAiGenerated] = useState(false)
-  const [isImpressPresent, setIsImpressPresent] = useState(false)
 
   const [ArraySlides, setArraySlides] = useState(() => {
     const savedSlides = JSON.parse(localStorage.getItem("slides")) || []
@@ -569,15 +567,9 @@ export default function Page() {
     }))
   })));
 }, []);
-
-  const startImpress = () => {
-    setIsImpressPresent(true);
-  };
-
-
   return (
     <div className="h-screen flex flex-col bg-background">
-      <Header setGenerateAi={() => setShowPopup(true)} startPresentation={startPresentation} startImpress={startImpress} />
+      <Header setGenerateAi={() => setShowPopup(true)} startPresentation={startPresentation} />
 
       <Toaster position="top-right" richColors />
       {isPresentationMode && (
@@ -588,12 +580,6 @@ export default function Page() {
           onClose={() => setIsPresentationMode(false)}
         />
       )}
-      {isImpressPresent && (
-        <ImpressPresentation 
-          slides={slides} 
-          onClose={() => setIsImpressPresent(false)} 
-        />
-      )}
       <div className="flex flex-1 overflow-hidden">
         <DndContext collisionDetection={closestCorners} onDragEnd={handleDragEnd}>
           {slidesPreview.length > 0 && (
