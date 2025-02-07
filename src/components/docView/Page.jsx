@@ -19,7 +19,7 @@ import {
 } from "../ui/dialog"
 import { Input } from "../ui/input"
 import { PresentationMode } from "./PresentationMode"
-import ImpressPresentation from "./ImpressPresentation"
+// import ImpressPresentation from "./ImpressPresentation"
 import AddButtonAi from "./GenerateAi/AiComponents/AddButtonAi"
 import html2canvas from "html2canvas"
 import { debounce } from "lodash"
@@ -33,7 +33,7 @@ import TwoColumnAi from "./GenerateAi/AiComponents/TwoColumnAi"
 import ImageTextAi from "./GenerateAi/AiComponents/ImageTextAi"
 import ThreeColumnAi from "./GenerateAi/AiComponents/ThreeColumnAi"
 import DefaultAi from "./GenerateAi/AiComponents/DefaultAi"
-
+import { v4 as uuidv4 } from "uuid"
 export default function Page() {
   const [currentSlide, setCurrentSlide] = useState(1)
   const [slidesPreview, setSlidesPreview] = useState([])
@@ -49,8 +49,7 @@ export default function Page() {
   const [showPopup, setShowPopup] = useState(false)
   const [aiInputData, setAiInputData] = useState("")
   const [isAiGenerated, setIsAiGenerated] = useState(false)
-  const [isImpressPresent, setIsImpressPresent] = useState(false)
-
+  const [isImpressPresent,setIsImpressPresent] = useState(false)
   const [ArraySlides, setArraySlides] = useState(() => {
     const savedSlides = JSON.parse(localStorage.getItem("slides")) || []
     return savedSlides
@@ -86,55 +85,70 @@ export default function Page() {
   }, [currentSlide])
 
   const handleSaveSlide = () => {
-    if (location.state) {
-      let storedSlides = JSON.parse(localStorage.getItem("slides")) || [];
-      storedSlides = storedSlides.filter((slide) => slide.key !== location.state.key);
-      localStorage.setItem("slides", JSON.stringify(storedSlides));
+  if (slides.length > 0) {
+    const newEntry = {
+      key: location.state?.key || Date.now(), // Preserve key if restoring from trash
+      slides: slides.map((slide) => ({
+        id: slide.id,
+        type: slide.type || "custom",
+        title: slide.title || "Untitled",
+        description: slide.description || "",
+        image: slide.image || null,
+        ...slide,
+      })),
     }
-  
-    if (slides.length > 0) {
-      const newEntry = {
-        key: Date.now(),
-        slides: slides.map(slide => ({
-          id: slide.id,
-          type: slide.type || 'custom', // Preserve type information
-          ...slide
-        }))
-      };
-  
-      let existingSlides = JSON.parse(localStorage.getItem("slides")) || [];
-  
-      const updatedSlides = [...existingSlides, newEntry];
-  
-      setArraySlides(updatedSlides);
-      setSlides([]); 
-        localStorage.setItem("slides", JSON.stringify(updatedSlides));
-    }
-  
-    navigate("/home");
-  };
-  
-  const renderSlideComponent = (slideData) => {
-    if (slideData.type === 'custom') { // Manual slides
-    return (
-      <CardTemplates
-        key={slideData.id}
-        slidesPreview={slidesPreview}
-        id={slideData.id}
-        setSlides={setSlides}
-        setCurrentSlide={setCurrentSlide}
-        setSlidesPreview={setSlidesPreview}
-      />
-    );
-  }
 
-  // AI-generated slides
-  const commonProps = {
-    generateAi: slideData,
-    key: slideData.id,
-    onEdit: (updated) => handleSlideUpdate(slideData.id, updated),
-    onDelete: () => deleteSlide(slideData.id),
-  };
+    setArraySlides((prevArraySlides) => {
+      // Check if slide already exists
+      const existingIndex = prevArraySlides.findIndex(group => group.key === newEntry.key);
+      let updatedArraySlides;
+
+      if (existingIndex !== -1) {
+        // Update existing slide
+        updatedArraySlides = prevArraySlides.map(group =>
+          group.key === newEntry.key ? newEntry : group
+        );
+      } else {
+        // Add new slide
+        updatedArraySlides = [...prevArraySlides, newEntry];
+      }
+
+      localStorage.setItem("slides", JSON.stringify(updatedArraySlides));
+
+      // Remove from trash
+      const trash = JSON.parse(localStorage.getItem("trash") || "[]");
+      const updatedTrash = trash.filter(slide => slide.key !== newEntry.key);
+      localStorage.setItem("trash", JSON.stringify(updatedTrash));
+
+      return updatedArraySlides;
+    });
+
+    navigate("/home");
+  }
+}
+
+  const renderSlideComponent = (slideData) => {
+    if (slideData.type === "custom") {
+      // Manual slides
+      return (
+        <CardTemplates
+          key={slideData.id}
+          slidesPreview={slidesPreview}
+          id={slideData.id}
+          setSlides={setSlides}
+          setCurrentSlide={setCurrentSlide}
+          setSlidesPreview={setSlidesPreview}
+        />
+      )
+    }
+
+    // AI-generated slides
+    const commonProps = {
+      generateAi: slideData,
+      key: slideData.id,
+      onEdit: (updated) => handleSlideUpdate(slideData.id, updated),
+      onDelete: () => deleteSlide(slideData.id), // Update: Pass deleteSlide function
+    }
 
     switch (slideData.type) {
       case "accentImage":
@@ -157,31 +171,31 @@ export default function Page() {
         savedSlides.map((slide, index) => ({
           number: index + 1,
           id: slide.id,
-          title: slide.title,
+          title: slide.title || "Untitled",
+          type: slide.type || "custom",
           content: renderSlideComponent(slide),
           onClick: () => setCurrentSlide(index + 1),
-        })),
+        }))
       )
 
       setSlides(savedSlides)
     } else {
-      // Default initialization
+      // Default initialization for new presentation
       const initialSlides = [
         {
           number: 1,
-          id: 1,
+          id: uuidv4(),
           title: "Customer Targeting Strategy",
+          type: "custom",
           content: (
-            <div className="flex justify-center">
               <CardTemplates
                 slidesPreview={slidesPreview}
                 id={1}
-                type= 'custom'
+                type="custom"
                 setSlides={setSlides}
                 setCurrentSlide={setCurrentSlide}
                 setSlidesPreview={setSlidesPreview}
               />
-            </div>
           ),
           onClick: () => setCurrentSlide(1),
         },
@@ -191,10 +205,12 @@ export default function Page() {
         initialSlides.map((slide) => ({
           Slide: slide.content,
           id: slide.id,
-        })),
+          type: slide.type,
+          title: slide.title,
+        }))
       )
-      updateSlideImages()
     }
+    updateSlideImages()
   }, [location.state])
 
   const handleDragEnd = (e) => {
@@ -369,7 +385,6 @@ export default function Page() {
 
           case "imageCardText": {
             console.log("Processing imageCardText slide:", { title, description })
-
             if (generateAi.image) {
               try {
                 const base64Image = await getBase64FromImgElement(generateAi.image)
@@ -508,23 +523,23 @@ export default function Page() {
 
   const addNewSlide = async (index) => {
     const newSlide = {
-    number: index + 1,
-    id: Date.now(),
-    type: 'custom', // Add type identifier
-    title: "New Slide",
-    content: (
-      <div className="flex justify-center">
-        <CardTemplates
-          slidesPreview={slidesPreview}
-          id={Date.now()}
-          setSlides={setSlides}
-          setCurrentSlide={setCurrentSlide}
-          setSlidesPreview={setSlidesPreview}
-        />
-      </div>
-    ),
-    onClick: () => setCurrentSlide(index + 1),
-  };
+      number: index + 1,
+      id: uuidv4(),
+      type: "custom", // Add type identifier
+      title: "New Slide",
+      content: (
+        <div className="flex justify-center">
+          <CardTemplates
+            slidesPreview={slidesPreview}
+            id={Date.now()}
+            setSlides={setSlides}
+            setCurrentSlide={setCurrentSlide}
+            setSlidesPreview={setSlidesPreview}
+          />
+        </div>
+      ),
+      onClick: () => setCurrentSlide(index + 1),
+    }
 
     setSlidesPreview((prevSlides) => {
       const updatedSlides = [
@@ -547,12 +562,20 @@ export default function Page() {
   }
 
   const deleteSlide = (id) => {
-    setSlidesPreview((prevSlides) => prevSlides.filter((slide) => slide.id !== id))
-    setSlides((prevSlides) => {
-      const newSlides = prevSlides.filter((slide) => slide.id !== id)
-      debouncedUpdateSlideImages()
-      return newSlides
+    // Update the slidesPreview state
+    setSlidesPreview(prev => {
+      const updatedPreview = prev.filter(slide => slide.id !== id)
+      return updatedPreview.map((slide, index) => ({
+        ...slide,
+        number: index + 1
+      }))
     })
+
+    // Update the current slides state
+    setSlides(prev => prev.filter(slide => slide.id !== id))
+
+    // No need to update ArraySlides here - it will be updated when saving
+    debouncedUpdateSlideImages()
   }
 
   useEffect(() => {
@@ -572,7 +595,7 @@ export default function Page() {
 
   const startImpress = () => {
     setIsImpressPresent(true);
-  };
+  }
 
 
   return (
@@ -588,12 +611,13 @@ export default function Page() {
           onClose={() => setIsPresentationMode(false)}
         />
       )}
-      {isImpressPresent && (
+      {/* {isImpressPresent && (
         <ImpressPresentation 
           slides={slides} 
           onClose={() => setIsImpressPresent(false)} 
         />
-      )}
+        )
+      } */}
       <div className="flex flex-1 overflow-hidden">
         <DndContext collisionDetection={closestCorners} onDragEnd={handleDragEnd}>
           {slidesPreview.length > 0 && (
@@ -621,6 +645,7 @@ export default function Page() {
                 setIsLoadingCopy(false)
                 toast.error("Generation failed. Please try again.")
               }}
+              onComplete={() => setIsGenerating(false)}
             />
           ) : (
             <div>

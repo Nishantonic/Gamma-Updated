@@ -9,6 +9,7 @@ import Navbar from "./components/Slidebar";
 // import Contact from "./components/Contact";
 // import Feedback from "./components/Feedback";
 import Gammas from "./components/Gammas/Gammas";
+import Trash from "./components/Trash";
 
 const Dashboard = () => {
   const [activeComponent, setActiveComponent] = useState("Gammas");
@@ -28,6 +29,7 @@ const Dashboard = () => {
     "Gammas": <Gammas credits={credits} setCradits={setCradits} />,
     "Settings & Members": <Settings />,
     "Ai Images" : <AiImages credits={credits} setCradits={setCradits} />,
+    "Trash" : <Trash />,
     // "Contact Support": <Contact /> ,
   };
 

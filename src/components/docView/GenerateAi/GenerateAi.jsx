@@ -118,9 +118,6 @@ the last slide must be conclusion slide in default template
             type: slide.type || 'default', // Ensure type exists
             id: uuidv4()
           }));
-          
-          setSlidesState(enhancedSlides);
-          setEditableSlides(enhancedSlides);
 
       setSlidesPreview(enhancedSlides.map((slide, index) => ({
         number: index + 1,
@@ -131,12 +128,10 @@ the last slide must be conclusion slide in default template
         onClick: () => setCurrentSlide(index + 1),
       })));
 
-      setSlides(enhancedSlides.map((slide) => ({
+      setSlides(enhancedSlides.map(slide => ({
         ...slide,
         Slide: renderSlide(slide, slide.number - 1),
       })));
-
-        setGenerateAi(true) // Set this to false to keep showing the GenerateAi component
       } else {
         throw new Error("No valid slides generated.")
       }
@@ -145,9 +140,10 @@ the last slide must be conclusion slide in default template
       setError(err.message || "An unexpected error occurred.")
       setGenerateAi(false)
     } finally {
-      setIsLoading(false)
-      setShowPopup(false)
-      setIsLoadingCopy(false)
+      setIsLoading(false);
+      setShowPopup(false);
+      setIsLoadingCopy(false);
+      setGenerateAi(false);
     }
   }
 
@@ -186,7 +182,7 @@ the last slide must be conclusion slide in default template
       const updatedSlides = [...prevSlides]
 
       const newSlide = {
-        type: "default",
+        type: "custom",
         title: "Untitled Card",
         description: "This is a new slide. Edit as needed.",
         id: uuidv4(),
@@ -270,11 +266,7 @@ the last slide must be conclusion slide in default template
             <CardContent className="p-4">Error: {error}</CardContent>
           </Card>
         )}
-        {editableSlides.length > 0 && (
-          <div className="mt-8 space-y-8">
-            {editableSlides.slice().map((slide, index) => renderSlide(slide, index))}
-          </div>
-        )}
+        
 
         {isLoading && (
           <div className="flex justify-center mt-10">

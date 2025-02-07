@@ -1,75 +1,76 @@
-import React, { useState, useEffect, useRef, useContext } from "react";
-import { CardMenu } from "../../slidesView/Menu/CardMenu";
-import TitleAi from "./TitleAi.jsx";
-import ParagraphAi from "./ParagraphAi.jsx";
-import { DragContext } from "@/components/SidebarLeft/DragContext";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Image, Move } from "lucide-react";
+import React, { useState, useEffect, useRef, useContext } from "react"
+import { CardMenu } from "../../slidesView/Menu/CardMenu"
+import TitleAi from "./TitleAi.jsx"
+import ParagraphAi from "./ParagraphAi.jsx"
+import { DragContext } from "@/components/SidebarLeft/DragContext"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Image, Move } from "lucide-react"
 
 function AccentImageAi({ generateAi = {}, ...props }) {
-  const [preview, setPreview] = useState(generateAi.image);
-  const [imageSize, setImageSize] = useState({ width: 300, height: 210 });
-  const [isResizing, setIsResizing] = useState(false);
-  const [initialMousePos, setInitialMousePos] = useState({ x: 0, y: 0 });
-  const [initialSize, setInitialSize] = useState({ width: 0, height: 0 });
-  const [title, setTitle] = useState(generateAi.title || "Untitled Card");
-  const [description, setDescription] = useState(generateAi.description || "Start typing...");
-  const [droppedItems, setDroppedItems] = useState([]); // To store dropped items
-  const { draggedElement } = useContext(DragContext); // Access the dragged element context
-  const imageRef = useRef(null);
-  console.log(preview);
-  
+  const [preview, setPreview] = useState(generateAi.image)
+  const [imageSize, setImageSize] = useState({ width: 300, height: 210 })
+  const [isResizing, setIsResizing] = useState(false)
+  const [initialMousePos, setInitialMousePos] = useState({ x: 0, y: 0 })
+  const [initialSize, setInitialSize] = useState({ width: 0, height: 0 })
+  const [title, setTitle] = useState(generateAi.title || "Untitled Card")
+  const [description, setDescription] = useState(generateAi.description || "Start typing...")
+  const [droppedItems, setDroppedItems] = useState([]) // To store dropped items
+  const [isDeleted, setIsDeleted] = useState(false) // Added state for deletion
+  const { draggedElement } = useContext(DragContext) // Access the dragged element context
+  const imageRef = useRef(null)
+  console.log(preview)
+
   useEffect(() => {
     if (generateAi.image && isValidImageUrl(generateAi.image)) {
-      setPreview(generateAi.image);
+      setPreview(generateAi.image)
     }
-  }, [generateAi.image]);
+  }, [generateAi.image])
 
   const isValidImageUrl = (url) => {
-    return url.match(/\.(jpeg|jpg|gif|png)$/) != null;
-  };
+    return url.match(/\.(jpeg|jpg|gif|png)$/) != null
+  }
 
   const handleImagePreview = (e) => {
-    const file = e.target.files[0];
+    const file = e.target.files[0]
     if (file) {
-      const reader = new FileReader();
+      const reader = new FileReader()
       reader.onload = () => {
-        setPreview(reader.result);
-        updateParent({ image: reader.result });
-      };
-      reader.readAsDataURL(file);
+        setPreview(reader.result)
+        updateParent({ image: reader.result })
+      }
+      reader.readAsDataURL(file)
     }
-  };
+  }
 
   const handleMouseDown = (e) => {
-    setIsResizing(true);
-    setInitialMousePos({ x: e.clientX, y: e.clientY });
-    setInitialSize({ width: imageSize.width, height: imageSize.height });
-  };
+    setIsResizing(true)
+    setInitialMousePos({ x: e.clientX, y: e.clientY })
+    setInitialSize({ width: imageSize.width, height: imageSize.height })
+  }
 
   const handleMouseMove = (e) => {
     if (isResizing) {
-      const dx = e.clientX - initialMousePos.x;
-      const dy = e.clientY - initialMousePos.y;
+      const dx = e.clientX - initialMousePos.x
+      const dy = e.clientY - initialMousePos.y
 
-      const newWidth = Math.max(initialSize.width + dx, 100);
-      const newHeight = Math.max(initialSize.height + dy, 100);
+      const newWidth = Math.max(initialSize.width + dx, 100)
+      const newHeight = Math.max(initialSize.height + dy, 100)
 
       setImageSize({
         width: newWidth,
         height: newHeight,
-      });
+      })
 
-      updateParent({ imageSize: { width: newWidth, height: newHeight } });
+      updateParent({ imageSize: { width: newWidth, height: newHeight } })
     }
-  };
+  }
 
   const handleMouseUp = () => {
-    setIsResizing(false);
-  };
+    setIsResizing(false)
+  }
 
   const updateParent = (updates) => {
     generateAi.onEdit({
@@ -79,27 +80,38 @@ function AccentImageAi({ generateAi = {}, ...props }) {
       description,
       image: preview,
       imageSize,
-    });
-  };
+    })
+  }
 
   const handleDrop = (event) => {
-    event.preventDefault();
+    event.preventDefault()
     if (draggedElement?.template) {
       const newItem = {
         id: Date.now(), // Unique ID for each dropped item
         content: draggedElement.template,
-      };
-      setDroppedItems((prev) => [...prev, newItem]);
+      }
+      setDroppedItems((prev) => [...prev, newItem])
     }
-  };
+  }
 
   const handleDragOver = (event) => {
-    event.preventDefault();
-  };
+    event.preventDefault()
+  }
 
   const handleDeleteDroppedItem = (id) => {
-    setDroppedItems((prev) => prev.filter((item) => item.id !== id));
-  };
+    setDroppedItems((prev) => prev.filter((item) => item.id !== id))
+  }
+
+  const handleDelete = () => {
+    setIsDeleted(true)
+    if (generateAi.onDelete) {
+      generateAi.onDelete(generateAi.id)
+    }
+  }
+
+  if (isDeleted) {
+    return null
+  }
 
   return (
     <Card
@@ -107,13 +119,12 @@ function AccentImageAi({ generateAi = {}, ...props }) {
       className="min-h-screen w-full md:min-h-[25vw] my-8 bg-[#342c4e] relative overflow-hidden max-w-4xl mx-auto outline-none border-none"
       onDragOver={handleDragOver} // Enable drag-over functionality
       onDrop={handleDrop} // Enable drop functionality
-      
     >
       <CardContent className="p-6">
         <div className="absolute top-4 left-11">
           <CardMenu
             onEdit={() => console.log("Edit clicked")}
-            onDelete={generateAi.onDelete}
+            onDelete={handleDelete}
             onDuplicate={() => console.log("Duplicate clicked")}
             onShare={() => console.log("Share clicked")}
             onDownload={() => console.log("Download clicked")}
@@ -125,16 +136,16 @@ function AccentImageAi({ generateAi = {}, ...props }) {
             <TitleAi
               initialData={title}
               onUpdate={(newTitle) => {
-                setTitle(newTitle);
-                updateParent({ title: newTitle });
+                setTitle(newTitle)
+                updateParent({ title: newTitle })
               }}
               className="title text-3xl font-bold text-white mb-4"
             />
             <ParagraphAi
               initialData={description}
               onUpdate={(newDescription) => {
-                setDescription(newDescription);
-                updateParent({ description: newDescription });
+                setDescription(newDescription)
+                updateParent({ description: newDescription })
               }}
               className="description text-lg text-gray-300"
             />
@@ -202,7 +213,8 @@ function AccentImageAi({ generateAi = {}, ...props }) {
         )}
       </CardContent>
     </Card>
-  );
+  )
 }
 
-export default AccentImageAi;
+export default AccentImageAi
+

@@ -145,8 +145,11 @@ export default function CardTemplates({ children, slidesPreview, setSlidesPrevie
   }
 
   if (showAccentImage) {
+    console.log("AccentImage Clicked");
+    
     return <AccentImage 
       {...props}
+      type='accentImage'
       id={id}
       slidesPreview={slidesPreview}
       setSlidesPreview={setSlidesPreview}
@@ -167,10 +170,22 @@ export default function CardTemplates({ children, slidesPreview, setSlidesPrevie
   if (replacedTemplate) {
     return <div>{replacedTemplate}</div>;
   }
+  const handleDuplicate = () =>{
+    console.log("duplicate");
+    
+  }
+  const handleShare = () =>{
+    console.log("duplicate");
+    
+  }
+  const handleDownload = () =>{
+    console.log("duplicate");
+    
+  }
 
   return (
     <div onDragOver={handleDragOver} onDrop={handleDrop}>
-      <div className="min-h-screen w-full md:w-[60vw] md:min-h-[25vw] md:mt-[3vh] md:mb-[3vh] rounded-lg px-1 bg-[#342c4e] p-6 relative">
+      <div className="min-h-screen w-full md:min-h-[25vw] md:mt-[3vh] md:mb-[3vh] rounded-lg px-1 bg-[#342c4e] p-6 relative max-w-4xl mx-auto">
         <div className="absolute top-4 left-11">
           <CardMenu
             onEdit={handleEdit}
