@@ -4,6 +4,7 @@ import Heading from "./Heading";
 import ParagraphAi from "./ParagraphAi.jsx";
 import { DragContext } from "@/components/SidebarLeft/DragContext";
 import TitleAi from "./TitleAi";
+import { Card } from "@/components/ui/card";
 
 function ThreeImgTextAi({ generateAi = {}, ...props }) {
   const [title, setTitle] = useState(generateAi.title || "Untitled Card");
@@ -67,8 +68,8 @@ function ThreeImgTextAi({ generateAi = {}, ...props }) {
   }
 
   return (
-    <div
-      className="min-h-screen w-full md:min-h-[25vw] md:mt-[3vh] md:mb-[3vh] rounded-lg px-1 bg-[#342c4e] p-6 relative max-w-4xl mx-auto"
+    <Card
+      className="min-h-screen w-full md:min-h-[25vw] my-8 bg-[#342c4e] relative overflow-visible max-w-4xl mx-auto px-3 py-3 outline-none border-none"
       onDragOver={handleDragOver}
       onDrop={handleDrop}
     >
@@ -88,6 +89,7 @@ function ThreeImgTextAi({ generateAi = {}, ...props }) {
         <TitleAi
           initialData={title}
           onUpdate={(newTitle) => setTitle(newTitle)}
+          slideId={generateAi.id}
         />
 
         {/* Three Cards Section */}
@@ -173,7 +175,7 @@ function ThreeImgTextAi({ generateAi = {}, ...props }) {
           ))}
         </div>
       )}
-    </div>
+    </Card>
   );
 }
 

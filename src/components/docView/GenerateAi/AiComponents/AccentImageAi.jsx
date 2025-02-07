@@ -8,6 +8,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Image, Move } from "lucide-react"
+import { v4 as uuidv4 } from "uuid";
 
 function AccentImageAi({ generateAi = {}, ...props }) {
   const [preview, setPreview] = useState(generateAi.image)
@@ -116,7 +117,7 @@ function AccentImageAi({ generateAi = {}, ...props }) {
   return (
     <Card
       id={`slide-${generateAi.index}`}
-      className="min-h-screen w-full md:min-h-[25vw] my-8 bg-[#342c4e] relative overflow-hidden max-w-4xl mx-auto outline-none border-none"
+      className="min-h-screen w-full md:min-h-[25vw] my-8 bg-[#342c4e] relative overflow-visible max-w-4xl mx-auto outline-none border-none"
       onDragOver={handleDragOver} // Enable drag-over functionality
       onDrop={handleDrop} // Enable drop functionality
     >
@@ -133,14 +134,17 @@ function AccentImageAi({ generateAi = {}, ...props }) {
 
         <div className="flex flex-col md:flex-row gap-8 mt-16">
           <div className="flex-1">
+            <div className="relative overflow-visible z-50 w-full   ">
             <TitleAi
               initialData={title}
               onUpdate={(newTitle) => {
                 setTitle(newTitle)
                 updateParent({ title: newTitle })
               }}
-              className="title text-3xl font-bold text-white mb-4"
+              slideId={generateAi.id}
+              className="title text-3xl font-bold text-white mb-4 relative overflow-visible"
             />
+            </div>
             <ParagraphAi
               initialData={description}
               onUpdate={(newDescription) => {

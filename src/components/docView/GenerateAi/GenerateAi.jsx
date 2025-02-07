@@ -206,7 +206,6 @@ the last slide must be conclusion slide in default template
       onEdit: (updatedSlide) => handleEdit(index, updatedSlide),
       onDelete: () => handleDelete(slide.id),
     }
-
     switch (slide.type) {
       case "accentImage":
         return <AccentImageAi generateAi={slideProps} />

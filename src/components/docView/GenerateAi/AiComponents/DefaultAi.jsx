@@ -62,7 +62,7 @@ function DefaultAi({ generateAi = {}, index }) {
   return (
     <Card
       id={`slide-${generateAi.index}`}
-      className="min-h-screen w-full md:min-h-[25vw] my-8 bg-[#342c4e] relative overflow-hidden max-w-4xl mx-auto outline-none border-none"
+      className="min-h-screen w-full md:min-h-[25vw] my-8 bg-[#342c4e] relative overflow-visible max-w-4xl mx-auto outline-none border-none"
       onDragOver={handleDragOver} // Enable drag-over functionality
       onDrop={handleDrop} // Enable drop functionality
       
@@ -86,6 +86,7 @@ function DefaultAi({ generateAi = {}, index }) {
             initialData={title}
             onUpdate={(newContent, newStyles) => handleUpdate("title", newContent, newStyles)}
             index={index}
+            slideId={generateAi.id}
           />
 
           {/* Editable Description */}

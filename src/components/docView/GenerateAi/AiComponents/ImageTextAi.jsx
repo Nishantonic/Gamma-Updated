@@ -5,6 +5,7 @@ import { CardMenu } from "../../slidesView/Menu/CardMenu";
 import TitleAi from "./TitleAi.jsx";
 import ParagraphAi from "./ParagraphAi.jsx";
 import { DragContext } from "@/components/SidebarLeft/DragContext";
+import { Card } from "@/components/ui/card";
 
 function ImageTextAi({ generateAi = {}, ...props }) {
   const [preview, setPreview] = useState(generateAi.image || null);
@@ -107,8 +108,8 @@ function ImageTextAi({ generateAi = {}, ...props }) {
   }
 
   return (
-    <div
-      className="min-h-screen w-full md:min-h-[25vw] md:mt-[3vh] md:mb-[3vh] rounded-lg px-1 bg-[#342c4e] p-6 relative max-w-4xl mx-auto"
+    <Card
+      className="min-h-screen w-full md:min-h-[25vw] my-8 bg-[#342c4e] relative overflow-visible max-w-4xl mx-auto px-3 py-3 outline-none border-none"
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
       onMouseLeave={handleMouseUp}
@@ -189,6 +190,7 @@ function ImageTextAi({ generateAi = {}, ...props }) {
                 setTitle(newTitle);
                 updateParent({ title: newTitle });
               }}
+              slideId={generateAi.id}
             />
             <ParagraphAi
               initialData={description}
@@ -213,7 +215,7 @@ function ImageTextAi({ generateAi = {}, ...props }) {
           ))}
         </div>
       )}
-    </div>
+    </Card>
   );
 }
 

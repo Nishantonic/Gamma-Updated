@@ -3,6 +3,7 @@ import { CardMenu } from "../../slidesView/Menu/CardMenu";
 import { DragContext } from "@/components/SidebarLeft/DragContext";
 import TitleAi from "./TitleAi.jsx";
 import ParagraphAi from "./ParagraphAi.jsx";
+import { Card } from "@/components/ui/card";
 
 function CardTemplateTwoColumn({ generateAi = {}, ...props }) {
   const [title, setTitle] = useState(generateAi.title || "Untitled Card");
@@ -47,8 +48,8 @@ function CardTemplateTwoColumn({ generateAi = {}, ...props }) {
   }
 
   return (
-    <div
-      className="min-h-screen w-full md:min-h-[25vw] md:mt-[3vh] md:mb-[3vh] rounded-lg px-1 bg-[#342c4e] p-6 relative max-w-4xl mx-auto"
+    <Card
+      className="min-h-screen w-full md:min-h-[25vw] my-8 bg-[#342c4e] relative overflow-visible max-w-4xl mx-auto px-3 py-3 outline-none border-none"
       onDragOver={handleDragOver}
       onDrop={handleDrop}
     >
@@ -68,6 +69,7 @@ function CardTemplateTwoColumn({ generateAi = {}, ...props }) {
         <TitleAi
           initialData={title}
           onUpdate={(newTitle) => setTitle(newTitle)}
+          slideId={generateAi.id}
         />
 
         {/* Two Column Section */}
@@ -98,7 +100,7 @@ function CardTemplateTwoColumn({ generateAi = {}, ...props }) {
           ))}
         </div>
       )}
-    </div>
+    </Card>
   );
 }
 
