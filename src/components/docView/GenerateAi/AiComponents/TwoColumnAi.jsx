@@ -6,7 +6,9 @@ import ParagraphAi from "./ParagraphAi.jsx";
 import { Card } from "@/components/ui/card";
 
 function CardTemplateTwoColumn({ generateAi = {}, ...props }) {
-  const [title, setTitle] = useState(generateAi.title || "Untitled Card");
+  const [title, setTitle] = useState(
+      generateAi.titleContainer?.title || "Untitled Card"
+    );
   const [columns, setColumns] = useState(generateAi.columns || [{ content: "" }, { content: "" }]);
   const { draggedElement } = useContext(DragContext);
   const [replacedTemplate, setReplacedTemplate] = useState(null);

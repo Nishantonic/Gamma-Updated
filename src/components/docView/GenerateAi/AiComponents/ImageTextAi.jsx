@@ -8,8 +8,8 @@ import { DragContext } from "@/components/SidebarLeft/DragContext";
 import { Card } from "@/components/ui/card";
 
 function ImageTextAi({ generateAi = {}, ...props }) {
-  const [preview, setPreview] = useState(generateAi.image || null);
-  const [imageSize, setImageSize] = useState(generateAi.imageSize || { width: 300, height: 210 });
+  const [preview, setPreview] = useState(generateAi.imageContainer.image || null);
+  const [imageSize, setImageSize] = useState({ width: 300, height: 210 });
   const [isResizing, setIsResizing] = useState(false);
   const [initialMousePos, setInitialMousePos] = useState({ x: 0, y: 0 });
   const [initialSize, setInitialSize] = useState({ width: 0, height: 0 });
@@ -17,8 +17,8 @@ function ImageTextAi({ generateAi = {}, ...props }) {
   const [replacedTemplate, setReplacedTemplate] = useState(null);
   const { draggedElement } = useContext(DragContext);
 
-  const [title, setTitle] = useState(generateAi.title || "Untitled Card");
-  const [description, setDescription] = useState(generateAi.description || "Start typing...");
+  const [title, setTitle] = useState(generateAi.titleContainer.title || "Untitled Card");
+  const [description, setDescription] = useState(generateAi.descriptionContainer.description || "Start typing...");
 
   useEffect(() => {
     if (generateAi.image && isValidImageUrl(generateAi.image)) {

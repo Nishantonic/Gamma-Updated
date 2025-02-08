@@ -82,19 +82,126 @@ the last slide must be conclusion slide in default template
 `
 
   const validateAndParseJson = (text) => {
-    try {
-      const jsonStartIndex = text.indexOf("[")
-      const jsonEndIndex = text.lastIndexOf("]")
-      if (jsonStartIndex === -1 || jsonEndIndex === -1) {
-        throw new Error("No valid JSON found in the response.")
-      }
-      const jsonString = text.substring(jsonStartIndex, jsonEndIndex + 1)
-      const slides = JSON.parse(jsonString)
-      return slides.map((slide) => ({ ...slide, id: uuidv4() }))
-    } catch (err) {
-      throw new Error("Invalid JSON structure or missing required fields.")
+  try {
+    const jsonStartIndex = text.indexOf("[");
+    const jsonEndIndex = text.lastIndexOf("]");
+    if (jsonStartIndex === -1 || jsonEndIndex === -1) {
+      throw new Error("No valid JSON found in the response.");
     }
+    const jsonString = text.substring(jsonStartIndex, jsonEndIndex + 1);
+    const slides = JSON.parse(jsonString);
+
+    return slides.map((slide) => {
+      const baseSlide = {
+        id: uuidv4(), // Unique slide ID
+        type: slide.type, // Keep slide type
+      };
+
+      switch (slide.type) {
+        case "accentImage":
+          return {
+            ...baseSlide,
+            titleContainer: {
+              titleId: uuidv4(),
+              title: slide.title || "",
+              styles: slide.styles || {}
+            },
+            descriptionContainer: {
+              descriptionId: uuidv4(),
+              description: slide.description || "",
+              styles: slide.styles || {}
+            },
+            imageContainer: {
+              imageId: uuidv4(),
+              image: slide.image || "",
+              styles: slide.styles || {}
+            },
+          };
+
+        case "twoColumn":
+          return {
+            ...baseSlide,
+            titleContainer: {
+              titleId: uuidv4(),
+              title: slide.title || "",
+              styles: slide.styles || {}
+            },
+            columns: slide.columns.map((column) => ({
+              contentId: uuidv4(),
+              content: column.content || "",
+              styles: slide.styles || {}
+            })),
+          };
+
+        case "imageCardText":
+          return {
+            ...baseSlide,
+            titleContainer: {
+              titleId: uuidv4(),
+              title: slide.title || "",
+              styles: slide.styles || {}
+            },
+            descriptionContainer: {
+              descriptionId: uuidv4(),
+              description: slide.description || "",
+              styles: slide.styles || {}
+            },
+            imageContainer: {
+              imageId: uuidv4(),
+              image: slide.image || "",
+              styles: slide.styles || {}
+            },
+          };
+
+        case "threeImgCard":
+          return {
+            ...baseSlide,
+            titleContainer: {
+              titleId: uuidv4(),
+              title: slide.title || "",
+              styles: slide.styles || {}
+            },
+            cards: slide.cards.map((card) => ({
+              cardId: uuidv4(),
+              image: card.image || "",
+              headingContainer: {
+                headingId: uuidv4(),
+                heading: card.heading || "",
+                styles: slide.styles || {}
+              },
+              descriptionContainer: {
+                descriptionId: uuidv4(),
+                description: card.description || "",
+                styles: slide.styles || {}
+              },
+            })),
+          };
+
+        case "default":
+          return {
+            ...baseSlide,
+            titleContainer: {
+              titleId: uuidv4(),
+              title: slide.title || "",
+              styles: slide.styles || {}
+            },
+            descriptionContainer: {
+              descriptionId: uuidv4(),
+              description: slide.description || "",
+              styles: slide.styles || {}
+            },
+          };
+
+        default:
+          return baseSlide;
+      }
+    });
+  } catch (err) {
+    throw new Error("Invalid JSON structure or missing required fields.");
   }
+};
+
+
 
   const generateResponse = async () => {
     setIsLoading(true)
@@ -112,6 +219,8 @@ the last slide must be conclusion slide in default template
       const aiText = response.data.candidates[0].content.parts[0].text
       // In generateResponse function:
         const jsonSlides = validateAndParseJson(aiText);
+        console.log(jsonSlides);
+        
         if (jsonSlides.length > 0) {
           const enhancedSlides = jsonSlides.map(slide => ({
             ...slide,
@@ -147,13 +256,22 @@ the last slide must be conclusion slide in default template
     }
   }
 
-  const handleEdit = (index, updatedSlide) => {
-    setEditableSlides((prevSlides) => {
-      const newSlides = [...prevSlides]
-      newSlides[index] = updatedSlide
-      return newSlides
-    })
-  }
+  const handleEdit = (id, updatedSlide) => {
+    console.log(updatedSlide);
+    
+  setEditableSlides(prevSlides => 
+    prevSlides.map(slide => 
+      slide.id === id ? {...slide, ...updatedSlide} : slide
+    )
+  );
+  
+  setSlides(prevSlides =>
+    prevSlides.map(slide =>
+      slide.id === id ? {...slide, ...updatedSlide} : slide
+    )
+  );
+};
+
   const handleDelete = (id) => {
     // Update editableSlides
     setEditableSlides((prevSlides) => {
@@ -220,13 +338,7 @@ the last slide must be conclusion slide in default template
     }
   }
 
-  useEffect(() => {
-    if (prompt && inputData) {
-      setSlidesState([])
-      setEditableSlides([])
-      generateResponse()
-    }
-  }, [])
+  
   const [hasGenerated, setHasGenerated] = useState(false);
   useEffect(() => {
   if (prompt && inputData && !hasGenerated) {

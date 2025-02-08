@@ -7,26 +7,36 @@ import TitleAi from "./TitleAi";
 import { Card } from "@/components/ui/card";
 
 function ThreeImgTextAi({ generateAi = {}, ...props }) {
-  const [title, setTitle] = useState(generateAi.title || "Untitled Card");
+  const [title, setTitle] = useState(
+    generateAi.titleContainer?.title || "Untitled Card"
+  );
+
   const [cards, setCards] = useState(
-    generateAi.cards || [
+    generateAi.cards?.map((card) => ({
+      image: card.image || null,
+      heading: card.headingContainer?.heading || "Heading",
+      description: card.descriptionContainer?.description || "Description",
+    })) || [
       { image: null, heading: "Heading 1", description: "Description 1" },
       { image: null, heading: "Heading 2", description: "Description 2" },
       { image: null, heading: "Heading 3", description: "Description 3" },
     ]
   );
+
   const [replacedTemplate, setReplacedTemplate] = useState(null);
   const [droppedItems, setDroppedItems] = useState([]); // To store dropped items
   const { draggedElement } = useContext(DragContext);
 
   useEffect(() => {
-    const updatedCards = cards.map((card, index) => {
-      if (generateAi.cards && generateAi.cards[index] && generateAi.cards[index].image) {
-        return { ...card, image: generateAi.cards[index].image };
-      }
-      return card;
-    });
-    setCards(updatedCards);
+    if (generateAi.cards) {
+      setCards(
+        generateAi.cards.map((card, index) => ({
+          image: card.image || cards[index]?.image || null,
+          heading: card.headingContainer?.heading || cards[index]?.heading || "Heading",
+          description: card.descriptionContainer?.description || cards[index]?.description || "Description",
+        }))
+      );
+    }
   }, [generateAi.cards]);
 
   const handleImagePreview = (e, index) => {
@@ -66,6 +76,7 @@ function ThreeImgTextAi({ generateAi = {}, ...props }) {
   if (replacedTemplate) {
     return <div>{replacedTemplate}</div>;
   }
+
 
   return (
     <Card
@@ -130,9 +141,6 @@ function ThreeImgTextAi({ generateAi = {}, ...props }) {
                     <span>Click to Upload</span>
                   </div>
                 )}
-                <div className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                  <span className="text-white text-sm font-medium">Click to Upload Image</span>
-                </div>
                 <input
                   type="file"
                   accept="image/*"
@@ -162,8 +170,6 @@ function ThreeImgTextAi({ generateAi = {}, ...props }) {
           ))}
         </div>
       </div>
-
-      {/* Dropped Items Section */}
       {droppedItems.length > 0 && (
         <div className="mt-6 ml-3 mr-3 space-y-4">
           {droppedItems.map((item) => (
@@ -178,5 +184,6 @@ function ThreeImgTextAi({ generateAi = {}, ...props }) {
     </Card>
   );
 }
+
 
 export default ThreeImgTextAi;

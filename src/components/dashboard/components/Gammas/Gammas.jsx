@@ -146,7 +146,7 @@ const Gammas = ({ credits, setCredits }) => {
             slideGroup.slides && slideGroup.slides.length > 0 ? (
               <Card
                 key={slideGroup.key}
-                slide={slideGroup.slides[0]?.Slide?.props?.generateAi}
+                slide={slideGroup?.slides[0]}
                 onClick={() => handleCardClick(slideGroup.slides,ArraySlides.key)}
                 onDelete={() => handleDeleteSlide(slideGroup.key)}
               />

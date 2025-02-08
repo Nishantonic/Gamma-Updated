@@ -11,13 +11,15 @@ import { Image, Move } from "lucide-react"
 import { v4 as uuidv4 } from "uuid";
 
 function AccentImageAi({ generateAi = {}, ...props }) {
-  const [preview, setPreview] = useState(generateAi.image)
+  const [preview, setPreview] = useState(generateAi.imageContainer?.image)
   const [imageSize, setImageSize] = useState({ width: 300, height: 210 })
   const [isResizing, setIsResizing] = useState(false)
   const [initialMousePos, setInitialMousePos] = useState({ x: 0, y: 0 })
   const [initialSize, setInitialSize] = useState({ width: 0, height: 0 })
-  const [title, setTitle] = useState(generateAi.title || "Untitled Card")
-  const [description, setDescription] = useState(generateAi.description || "Start typing...")
+  const [title, setTitle] = useState(generateAi.titleContainer?.title || "Untitled Card")
+  const [titleStyles, setTitleStyles] = useState(generateAi.titleContainer?.styles || {})
+  const [description, setDescription] = useState(generateAi.descriptionContainer?.description || "Start typing...")
+  const [descriptionStyles, setDescriptionStyles] = useState(generateAi.descriptionContainer?.styles || {})
   const [droppedItems, setDroppedItems] = useState([]) // To store dropped items
   const [isDeleted, setIsDeleted] = useState(false) // Added state for deletion
   const { draggedElement } = useContext(DragContext) // Access the dragged element context
@@ -35,16 +37,19 @@ function AccentImageAi({ generateAi = {}, ...props }) {
   }
 
   const handleImagePreview = (e) => {
-    const file = e.target.files[0]
-    if (file) {
-      const reader = new FileReader()
-      reader.onload = () => {
-        setPreview(reader.result)
-        updateParent({ image: reader.result })
-      }
-      reader.readAsDataURL(file)
-    }
+  const file = e.target.files[0];
+  if (file) {
+    const reader = new FileReader();
+    reader.onload = () => {
+      setPreview(reader.result);
+      updateParent({
+        imageContainer: { image: reader.result }
+      });
+    };
+    reader.readAsDataURL(file);
   }
+};
+
 
   const handleMouseDown = (e) => {
     setIsResizing(true)
@@ -74,15 +79,86 @@ function AccentImageAi({ generateAi = {}, ...props }) {
   }
 
   const updateParent = (updates) => {
-    generateAi.onEdit({
-      ...generateAi,
-      ...updates,
-      title,
-      description,
+  const updatedData = {
+    ...generateAi,
+    titleContainer: {
+      ...generateAi.titleContainer,
+      title: title,
+      styles: titleStyles,
+    },
+    descriptionContainer: {
+      ...generateAi.descriptionContainer,
+      description: description,
+      styles: descriptionStyles,
+    },
+    imageContainer: {
+      ...generateAi.imageContainer,
       image: preview,
-      imageSize,
-    })
+      styles: { width: imageSize.width, height: imageSize.height },
+    },
+    ...updates,
+  };
+
+  if (generateAi.onEdit) {
+    generateAi.onEdit(generateAi.id, updatedData);
   }
+};
+useEffect(() => {
+  updateParent({
+    titleContainer: { styles: titleStyles },
+    descriptionContainer: { styles: descriptionStyles }
+  });
+}, [titleStyles, descriptionStyles]);
+
+const updateGenerateAiJson = (generateAi, slideId, inputId, newData) => {
+  if (!slideId || !inputId) {
+    console.error("slideId and inputId are required to update JSON.");
+    return;
+  }
+
+  // Clone the existing JSON to avoid direct mutations
+  const updatedJson = { ...generateAi };
+
+  // Find the correct slide
+  if (updatedJson.id === slideId) {
+    // Find the correct input and update
+    if (updatedJson.titleContainer?.titleId === inputId) {
+      updatedJson.titleContainer = { ...updatedJson.titleContainer, ...newData };
+    } else if (updatedJson.descriptionContainer?.descriptionId === inputId) {
+      updatedJson.descriptionContainer = { ...updatedJson.descriptionContainer, ...newData };
+    } else {
+      console.warn("No matching inputId found.");
+    }
+  }
+  console.log(updatedJson);
+  // Call onEdit to update parent state
+  if (generateAi.onEdit) {
+    generateAi.onEdit(updatedJson);
+    
+    
+  }
+};
+
+// Modify title and description updates to include slideId & inputId
+const handleTitleUpdate = (newTitle, styles) => {
+  setTitle(newTitle);
+  setTitleStyles(styles);
+  updateGenerateAiJson(generateAi, generateAi.id, generateAi.titleContainer?.titleId, {
+    title: newTitle,
+    styles,
+  });
+};
+
+const handleDescriptionUpdate = (newDescription, styles) => {
+  setDescription(newDescription);
+  setDescriptionStyles(styles);
+  updateGenerateAiJson(generateAi, generateAi.id, generateAi.descriptionContainer?.descriptionId, {
+    description: newDescription,
+    styles,
+  });
+};
+
+
 
   const handleDrop = (event) => {
     event.preventDefault()
@@ -137,20 +213,19 @@ function AccentImageAi({ generateAi = {}, ...props }) {
             <div className="relative overflow-visible z-50 w-full   ">
             <TitleAi
               initialData={title}
-              onUpdate={(newTitle) => {
-                setTitle(newTitle)
-                updateParent({ title: newTitle })
-              }}
-              slideId={generateAi.id}
+                initialStyles={titleStyles}
+                onUpdate={handleTitleUpdate}
+                slideId={generateAi.id}
+                inputId={generateAi.titleContainer?.titleId}
               className="title text-3xl font-bold text-white mb-4 relative overflow-visible"
             />
             </div>
             <ParagraphAi
               initialData={description}
-              onUpdate={(newDescription) => {
-                setDescription(newDescription)
-                updateParent({ description: newDescription })
-              }}
+              initialStyles={descriptionStyles}
+              onUpdate={handleDescriptionUpdate}
+              slideId={generateAi.id}
+              inputId={generateAi.descriptionContainer?.descriptionId}
               className="description text-lg text-gray-300"
             />
           </div>
@@ -221,4 +296,3 @@ function AccentImageAi({ generateAi = {}, ...props }) {
 }
 
 export default AccentImageAi
-

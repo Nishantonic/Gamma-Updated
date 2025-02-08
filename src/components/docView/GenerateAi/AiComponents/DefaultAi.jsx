@@ -8,8 +8,8 @@ import { Card, CardContent } from "@/components/ui/card.jsx";
 import { CardMenu } from "../../slidesView/Menu/CardMenu.jsx";
 
 function DefaultAi({ generateAi = {}, index }) {
-  const [title, setTitle] = useState(generateAi.title || "Untitled Card");
-  const [description, setDescription] = useState(generateAi.description || "Start typing...");
+  const [title, setTitle] = useState(generateAi.titleContainer.title || "Untitled Card");
+  const [description, setDescription] = useState(generateAi.descriptionContainer.description || "Start typing...");
   const [droppedItems, setDroppedItems] = useState([]); // Store dropped items
   const [replacedTemplate, setReplacedTemplate] = useState(null);
 

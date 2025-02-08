@@ -3,35 +3,30 @@ import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
 import "react-quill/dist/quill.bubble.css";
 
-function EditorToolsQuill({ slideId, inputId, onChange, initialData }) {
-  const storageKey = `editor_${slideId}_${inputId}`;
+function TitleAi({ slideId, inputId, onUpdate, initialData,initialStyles}) {
   const quillRef = useRef(null);
 
-  const formattedInitialData = initialData ? `<h1>${initialData}</h1>` : "";
+  const formattedInitialData = initialData ? <h1>${initialData}</h1> : "";
   const [editorHtml, setEditorHtml] = useState(formattedInitialData);
   const [editorStyles, setEditorStyles] = useState({});
 
-  useEffect(() => {
-    const storedData = JSON.parse(localStorage.getItem(storageKey));
-    if (storedData) {
-      setEditorHtml(storedData.content);
-    }
-  }, [storageKey]);
-
+  
   const handleChange = (value) => {
-    setEditorHtml(value);
+  const quill = quillRef.current.getEditor();
+  const styles = quill.getFormat();
+  
+  setEditorHtml(value);
+  setEditorStyles(styles);
+  
+  // Pass all necessary identifiers and data
+  onUpdate(
+    value.replace(/<[^>]+>/g, ''), // Raw text without HTML tags
+    styles,
+    slideId,
+    inputId
+  );
+};
 
-    if (quillRef.current) {
-      const quill = quillRef.current.getEditor();
-      const styles = quill.getFormat();
-      localStorage.setItem(
-        storageKey,
-        JSON.stringify({ slideId, inputId, content: value, styles })
-      );
-      setEditorStyles(styles);
-      if (onChange) onChange(value, styles);
-    }
-  };
 
   const modules = {
     toolbar: [
@@ -84,4 +79,4 @@ function EditorToolsQuill({ slideId, inputId, onChange, initialData }) {
   );
 }
 
-export default EditorToolsQuill;
+export default TitleAi;
