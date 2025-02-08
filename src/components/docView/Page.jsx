@@ -600,7 +600,7 @@ export default function Page() {
 
   return (
     <div className="h-screen flex flex-col bg-background">
-      <Header setGenerateAi={() => setShowPopup(true)} startPresentation={startPresentation} startImpress={startImpress} />
+      <Header setGenerateAi={() => setShowPopup(true)} startPresentation={startPresentation} />
 
       <Toaster position="top-right" richColors />
       {isPresentationMode && (

@@ -117,11 +117,11 @@ const ImpressPresentation = ({ slides, onClose }) => {
               key={slide.id}
               id={`slide-${slide.id}`}
               className="step"
-              data-x={index * 1600} // Unique horizontal position for each slide
-              data-y={0} // Vertical position (centered)
-              data-z={-index * 1000} // Depth for 3D effect
-              data-rotate-y={index * 90} // Rotate 90 degrees per slide (cube effect)
-              data-scale={1} // No scaling
+              data-x={index * 1600} 
+              data-y={0} 
+              data-z={-index * 1000} 
+              data-rotate-y={index * 90} 
+              data-scale={1} 
             >
               <div className="slide-content absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 
                             w-[90vw] h-[90vh] bg-transparent flex items-center justify-center overflow-hidden">
