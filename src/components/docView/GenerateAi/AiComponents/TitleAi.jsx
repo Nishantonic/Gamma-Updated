@@ -6,7 +6,7 @@ import "react-quill/dist/quill.bubble.css";
 function TitleAi({ slideId, inputId, onUpdate, initialData,initialStyles}) {
   const quillRef = useRef(null);
 
-  const formattedInitialData = initialData ? <h1>${initialData}</h1> : "";
+  const formattedInitialData = initialData ? `<h1>${initialData}</h1>` : "";
   const [editorHtml, setEditorHtml] = useState(formattedInitialData);
   const [editorStyles, setEditorStyles] = useState({});
 
@@ -20,7 +20,7 @@ function TitleAi({ slideId, inputId, onUpdate, initialData,initialStyles}) {
   
   // Pass all necessary identifiers and data
   onUpdate(
-    value.replace(/<[^>]+>/g, ''), // Raw text without HTML tags
+    value, // Raw text without HTML tags
     styles,
     slideId,
     inputId
