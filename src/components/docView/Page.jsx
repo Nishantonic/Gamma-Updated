@@ -126,10 +126,11 @@ export default function Page() {
     navigate("/home");
   }
 }
-
+  
   const renderSlideComponent = (slideData) => {
+    if (!slideData) return null
+
     if (slideData.type === "custom") {
-      // Manual slides
       return (
         <CardTemplates
           key={slideData.id}
@@ -142,27 +143,26 @@ export default function Page() {
       )
     }
 
-    // AI-generated slides
     const commonProps = {
-      generateAi: slideData,
-      key: slideData.id,
-      onEdit: (updated) => handleSlideUpdate(slideData.id, updated),
-      onDelete: () => deleteSlide(slideData.id), // Update: Pass deleteSlide function
+      generateAi: {
+        ...slideData,
+        onEdit: (updated) => handleSlideUpdate(slideData.id, updated),
+        onDelete: () => deleteSlide(slideData.id),
+      }
     }
 
-    switch (slideData.type) {
-      case "accentImage":
-        return <AccentImageAi {...commonProps} />
-      case "twoColumn":
-        return <TwoColumnAi {...commonProps} />
-      case "imageCardText":
-        return <ImageTextAi {...commonProps} />
-      case "threeImgCard":
-        return <ThreeColumnAi {...commonProps} />
-      default:
-        return <DefaultAi {...commonProps} />
+    const components = {
+      accentImage: AccentImageAi,
+      twoColumn: TwoColumnAi,
+      imageCardText: ImageTextAi,
+      threeImgCard: ThreeColumnAi,
+      default: DefaultAi,
     }
+
+    const Component = components[slideData.type] || components.default
+    return <Component {...commonProps} key={slideData.id} />
   }
+  
   useEffect(() => {
     if (location.state?.slidesArray) {
       // Load saved presentation
@@ -561,21 +561,9 @@ export default function Page() {
     })
   }
 
-  const deleteSlide = (id) => {
-    // Update the slidesPreview state
-    setSlidesPreview(prev => {
-      const updatedPreview = prev.filter(slide => slide.id !== id)
-      return updatedPreview.map((slide, index) => ({
-        ...slide,
-        number: index + 1
-      }))
-    })
-
-    // Update the current slides state
-    setSlides(prev => prev.filter(slide => slide.id !== id))
-
-    // No need to update ArraySlides here - it will be updated when saving
-    debouncedUpdateSlideImages()
+  const deleteSlide = (slideId) => {
+    setSlides(prevSlides => prevSlides.filter(slide => slide.id !== slideId))
+    setSlidesPreview(prevSlides => prevSlides.filter(slide => slide.id !== slideId))
   }
 
   useEffect(() => {
@@ -593,8 +581,28 @@ export default function Page() {
   })));
 }, []);
 
-  const startImpress = () => {
-    setIsImpressPresent(true);
+  // const startImpress = () => {
+  //   setIsImpressPresent(true);
+  // }
+
+  const handleSlideUpdate = (slideId, updatedData) => {
+    setSlides(prevSlides => 
+      prevSlides.map(slide => 
+        slide.id === slideId ? { ...slide, ...updatedData } : slide
+      )
+    )
+    
+    setSlidesPreview(prevSlides =>
+      prevSlides.map(slide =>
+        slide.id === slideId 
+          ? { 
+              ...slide, 
+              ...updatedData,
+              content: renderSlideComponent({ ...slide, ...updatedData })
+            }
+          : slide
+      )
+    )
   }
 
 
@@ -631,43 +639,52 @@ export default function Page() {
           )}
         </DndContext>
         <main className="flex-1 overflow-y-auto">
-          {generateAi ? (
-            <GenerateAi
-              key={`ai-${aiInputData}-${Date.now()}`}
-              inputData={aiInputData}
-              setShowPopup={setShowPopup}
-              setIsLoadingCopy={setIsLoadingCopy}
-              setSlidesPreview={setSlidesPreview}
-              setSlides={setSlides}
-              setGenerateAi={setGenerateAi}
-              onError={() => {
-                setIsGenerating(false)
-                setIsLoadingCopy(false)
-                toast.error("Generation failed. Please try again.")
-              }}
-              onComplete={() => setIsGenerating(false)}
-            />
-          ) : (
-            <div>
-              {slides.map((slideData, index) => (
-                <React.Fragment key={slideData.id}>
-                  <div id={`at-${slideData.id}`}>{renderSlideComponent(slideData)}</div>
-                  <div className="flex justify-center align-middle justify-self-center ">
+        {generateAi ? (
+          <GenerateAi
+            inputData={aiInputData}
+            setShowPopup={setShowPopup}
+            setIsLoadingCopy={setIsLoadingCopy}
+            setSlidesPreview={setSlidesPreview}
+            setSlides={setSlides}
+            setGenerateAi={setGenerateAi}
+            onError={() => {
+              setIsGenerating(false)
+              setIsLoadingCopy(false)
+              toast.error("Generation failed. Please try again.")
+            }}
+            onComplete={() => {
+              setIsGenerating(false)
+              setIsAiGenerated(true)
+            }}
+          />
+        ) : (
+          <div className="space-y-4">
+            {slides.map((slideData, index) => (
+              <div key={slideData.id} className="relative">
+                <div id={`slide-${slideData.id}`} className="mb-4">
+                  {renderSlideComponent(slideData)}
+                </div>
+                <div className="flex justify-center align-middle justify-self-center ">
                     <AddButtonAi index={index} addNewSlide={addNewSlide} />
                   </div>
-                </React.Fragment>
-              ))}
-              {/* {isAiGenerated && ( */}
+              </div>
+            ))}
+            
+            {slides.length > 0 && (
               <Card className="bg-white/10 backdrop-blur-lg border-0">
-                <CardContent className="p-6 flex justify-center">
-                  <Button onClick={downloadPPT} className="bg-green-600 hover:bg-green-700 text-white" size="lg">
+                <CardContent className="p-6 flex justify-center gap-4">
+                  <Button 
+                    onClick={downloadPPT} 
+                    className="bg-green-600 hover:bg-green-700 text-white" 
+                    size="lg"
+                  >
                     <Download className="mr-2 h-4 w-4" />
                     Download Presentation
                   </Button>
 
                   <Button
                     onClick={handleSaveSlide}
-                    className="bg-green-600 hover:bg-green-700 ml-2 text-white"
+                    className="bg-green-600 hover:bg-green-700 text-white"
                     size="lg"
                   >
                     <Save className="mr-2 h-4 w-4" />
@@ -675,10 +692,10 @@ export default function Page() {
                   </Button>
                 </CardContent>
               </Card>
-              {/* )} */}
-            </div>
-          )}
-        </main>
+            )}
+          </div>
+        )}
+      </main>
       </div>
 
       {/* AI Input Dialog */}

@@ -19,11 +19,13 @@ const Gammas = ({ credits, setCredits }) => {
 
   // Handle clicking a card to navigate with slide data
   const handleCardClick = (slides, key) => {
+    console.log(slides);
+    
     if (!slides || slides.length === 0) return
     navigate("/page", {
       state: {
         slidesArray: slides.map((slide) => ({
-          type: slide?.Slide?.props?.generateAi?.type,
+          type: slide?.type,
           ...slide?.Slide?.props?.generateAi,
           id: slide?.id,
           Slide: slide?.Slide,

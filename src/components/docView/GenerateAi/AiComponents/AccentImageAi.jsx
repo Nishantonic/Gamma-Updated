@@ -24,8 +24,8 @@ function AccentImageAi({ generateAi = {}, ...props }) {
   const [isDeleted, setIsDeleted] = useState(false) // Added state for deletion
   const { draggedElement } = useContext(DragContext) // Access the dragged element context
   const imageRef = useRef(null)
-  console.log(preview)
-
+ 
+  
   useEffect(() => {
     if (generateAi.image && isValidImageUrl(generateAi.image)) {
       setPreview(generateAi.image)
@@ -99,9 +99,9 @@ function AccentImageAi({ generateAi = {}, ...props }) {
     ...updates,
   };
 
-  if (generateAi.onEdit) {
-    generateAi.onEdit(generateAi.id, updatedData);
-  }
+  // if (generateAi.onEdit) {
+  //   generateAi.onEdit(generateAi.id, updatedData);
+  // }
 };
 useEffect(() => {
   updateParent({
@@ -110,51 +110,86 @@ useEffect(() => {
   });
 }, [titleStyles, descriptionStyles]);
 
+const removeHtmlTags = (str) => str.replace(/<[^>]*>/g, ''); // Regex to remove HTML tags
+
 const updateGenerateAiJson = (generateAi, slideId, inputId, newData) => {
   if (!slideId || !inputId) {
     console.error("slideId and inputId are required to update JSON.");
     return;
   }
-
-  // Clone the existing JSON to avoid direct mutations
+  // console.log("GenerateAi's data",generateAi);
+  
+  // Clone existing JSON to avoid direct mutations
   const updatedJson = { ...generateAi };
+  // console.log("Starting updated data : ",updatedJson);
+  
+  // Ensure IDs are strings
+  const currentSlideId = String(slideId);
+  // console.log("currentSlideId",currentSlideId);
+  
+  
+  const currentInputId = String(inputId);
+  // console.log("currentInputId",currentInputId);
 
-  // Find the correct slide
-  if (updatedJson.id === slideId) {
-    // Find the correct input and update
-    if (updatedJson.titleContainer?.titleId === inputId) {
-      updatedJson.titleContainer = { ...updatedJson.titleContainer, ...newData };
-    } else if (updatedJson.descriptionContainer?.descriptionId === inputId) {
-      updatedJson.descriptionContainer = { ...updatedJson.descriptionContainer, ...newData };
+
+  // Sanitize newData to remove HTML tags
+  const sanitizedData = Object.fromEntries(
+    Object.entries(newData).map(([key, value]) => [
+      key,
+      typeof value === "string" ? removeHtmlTags(value) : value
+    ])
+  );
+
+  // Find and update the matching field
+  if (String(updatedJson.id) === currentSlideId) {
+    if (String(updatedJson.titleContainer?.titleId) === currentInputId) {
+      updatedJson.titleContainer = { 
+        ...updatedJson.titleContainer, 
+        ...sanitizedData 
+      };
+    } else if (String(updatedJson.descriptionContainer?.descriptionId) === currentInputId) {
+      updatedJson.descriptionContainer = { 
+        ...updatedJson.descriptionContainer, 
+        ...sanitizedData 
+      };
     } else {
-      console.warn("No matching inputId found.");
+      console.warn(`No matching inputId found: ${currentInputId}`);
     }
   }
+
   console.log(updatedJson);
+  
   // Call onEdit to update parent state
   if (generateAi.onEdit) {
     generateAi.onEdit(updatedJson);
-    
-    
   }
 };
 
+
 // Modify title and description updates to include slideId & inputId
 const handleTitleUpdate = (newTitle, styles) => {
+  // console.log("indisde title : ",generateAi);
+  
   setTitle(newTitle);
   setTitleStyles(styles);
-  updateGenerateAiJson(generateAi, generateAi.id, generateAi.titleContainer?.titleId, {
+  const titleId = generateAi.titleContainer?.titleId;
+  // console.log('Updating title with ID:', titleId); // Debug log
+  updateGenerateAiJson(generateAi, generateAi.id, titleId, {
     title: newTitle,
-    styles,
+    styles: styles
   });
 };
 
 const handleDescriptionUpdate = (newDescription, styles) => {
+  console.log("indisde description : ",generateAi);
+
   setDescription(newDescription);
   setDescriptionStyles(styles);
-  updateGenerateAiJson(generateAi, generateAi.id, generateAi.descriptionContainer?.descriptionId, {
+  const descriptionId = generateAi.descriptionContainer?.descriptionId;
+  console.log('Updating description with ID:', descriptionId); // Debug log
+  updateGenerateAiJson(generateAi, generateAi.id, descriptionId, {
     description: newDescription,
-    styles,
+    styles: styles
   });
 };
 

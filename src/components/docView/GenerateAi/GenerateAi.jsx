@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useEffect, useCallback } from "react"
 import axios from "axios"
 import { Send, Loader2 } from "lucide-react"
 import { Button } from "../../ui/button"
@@ -9,7 +9,6 @@ import TwoColumnAi from "./AiComponents/TwoColumnAi"
 import ImageTextAi from "./AiComponents/ImageTextAi"
 import ThreeColumnAi from "./AiComponents/ThreeColumnAi"
 import DefaultAi from "./AiComponents/DefaultAi"
-import { useEffect } from "react"
 import { v4 as uuidv4 } from "uuid"
 
 export default function GenerateAi({
@@ -17,15 +16,14 @@ export default function GenerateAi({
   setShowPopup,
   setIsLoadingCopy,
   setSlidesPreview,
-  setSlides,
+  setSlides: setParentSlides,
   setGenerateAi,
 }) {
-  const [slides, setSlidesState] = useState([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState(null)
   const [prompt, setPrompt] = useState(inputData)
-  const [editableSlides, setEditableSlides] = useState([])
-  const [currentSlide, setCurrentSlide] = useState(null) // Added state for current slide
+  const [hasGenerated, setHasGenerated] = useState(false)
+
   const enhancedPrompt = `
 ${prompt}
 
@@ -69,8 +67,8 @@ Generate a JSON response for ${prompt} for a presentation using the following pr
    - Purpose: General content for slide  note that it contains title and description it use as giving conclusion.
    - Fields:
      - **type**: "default".
-     - **title**: Slide 
-     -**description**:slide description.title.
+     - **title**: Slide title.
+     - **description**: slide description.
 
 Return 8-10 slides in JSON format, ensuring each slide adheres to one of these templates. Do not include extra explanations or non-JSON text Note that the description's size 6 to 8 sentences and also don't bold any text just give normal text for title and description and also must note that provide only must available and apropreate to the topic image url reuired
 the images must related to the topic and image is must availabele 
@@ -78,132 +76,199 @@ enerate a profetional text for each slide
 ensure the user's requirement for perticular slide
 use all templates in ppt
 Note : the content foe each slide managed your self because each templates height and width is width: '1024px', height: '768px'.**give midium content for each slide and each templates in specially accentImage template  but make sure the content is profatinal**.**for CardTemplateImgHeadingThree template description must be shorter and all 3 column which present in this templates these description's word size also must same** and  Ensure all images are accessible, relevant, and high-quality for the topic image url must available if not change url and provide only accessable image url.
-the last slide must be conclusion slide in default template
-`
+the last slide must be conclusion slide in default template`
 
-  const validateAndParseJson = (text) => {
-  try {
-    const jsonStartIndex = text.indexOf("[");
-    const jsonEndIndex = text.lastIndexOf("]");
-    if (jsonStartIndex === -1 || jsonEndIndex === -1) {
-      throw new Error("No valid JSON found in the response.");
-    }
-    const jsonString = text.substring(jsonStartIndex, jsonEndIndex + 1);
-    const slides = JSON.parse(jsonString);
+  const validateAndParseJson = useCallback((text) => {
+    try {
+      // First, try to find JSON array in the response
+      const jsonRegex = /\[[\s\S]*\]/
+      const match = text.match(jsonRegex)
+      
+      if (!match) {
+        throw new Error("No JSON array found in the response")
+      }
 
-    return slides.map((slide) => {
-      const baseSlide = {
-        id: uuidv4(), // Unique slide ID
-        type: slide.type, // Keep slide type
-      };
+      const jsonString = match[0]
+      const slides = JSON.parse(jsonString)
 
-      switch (slide.type) {
-        case "accentImage":
-          return {
-            ...baseSlide,
-            titleContainer: {
-              titleId: uuidv4(),
-              title: slide.title || "",
-              styles: slide.styles || {}
-            },
-            descriptionContainer: {
-              descriptionId: uuidv4(),
-              description: slide.description || "",
-              styles: slide.styles || {}
-            },
-            imageContainer: {
-              imageId: uuidv4(),
-              image: slide.image || "",
-              styles: slide.styles || {}
-            },
-          };
+      if (!Array.isArray(slides) || slides.length === 0) {
+        throw new Error("Invalid slides data structure")
+      }
 
-        case "twoColumn":
-          return {
-            ...baseSlide,
-            titleContainer: {
-              titleId: uuidv4(),
-              title: slide.title || "",
-              styles: slide.styles || {}
-            },
-            columns: slide.columns.map((column) => ({
-              contentId: uuidv4(),
-              content: column.content || "",
-              styles: slide.styles || {}
-            })),
-          };
+      return slides.map((slide) => {
+        if (!slide.type) {
+          throw new Error("Slide type is required")
+        }
 
-        case "imageCardText":
-          return {
-            ...baseSlide,
-            titleContainer: {
-              titleId: uuidv4(),
-              title: slide.title || "",
-              styles: slide.styles || {}
-            },
-            descriptionContainer: {
-              descriptionId: uuidv4(),
-              description: slide.description || "",
-              styles: slide.styles || {}
-            },
-            imageContainer: {
-              imageId: uuidv4(),
-              image: slide.image || "",
-              styles: slide.styles || {}
-            },
-          };
+        const baseSlide = {
+          id: uuidv4(),
+          type: slide.type,
+        }
 
-        case "threeImgCard":
-          return {
-            ...baseSlide,
-            titleContainer: {
-              titleId: uuidv4(),
-              title: slide.title || "",
-              styles: slide.styles || {}
-            },
-            cards: slide.cards.map((card) => ({
-              cardId: uuidv4(),
-              image: card.image || "",
-              headingContainer: {
-                headingId: uuidv4(),
-                heading: card.heading || "",
-                styles: slide.styles || {}
+        switch (slide.type) {
+          case "accentImage":
+            return {
+              ...baseSlide,
+              titleContainer: {
+                titleId: uuidv4(),
+                title: slide.title || "",
+                styles: {}
               },
               descriptionContainer: {
                 descriptionId: uuidv4(),
-                description: card.description || "",
-                styles: slide.styles || {}
+                description: slide.description || "",
+                styles: {}
               },
-            })),
-          };
+              imageContainer: {
+                imageId: uuidv4(),
+                image: slide.image || "",
+                styles: {}
+              },
+            }
 
-        case "default":
-          return {
-            ...baseSlide,
-            titleContainer: {
-              titleId: uuidv4(),
-              title: slide.title || "",
-              styles: slide.styles || {}
-            },
-            descriptionContainer: {
-              descriptionId: uuidv4(),
-              description: slide.description || "",
-              styles: slide.styles || {}
-            },
-          };
+          case "twoColumn":
+            if (!Array.isArray(slide.columns) || slide.columns.length !== 2) {
+              throw new Error("Two columns are required for twoColumn type")
+            }
+            return {
+              ...baseSlide,
+              titleContainer: {
+                titleId: uuidv4(),
+                title: slide.title || "",
+                styles: {}
+              },
+              columns: slide.columns.map((column) => ({
+                contentId: uuidv4(),
+                content: column.content || "",
+                styles: {}
+              })),
+            }
 
-        default:
-          return baseSlide;
-      }
-    });
-  } catch (err) {
-    throw new Error("Invalid JSON structure or missing required fields.");
-  }
-};
+          case "imageCardText":
+            return {
+              ...baseSlide,
+              titleContainer: {
+                titleId: uuidv4(),
+                title: slide.title || "",
+                styles: {}
+              },
+              descriptionContainer: {
+                descriptionId: uuidv4(),
+                description: slide.description || "",
+                styles: {}
+              },
+              imageContainer: {
+                imageId: uuidv4(),
+                image: slide.image || "",
+                styles: {}
+              },
+            }
 
+          case "threeImgCard":
+            if (!Array.isArray(slide.cards) || slide.cards.length !== 3) {
+              throw new Error("Three cards are required for threeImgCard type")
+            }
+            return {
+              ...baseSlide,
+              titleContainer: {
+                titleId: uuidv4(),
+                title: slide.title || "",
+                styles: {}
+              },
+              cards: slide.cards.map((card) => ({
+                cardId: uuidv4(),
+                image: card.image || "",
+                headingContainer: {
+                  headingId: uuidv4(),
+                  heading: card.heading || "",
+                  styles: {}
+                },
+                descriptionContainer: {
+                  descriptionId: uuidv4(),
+                  description: card.description || "",
+                  styles: {}
+                },
+              })),
+            }
 
+          case "default":
+            return {
+              ...baseSlide,
+              titleContainer: {
+                titleId: uuidv4(),
+                title: slide.title || "",
+                styles: {}
+              },
+              descriptionContainer: {
+                descriptionId: uuidv4(),
+                description: slide.description || "",
+                styles: {}
+              },
+            }
 
-  const generateResponse = async () => {
+          default:
+            throw new Error(`Unknown slide type: ${slide.type}`)
+        }
+      })
+    } catch (err) {
+      console.error("JSON Parsing Error:", err)
+      throw new Error(`Invalid JSON structure or missing required fields: ${err.message}`)
+    }
+  }, [])
+
+  const renderSlide = useCallback((slide, index) => {
+    const slideProps = {
+      ...slide,
+      index,
+      onEdit: (updatedSlide) => handleEdit(slide.id, updatedSlide),
+      onDelete: () => handleDelete(slide.id),
+    }
+
+    const components = {
+      accentImage: AccentImageAi,
+      twoColumn: TwoColumnAi,
+      imageCardText: ImageTextAi,
+      threeImgCard: ThreeColumnAi,
+      default: DefaultAi,
+    }
+
+    const Component = components[slide.type] || components.default
+    return <Component generateAi={slideProps} />
+  }, [])
+
+  const handleEdit = useCallback((id, updatedSlide) => {
+    const updateSlides = (prevSlides) =>
+      prevSlides.map((slide) =>
+        slide.id === id ? { ...slide, ...updatedSlide } : slide
+      )
+
+    setParentSlides(updateSlides)
+    setSlidesPreview((prevSlides) =>
+      prevSlides.map((slide) =>
+        slide.id === id
+          ? {
+              ...slide,
+              ...updatedSlide,
+              content: renderSlide({ ...slide, ...updatedSlide }, slide.number - 1),
+            }
+          : slide
+      )
+    )
+  }, [setParentSlides, setSlidesPreview, renderSlide])
+
+  const handleDelete = useCallback((id) => {
+    const filterSlides = (prevSlides) =>
+      prevSlides
+        .filter((slide) => slide.id !== id)
+        .map((slide, index) => ({ ...slide, number: index + 1 }))
+
+    setParentSlides(filterSlides)
+    setSlidesPreview(filterSlides)
+  }, [setParentSlides, setSlidesPreview])
+
+  const generateResponse = useCallback(async () => {
+    if (isLoading || !prompt) return
+
     setIsLoading(true)
     setError(null)
 
@@ -211,36 +276,45 @@ the last slide must be conclusion slide in default template
       const response = await axios.post(
         "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=AIzaSyCzVOUDgpnieFh5lJ1vY2sRImrVuZkM5zY",
         {
-          contents: [{ parts: [{ text: enhancedPrompt }] }],
-        },
-        { headers: { "Content-Type": "application/json" } },
+          contents: [
+            {
+              parts: [
+                {
+                  text: enhancedPrompt,
+                },
+              ],
+            },
+          ],
+        }
       )
 
       const aiText = response.data.candidates[0].content.parts[0].text
-      // In generateResponse function:
-        const jsonSlides = validateAndParseJson(aiText);
-        console.log(jsonSlides);
+      const jsonSlides = validateAndParseJson(aiText)
+      // console.log(jsonSlides);
+      
+      if (jsonSlides.length > 0) {
+        const enhancedSlides = jsonSlides.map((slide, index) => ({
+          ...slide,
+          number: index + 1,
+        }))
+        // console.log(enhancedSlides);
         
-        if (jsonSlides.length > 0) {
-          const enhancedSlides = jsonSlides.map(slide => ({
+        setSlidesPreview(
+          enhancedSlides.map((slide, index) => ({
+            number: index + 1,
+            id: slide.id,
+            type: slide.type,
+            title: slide.titleContainer?.title,
+            content: renderSlide(slide, index),
+          }))
+        )
+
+        setParentSlides(
+          enhancedSlides.map((slide) => ({
             ...slide,
-            type: slide.type || 'default', // Ensure type exists
-            id: uuidv4()
-          }));
-
-      setSlidesPreview(enhancedSlides.map((slide, index) => ({
-        number: index + 1,
-        id: slide.id,
-        type: slide.type,
-        title: slide.title,
-        content: renderSlide(slide, index),
-        onClick: () => setCurrentSlide(index + 1),
-      })));
-
-      setSlides(enhancedSlides.map(slide => ({
-        ...slide,
-        Slide: renderSlide(slide, slide.number - 1),
-      })));
+            Slide: renderSlide(slide, slide.number - 1),
+          }))
+        )
       } else {
         throw new Error("No valid slides generated.")
       }
@@ -249,103 +323,31 @@ the last slide must be conclusion slide in default template
       setError(err.message || "An unexpected error occurred.")
       setGenerateAi(false)
     } finally {
-      setIsLoading(false);
-      setShowPopup(false);
-      setIsLoadingCopy(false);
-      setGenerateAi(false);
+      setIsLoading(false)
+      setShowPopup(false)
+      setIsLoadingCopy(false)
+      setGenerateAi(false)
     }
-  }
+  }, [
+    prompt,
+    enhancedPrompt,
+    isLoading,
+    validateAndParseJson,
+    renderSlide,
+    setSlidesPreview,
+    setParentSlides,
+    setGenerateAi,
+    setShowPopup,
+    setIsLoadingCopy,
+  ])
 
-  const handleEdit = (id, updatedSlide) => {
-    console.log(updatedSlide);
-    
-  setEditableSlides(prevSlides => 
-    prevSlides.map(slide => 
-      slide.id === id ? {...slide, ...updatedSlide} : slide
-    )
-  );
-  
-  setSlides(prevSlides =>
-    prevSlides.map(slide =>
-      slide.id === id ? {...slide, ...updatedSlide} : slide
-    )
-  );
-};
-
-  const handleDelete = (id) => {
-    // Update editableSlides
-    setEditableSlides((prevSlides) => {
-      const updatedSlides = prevSlides.filter((slide) => slide.id !== id)
-      console.log("Updated editableSlides:", updatedSlides)
-      return updatedSlides
-    })
-
-    // Update slides
-    setSlides((prevSlides) => {
-      const updatedSlides = prevSlides.filter((slide) => slide.id !== id)
-      console.log("Updated slides:", updatedSlides)
-      return updatedSlides
-    })
-
-    // Update slidesPreview
-    setSlidesPreview((prevSlides) => {
-      const updatedSlides = prevSlides.filter((slide) => slide.id !== id)
-      console.log("Updated slidesPreview:", updatedSlides)
-      return updatedSlides
-    })
-  }
-
-  const addNewSlide = (insertIndex) => {
-    setEditableSlides((prevSlides) => {
-      const updatedSlides = [...prevSlides]
-
-      const newSlide = {
-        type: "custom",
-        title: "Untitled Card",
-        description: "This is a new slide. Edit as needed.",
-        id: uuidv4(),
-        number: insertIndex + 1,
-      }
-
-      updatedSlides.splice(insertIndex, 0, newSlide)
-
-      return updatedSlides.map((slide, idx) => ({
-        ...slide,
-        number: idx + 1,
-        id: slide.id || `slide-${Date.now()}-${idx}`,
-      }))
-    })
-  }
-
-  const renderSlide = (slide, index) => {
-    const slideProps = {
-      ...slide,
-      index,
-      onEdit: (updatedSlide) => handleEdit(index, updatedSlide),
-      onDelete: () => handleDelete(slide.id),
-    }
-    switch (slide.type) {
-      case "accentImage":
-        return <AccentImageAi generateAi={slideProps} />
-      case "twoColumn":
-        return <TwoColumnAi generateAi={slideProps} />
-      case "imageCardText":
-        return <ImageTextAi generateAi={slideProps} />
-      case "threeImgCard":
-        return <ThreeColumnAi generateAi={slideProps} />
-      default:
-        return <DefaultAi generateAi={slideProps} />
-    }
-  }
-
-  
-  const [hasGenerated, setHasGenerated] = useState(false);
   useEffect(() => {
-  if (prompt && inputData && !hasGenerated) {
-    generateResponse();
-    setHasGenerated(true);
-  }
-}, [prompt, inputData, hasGenerated]);
+    if (prompt && inputData && !hasGenerated) {
+      generateResponse()
+      setHasGenerated(true)
+    }
+  }, [prompt, inputData, hasGenerated, generateResponse])
+
   return (
     <div className="min-h-screen p-6">
       <div className="max-w-4xl mx-auto">
@@ -372,12 +374,12 @@ the last slide must be conclusion slide in default template
             </Button>
           </CardContent>
         </Card>
+
         {error && (
           <Card className="mt-4 bg-red-500/10 border-red-500/20 text-red-200">
             <CardContent className="p-4">Error: {error}</CardContent>
           </Card>
         )}
-        
 
         {isLoading && (
           <div className="flex justify-center mt-10">
@@ -388,4 +390,3 @@ the last slide must be conclusion slide in default template
     </div>
   )
 }
-
