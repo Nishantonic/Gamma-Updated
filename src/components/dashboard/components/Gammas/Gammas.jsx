@@ -134,7 +134,7 @@ const Gammas = ({ credits, setCredits }) => {
       {/* Display Cards */}
       <div className="flex flex-wrap gap-4 mt-4">
         {ArraySlides.length === 0 ? (
-          <p className="text-gray-500">No slides available</p>
+          <p className=" text-red-600">No slides available</p>
         ) : (
           ArraySlides.map((slideGroup) =>
             slideGroup.slides && slideGroup.slides.length > 0 ? (
