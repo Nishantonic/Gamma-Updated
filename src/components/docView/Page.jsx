@@ -167,11 +167,13 @@ export default function Page() {
     if (location.state?.slidesArray) {
       // Load saved presentation
       const savedSlides = location.state.slidesArray
+      console.log(savedSlides);
+      
       setSlidesPreview(
         savedSlides.map((slide, index) => ({
           number: index + 1,
           id: slide.id,
-          title: slide.title || "Untitled",
+          title: slide?.titleContainer.title || "Untitled",
           type: slide.type || "custom",
           content: renderSlideComponent(slide),
           onClick: () => setCurrentSlide(index + 1),
@@ -743,4 +745,3 @@ export default function Page() {
     </div>
   )
 }
-

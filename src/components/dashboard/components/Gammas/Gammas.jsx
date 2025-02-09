@@ -26,9 +26,9 @@ const Gammas = ({ credits, setCredits }) => {
       state: {
         slidesArray: slides.map((slide) => ({
           type: slide?.type,
-          ...slide?.Slide?.props?.generateAi,
+          ...slide,
           id: slide?.id,
-          Slide: slide?.Slide,
+          Slide: slide,
         })),
         key:key,
       },
@@ -161,4 +161,3 @@ const Gammas = ({ credits, setCredits }) => {
 }
 
 export default Gammas
-

@@ -32,4 +32,3 @@ const Card = ({ slide, onClick, onDelete }) => {
 }
 
 export default Card
-
