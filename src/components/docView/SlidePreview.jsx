@@ -3,7 +3,7 @@ import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { useEffect, useState, useRef } from "react";
 
-export function SlidePreview({ number, title, isActive, onClick, id, previewImage }) {
+export function SlidePreview({ number,onDoubleClick, title, isActive, onClick, id, previewImage }) {
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id });
 
   const [scale, setScale] = useState(1);
@@ -36,6 +36,7 @@ export function SlidePreview({ number, title, isActive, onClick, id, previewImag
   return (
     <div
       onClick={onClick}
+      onDoubleClick={onDoubleClick}
       className={cn(
         "p-3 cursor-pointer hover:bg-accent/50 rounded-lg transition-all border border-gray-200 shadow-md bg-white",
         isActive && "bg-accent"

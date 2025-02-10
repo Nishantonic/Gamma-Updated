@@ -8,9 +8,9 @@ import { Card, CardContent } from "@/components/ui/card.jsx";
 import { CardMenu } from "../../slidesView/Menu/CardMenu.jsx";
 
 function DefaultAi({ generateAi = {}, index }) {
-  const [title, setTitle] = useState(generateAi.titleContainer.title || "Untitled Card");
+  const [title, setTitle] = useState(generateAi.titleContainer?.title || "Untitled Card");
   const [titleStyles, setTitleStyles] = useState(generateAi.titleContainer?.styles || {})
-  const [description, setDescription] = useState(generateAi.descriptionContainer.description || "Start typing...");
+  const [description, setDescription] = useState(generateAi.descriptionContainer?.description || "Start typing...");
   const [descriptionStyles, setDescriptionStyles] = useState(generateAi.descriptionContainer?.styles || {})
   const [droppedItems, setDroppedItems] = useState([]); // Store dropped items
   const [replacedTemplate, setReplacedTemplate] = useState(null);

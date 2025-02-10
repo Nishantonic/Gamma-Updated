@@ -188,7 +188,7 @@ export default function Page() {
       savedSlides.map((slide, index) => ({
         number: index + 1,
         id: slide.id,
-        title: slide?.titleContainer?.title || "Untitled",
+        title: slide?.titleContainer?.title.replace(/<[^>]*>/g, '') || "Untitled",
         type: slide.type || "custom",
         content: renderSlideComponent(slide),
         onClick: () => setCurrentSlide(index + 1),
@@ -233,28 +233,15 @@ export default function Page() {
   }, [location.state])
 
   const handleDragEnd = (e) => {
-    const { active, over } = e
-    if (!over || active.id === over.id) return
+  const { active, over } = e;
+  if (!over || active.id === over.id) return;
 
-    setSlidesPreview((prev) => {
-      const originalPos = prev.findIndex((item) => item.id === active.id)
-      const currentPos = prev.findIndex((item) => item.id === over.id)
-      const updatedPreview = arrayMove(prev, originalPos, currentPos)
-
-      // Sync main slides
-      setSlides(
-        updatedPreview.map((item) => ({
-          Slide: item.content,
-          id: item.id,
-        })),
-      )
-
-      return updatedPreview.map((item, index) => ({
-        ...item,
-        number: index + 1,
-      }))
-    })
-  }
+  setSlides(prev => {
+    const originalPos = prev.findIndex(item => item.id === active.id);
+    const newPos = prev.findIndex(item => item.id === over.id);
+    return arrayMove(prev, originalPos, newPos);
+  });
+};
 
   const handleAiPopupSubmit = () => {
     const currentCredits = Number.parseInt(localStorage.getItem("credits") || "50")
