@@ -87,35 +87,42 @@ export default function Page() {
   const handleSaveSlide = () => {
   if (slides.length > 0) {
     const newEntry = {
-      key: location.state?.key || Date.now(), // Preserve key if restoring from trash
+      key: location.state?.key || Date.now(),
       slides: slides.map((slide) => ({
         id: slide.id,
         type: slide.type || "custom",
         title: slide.title || "Untitled",
         description: slide.description || "",
         image: slide.image || null,
+        // Preserve style information
+        titleContainer: {
+          ...slide.titleContainer,
+          styles: slide.titleContainer?.styles || {}
+        },
+        descriptionContainer: {
+          ...slide.descriptionContainer,
+          styles: slide.descriptionContainer?.styles || {}
+        },
         ...slide,
       })),
-    }
+    };
 
     setArraySlides((prevArraySlides) => {
-      // Check if slide already exists
       const existingIndex = prevArraySlides.findIndex(group => group.key === newEntry.key);
       let updatedArraySlides;
 
       if (existingIndex !== -1) {
-        // Update existing slide
         updatedArraySlides = prevArraySlides.map(group =>
           group.key === newEntry.key ? newEntry : group
         );
       } else {
-        // Add new slide
         updatedArraySlides = [...prevArraySlides, newEntry];
       }
 
+      // Save to localStorage with style information
       localStorage.setItem("slides", JSON.stringify(updatedArraySlides));
 
-      // Remove from trash
+      // Update trash if needed
       const trash = JSON.parse(localStorage.getItem("trash") || "[]");
       const updatedTrash = trash.filter(slide => slide.key !== newEntry.key);
       localStorage.setItem("trash", JSON.stringify(updatedTrash));
@@ -125,7 +132,7 @@ export default function Page() {
 
     navigate("/home");
   }
-}
+};
   
   const renderSlideComponent = (slideData) => {
     if (!slideData) return null
@@ -165,22 +172,32 @@ export default function Page() {
   
   useEffect(() => {
     if (location.state?.slidesArray) {
-      // Load saved presentation
-      const savedSlides = location.state.slidesArray
-      // console.log(savedSlides);
-      
-      setSlidesPreview(
-        savedSlides.map((slide, index) => ({
-          number: index + 1,
-          id: slide.id,
-          title: slide?.titleContainer.title || "Untitled",
-          type: slide.type || "custom",
-          content: renderSlideComponent(slide),
-          onClick: () => setCurrentSlide(index + 1),
-        }))
-      )
+    const savedSlides = location.state.slidesArray.map(slide => ({
+      ...slide,
+      titleContainer: {
+        ...slide.titleContainer,
+        styles: slide.titleContainer?.styles || {}
+      },
+      descriptionContainer: {
+        ...slide.descriptionContainer,
+        styles: slide.descriptionContainer?.styles || {}
+      }
+    }));
 
-      setSlides(savedSlides)
+    setSlidesPreview(
+      savedSlides.map((slide, index) => ({
+        number: index + 1,
+        id: slide.id,
+        title: slide?.titleContainer?.title || "Untitled",
+        type: slide.type || "custom",
+        content: renderSlideComponent(slide),
+        onClick: () => setCurrentSlide(index + 1),
+        titleContainer: slide.titleContainer,
+        descriptionContainer: slide.descriptionContainer
+      }))
+    );
+
+    setSlides(savedSlides);
     } else {
       // Default initialization for new presentation
       const initialSlides = [
@@ -588,24 +605,68 @@ export default function Page() {
   // }
 
   const handleSlideUpdate = (slideId, updatedData) => {
-    setSlides(prevSlides => 
-      prevSlides.map(slide => 
-        slide.id === slideId ? { ...slide, ...updatedData } : slide
-      )
-    )
-    
-    setSlidesPreview(prevSlides =>
-      prevSlides.map(slide =>
-        slide.id === slideId 
-          ? { 
-              ...slide, 
-              ...updatedData,
-              content: renderSlideComponent({ ...slide, ...updatedData })
+  // Preserve all styling information when updating slides
+  setSlides(prevSlides => 
+    prevSlides.map(slide => {
+      if (slide.id === slideId) {
+        return {
+          ...slide,
+          ...updatedData,
+          titleContainer: {
+            ...slide.titleContainer,
+            ...updatedData.titleContainer,
+            styles: {
+              ...slide.titleContainer?.styles,
+              ...updatedData.titleContainer?.styles
             }
-          : slide
-      )
-    )
-  }
+          },
+          descriptionContainer: {
+            ...slide.descriptionContainer,
+            ...updatedData.descriptionContainer,
+            styles: {
+              ...slide.descriptionContainer?.styles,
+              ...updatedData.descriptionContainer?.styles
+            }
+          }
+        };
+      }
+      return slide;
+    })
+  );
+
+  // Update preview with preserved styles
+  setSlidesPreview(prevSlides =>
+    prevSlides.map(slide => {
+      if (slide.id === slideId) {
+        const updatedSlide = {
+          ...slide,
+          ...updatedData,
+          titleContainer: {
+            ...slide.titleContainer,
+            ...updatedData.titleContainer,
+            styles: {
+              ...slide.titleContainer?.styles,
+              ...updatedData.titleContainer?.styles
+            }
+          },
+          descriptionContainer: {
+            ...slide.descriptionContainer,
+            ...updatedData.descriptionContainer,
+            styles: {
+              ...slide.descriptionContainer?.styles,
+              ...updatedData.descriptionContainer?.styles
+            }
+          }
+        };
+        return {
+          ...updatedSlide,
+          content: renderSlideComponent(updatedSlide)
+        };
+      }
+      return slide;
+    })
+  );
+};
 
 
   return (

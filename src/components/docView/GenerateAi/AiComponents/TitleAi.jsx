@@ -22,7 +22,7 @@ function TitleAi({ slideId, inputId, onUpdate, initialData,initialStyles}) {
   setEditorStyles(styles);
   
   onUpdate(
-    value.replace(/<[^>]*>/g, ''), // Send plain text
+    value, // Send plain text
     styles,
     slideId,
     inputId

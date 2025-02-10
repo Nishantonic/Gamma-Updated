@@ -110,60 +110,40 @@ useEffect(() => {
   });
 }, [titleStyles, descriptionStyles]);
 
-const removeHtmlTags = (str) => str.replace(/<[^>]*>/g, ''); // Regex to remove HTML tags
 
 const updateGenerateAiJson = (generateAi, slideId, inputId, newData) => {
-  if (!slideId || !inputId) {
-    console.error("slideId and inputId are required to update JSON.");
-    return;
-  }
-  // console.log("GenerateAi's data",generateAi);
-  
-  // Clone existing JSON to avoid direct mutations
-  const updatedJson = { ...generateAi };
-  // console.log("Starting updated data : ",updatedJson);
-  
-  // Ensure IDs are strings
-  const currentSlideId = String(slideId);
-  // console.log("currentSlideId",currentSlideId);
-  
-  
-  const currentInputId = String(inputId);
-  // console.log("currentInputId",currentInputId);
+    if (!slideId || !inputId) {
+      console.error("slideId and inputId are required to update JSON.")
+      return
+    }
 
+    const updatedJson = { ...generateAi }
+    const currentSlideId = String(slideId)
+    const currentInputId = String(inputId)
 
-  // Sanitize newData to remove HTML tags
-  const sanitizedData = Object.fromEntries(
-    Object.entries(newData).map(([key, value]) => [
-      key,
-      typeof value === "string" ? removeHtmlTags(value) : value
-    ])
-  );
+    // Don't sanitize newData, preserve HTML content
+    if (String(updatedJson.id) === currentSlideId) {
+      if (String(updatedJson.titleContainer?.titleId) === currentInputId) {
+        updatedJson.titleContainer = {
+          ...updatedJson.titleContainer,
+          ...newData,
+        }
+      } else if (String(updatedJson.descriptionContainer?.descriptionId) === currentInputId) {
+        updatedJson.descriptionContainer = {
+          ...updatedJson.descriptionContainer,
+          ...newData,
+        }
+      } else {
+        console.warn(`No matching inputId found: ${currentInputId}`)
+      }
+    }
 
-  // Find and update the matching field
-  if (String(updatedJson.id) === currentSlideId) {
-    if (String(updatedJson.titleContainer?.titleId) === currentInputId) {
-      updatedJson.titleContainer = { 
-        ...updatedJson.titleContainer, 
-        ...sanitizedData 
-      };
-    } else if (String(updatedJson.descriptionContainer?.descriptionId) === currentInputId) {
-      updatedJson.descriptionContainer = { 
-        ...updatedJson.descriptionContainer, 
-        ...sanitizedData 
-      };
-    } else {
-      console.warn(`No matching inputId found: ${currentInputId}`);
+    console.log(updatedJson)
+
+    if (generateAi.onEdit) {
+      generateAi.onEdit(updatedJson)
     }
   }
-
-  console.log(updatedJson);
-  
-  // Call onEdit to update parent state
-  if (generateAi.onEdit) {
-    generateAi.onEdit(updatedJson);
-  }
-};
 
 
 // Modify title and description updates to include slideId & inputId
