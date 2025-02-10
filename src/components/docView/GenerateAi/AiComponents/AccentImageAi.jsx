@@ -103,6 +103,7 @@ function AccentImageAi({ generateAi = {}, ...props }) {
   //   generateAi.onEdit(generateAi.id, updatedData);
   // }
 };
+
 useEffect(() => {
   updateParent({
     titleContainer: { styles: titleStyles },
@@ -137,9 +138,6 @@ const updateGenerateAiJson = (generateAi, slideId, inputId, newData) => {
         console.warn(`No matching inputId found: ${currentInputId}`)
       }
     }
-
-    console.log(updatedJson)
-
     if (generateAi.onEdit) {
       generateAi.onEdit(updatedJson)
     }
@@ -161,12 +159,10 @@ const handleTitleUpdate = (newTitle, styles) => {
 };
 
 const handleDescriptionUpdate = (newDescription, styles) => {
-  console.log("indisde description : ",generateAi);
-
   setDescription(newDescription);
   setDescriptionStyles(styles);
   const descriptionId = generateAi.descriptionContainer?.descriptionId;
-  console.log('Updating description with ID:', descriptionId); // Debug log
+  // console.log('Updating description with ID:', descriptionId); // Debug log
   updateGenerateAiJson(generateAi, generateAi.id, descriptionId, {
     description: newDescription,
     styles: styles
@@ -235,6 +231,7 @@ const handleDescriptionUpdate = (newDescription, styles) => {
               className="title text-3xl font-bold text-white mb-4 relative overflow-visible"
             />
             </div>
+            <div className="relative overflow-visible z-50 w-full   ">
             <ParagraphAi
               initialData={description}
               initialStyles={descriptionStyles}
@@ -243,6 +240,7 @@ const handleDescriptionUpdate = (newDescription, styles) => {
               inputId={generateAi.descriptionContainer?.descriptionId}
               className="description text-lg text-gray-300"
             />
+            </div>
           </div>
 
           <div

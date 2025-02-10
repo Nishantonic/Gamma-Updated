@@ -6,89 +6,187 @@ import { DragContext } from "@/components/SidebarLeft/DragContext";
 import TitleAi from "./TitleAi";
 import { Card } from "@/components/ui/card";
 
-function ThreeImgTextAi({ generateAi = {}, ...props }) {
-  const [title, setTitle] = useState(
-    generateAi.titleContainer?.title || "Untitled Card"
-  );
+const DEFAULT_CARD = {
+  image: null,
+  heading: "Heading",
+  headingStyles: {},
+  description: "Description",
+  descriptionStyles: {},
+  headingId: "",
+  descriptionId: ""
+};
 
-  const [cards, setCards] = useState(
-    generateAi.cards?.map((card) => ({
-      image: card.image || null,
-      heading: card.headingContainer?.heading || "Heading",
-      description: card.descriptionContainer?.description || "Description",
-    })) || [
-      { image: null, heading: "Heading 1", description: "Description 1" },
-      { image: null, heading: "Heading 2", description: "Description 2" },
-      { image: null, heading: "Heading 3", description: "Description 3" },
-    ]
-  );
+const generateDefaultCards = () => {
+  return Array(3).fill(null).map((_, index) => ({
+    ...DEFAULT_CARD,
+    heading: `Heading ${index + 1}`,
+    description: `Description ${index + 1}`,
+    headingId: `heading-${Date.now()}-${index + 1}`,
+    descriptionId: `desc-${Date.now()}-${index + 1}`
+  }));
+};
 
-  const [replacedTemplate, setReplacedTemplate] = useState(null);
-  const [droppedItems, setDroppedItems] = useState([]); // To store dropped items
+const ThreeImgTextAi = ({ generateAi = {}, ...props }) => {
+  const [state, setState] = useState({
+    title: generateAi.titleContainer?.title || "Untitled Card",
+    titleStyles: generateAi.titleContainer?.styles || {},
+    isDeleted: false,
+    replacedTemplate: null,
+    droppedItems: []
+  });
+
+  const [cards, setCards] = useState(() => {
+    if (generateAi.cards?.length) {
+      return generateAi.cards.map(card => ({
+        image: card.image || null,
+        heading: card.headingContainer?.heading || "Heading",
+        headingStyles: card.headingContainer?.styles || {},
+        description: card.descriptionContainer?.description || "Description",
+        descriptionStyles: card.descriptionContainer?.styles || {},
+        headingId: card.headingContainer?.headingId || `heading-${Date.now()}-${Math.random()}`,
+        descriptionId: card.descriptionContainer?.descriptionId || `desc-${Date.now()}-${Math.random()}`
+      }));
+    }
+    return generateDefaultCards();
+  });
+
   const { draggedElement } = useContext(DragContext);
 
+  const updateParent = (updates = {}) => {
+    const updatedData = {
+      ...generateAi,
+      titleContainer: {
+        ...generateAi.titleContainer,
+        title: state.title,
+        styles: state.titleStyles,
+      },
+      cards: cards.map(card => ({
+        image: card.image,
+        headingContainer: {
+          heading: card.heading,
+          styles: card.headingStyles,
+          headingId: card.headingId,
+        },
+        descriptionContainer: {
+          description: card.description,
+          styles: card.descriptionStyles,
+          descriptionId: card.descriptionId,
+        },
+      })),
+      ...updates,
+    };
+
+    generateAi.onEdit?.(updatedData);
+  };
+
   useEffect(() => {
-    if (generateAi.cards) {
-      setCards(
-        generateAi.cards.map((card, index) => ({
-          image: card.image || cards[index]?.image || null,
-          heading: card.headingContainer?.heading || cards[index]?.heading || "Heading",
-          description: card.descriptionContainer?.description || cards[index]?.description || "Description",
-        }))
-      );
+    updateParent();
+  }, [state.title, state.titleStyles, cards]);
+
+  const updateGenerateAiJson = (slideId, inputId, newData) => {
+    if (!slideId || !inputId) {
+      console.error("slideId and inputId are required to update JSON.");
+      return;
     }
-  }, [generateAi.cards]);
+
+    const currentSlideId = String(slideId);
+    const currentInputId = String(inputId);
+
+    if (String(generateAi.id) === currentSlideId) {
+      if (String(generateAi.titleContainer?.titleId) === currentInputId) {
+        setState(prev => ({
+          ...prev,
+          title: newData.title || newData.content,
+          titleStyles: newData.styles
+        }));
+        return;
+      }
+
+      const cardIndex = cards.findIndex(card => 
+        String(card.headingId) === currentInputId || 
+        String(card.descriptionId) === currentInputId
+      );
+
+      if (cardIndex !== -1) {
+        const isHeading = String(cards[cardIndex].headingId) === currentInputId;
+        const updatedCards = [...cards];
+        
+        updatedCards[cardIndex] = {
+          ...updatedCards[cardIndex],
+          ...(isHeading 
+            ? { 
+                heading: newData.heading || newData.content,
+                headingStyles: newData.styles,
+              }
+            : {
+                description: newData.description || newData.content,
+                descriptionStyles: newData.styles,
+              }
+          )
+        };
+        
+        setCards(updatedCards);
+      }
+    }
+  };
 
   const handleImagePreview = (e, index) => {
-    const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = () => {
-        const updatedCards = [...cards];
-        updatedCards[index] = { ...updatedCards[index], image: reader.result };
-        setCards(updatedCards);
-      };
-      reader.readAsDataURL(file);
-    }
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      setCards(prev => {
+        const updated = [...prev];
+        updated[index] = { ...updated[index], image: reader.result };
+        return updated;
+      });
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleDrop = (event) => {
     event.preventDefault();
-    if (draggedElement?.template && draggedElement.type === "CardTemplate") {
-      setReplacedTemplate(draggedElement.template);
-    } else if (draggedElement?.template) {
-      const newItem = {
-        id: Date.now(), // Unique ID for each dropped item
-        content: draggedElement.template,
-      };
-      setDroppedItems((prev) => [...prev, newItem]);
+    if (!draggedElement?.template) return;
+
+    if (draggedElement.type === "CardTemplate") {
+      setState(prev => ({ ...prev, replacedTemplate: draggedElement.template }));
+    } else {
+      setState(prev => ({
+        ...prev,
+        droppedItems: [
+          ...prev.droppedItems,
+          { id: Date.now(), content: draggedElement.template }
+        ]
+      }));
     }
   };
 
-  const handleDragOver = (event) => {
-    event.preventDefault();
-  };
-
   const handleDeleteDroppedItem = (id) => {
-    setDroppedItems((prev) => prev.filter((item) => item.id !== id));
+    setState(prev => ({
+      ...prev,
+      droppedItems: prev.droppedItems.filter(item => item.id !== id)
+    }));
   };
 
-  if (replacedTemplate) {
-    return <div>{replacedTemplate}</div>;
-  }
+  const handleDelete = () => {
+    setState(prev => ({ ...prev, isDeleted: true }));
+    generateAi.onDelete?.(generateAi.id);
+  };
 
+  if (state.isDeleted) return null;
+  if (state.replacedTemplate) return <div>{state.replacedTemplate}</div>;
 
   return (
     <Card
       className="min-h-screen w-full md:min-h-[25vw] my-8 bg-[#342c4e] relative overflow-visible max-w-4xl mx-auto px-3 py-3 outline-none border-none"
-      onDragOver={handleDragOver}
+      onDragOver={(e) => e.preventDefault()}
       onDrop={handleDrop}
     >
-      {/* Card Menu with Delete Option */}
       <div className="absolute top-4 left-11">
         <CardMenu
           onEdit={() => console.log("Edit clicked")}
-          onDelete={generateAi.onDelete} // Pass the onDelete prop from parent
+          onDelete={handleDelete}
           onDuplicate={() => console.log("Duplicate clicked")}
           onShare={() => console.log("Share clicked")}
           onDownload={() => console.log("Download clicked")}
@@ -96,47 +194,44 @@ function ThreeImgTextAi({ generateAi = {}, ...props }) {
       </div>
 
       <div className="mt-16 space-y-6">
-        {/* Title Section */}
         <TitleAi
-          initialData={title}
-          onUpdate={(newTitle) => setTitle(newTitle)}
+          initialData={state.title}
+          initialStyles={state.titleStyles}
+          onUpdate={(newTitle, styles) => {
+            setState(prev => ({ ...prev, title: newTitle, titleStyles: styles }));
+            updateGenerateAiJson(generateAi.id, generateAi.titleContainer?.titleId, {
+              title: newTitle,
+              styles
+            });
+          }}
           slideId={generateAi.id}
+          inputId={generateAi.titleContainer?.titleId}
         />
 
-        {/* Three Cards Section */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5 px-10">
           {cards.map((card, index) => (
             <div
-              key={index}
+              key={card.headingId}
               className="flex flex-col bg-[#2a2438] rounded-lg p-4 shadow-lg"
             >
-              {/* Image Section */}
               <div className="relative w-full h-40 bg-[#342c4e] rounded-lg overflow-hidden group mb-4 flex items-center justify-center">
                 {card.image ? (
                   <img
-                    src={card.image || "/placeholder.svg"}
-                    alt={`Preview ${index + 1}`}
+                    src={card.image}
+                    alt={`Card ${index + 1}`}
                     className="w-full h-full object-cover rounded-lg"
                   />
                 ) : (
                   <div className="flex flex-col items-center text-[#9d8ba7] text-sm">
                     <svg
-                      aria-hidden="true"
-                      focusable="false"
-                      data-prefix="fad"
-                      data-icon="image"
-                      className="svg-inline--fa fa-image fa-fw w-8 h-8 mb-2"
-                      role="img"
-                      xmlns="http://www.w3.org/2000/svg"
+                      className="w-8 h-8 mb-2"
                       viewBox="0 0 512 512"
+                      xmlns="http://www.w3.org/2000/svg"
                     >
-                      <g>
-                        <path
-                          className="fa-secondary"
-                          fill="currentColor"
-                          d="M0 96C0 60.7 28.7 32 64 32H448c35.3 0 64 28.7 64 64V416c0 35.3-28.7 64-64 64H64c-35.3 0-64-28.7-64-64V96zM323.8 202.5c-4.5-6.6-11.9-10.5-19.8-10.5s-15.4 3.9-19.8 10.5l-87 127.6L170.7 297c-4.6-5.7-11.5-9-18.7-9s-14.2 3.3-18.7 9l-64 80c-5.8 7.2-6.9 17.1-2.9 25.4s12.4 13.6 21.6 13.6h96 32H424c8.9 0 17.1-4.9 21.2-12.8s3.6-17.4-1.4-24.7l-120-176zM112 192a48 48 0 1 0 0-96 48 48 0 1 0 0 96z"
-                        />
-                      </g>
+                      <path
+                        fill="currentColor"
+                        d="M0 96C0 60.7 28.7 32 64 32H448c35.3 0 64 28.7 64 64V416c0 35.3-28.7 64-64 64H64c-35.3 0-64-28.7-64-64V96zM323.8 202.5c-4.5-6.6-11.9-10.5-19.8-10.5s-15.4 3.9-19.8 10.5l-87 127.6L170.7 297c-4.6-5.7-11.5-9-18.7-9s-14.2 3.3-18.7 9l-64 80c-5.8 7.2-6.9 17.1-2.9 25.4s12.4 13.6 21.6 13.6h96 32H424c8.9 0 17.1-4.9 21.2-12.8s3.6-17.4-1.4-24.7l-120-176zM112 192a48 48 0 1 0 0-96 48 48 0 1 0 0 96z"
+                      />
                     </svg>
                     <span>Click to Upload</span>
                   </div>
@@ -149,30 +244,39 @@ function ThreeImgTextAi({ generateAi = {}, ...props }) {
                 />
               </div>
 
-              {/* Heading and Description */}
               <Heading
                 initialData={card.heading}
-                onUpdate={(newHeading) => {
-                  const updatedCards = [...cards];
-                  updatedCards[index] = { ...updatedCards[index], heading: newHeading };
-                  setCards(updatedCards);
+                initialStyles={card.headingStyles}
+                onUpdate={(newHeading, newStyles) => {
+                  updateGenerateAiJson(generateAi.id, card.headingId, {
+                    heading: newHeading,
+                    styles: newStyles
+                  });
                 }}
+                slideId={generateAi.id}
+                inputId={card.headingId}
               />
+              
               <ParagraphAi
                 initialData={card.description}
-                onUpdate={(newDescription) => {
-                  const updatedCards = [...cards];
-                  updatedCards[index] = { ...updatedCards[index], description: newDescription };
-                  setCards(updatedCards);
+                initialStyles={card.descriptionStyles}
+                onUpdate={(newDescription, newStyles) => {
+                  updateGenerateAiJson(generateAi.id, card.descriptionId, {
+                    description: newDescription,
+                    styles: newStyles
+                  });
                 }}
+                slideId={generateAi.id}
+                inputId={card.descriptionId}
               />
             </div>
           ))}
         </div>
       </div>
-      {droppedItems.length > 0 && (
-        <div className="mt-6 ml-3 mr-3 space-y-4">
-          {droppedItems.map((item) => (
+
+      {state.droppedItems.length > 0 && (
+        <div className="mt-6 mx-3 space-y-4">
+          {state.droppedItems.map((item) => (
             <div key={item.id} className="relative bg-[#2a2438] p-4 rounded-lg shadow-md">
               {React.cloneElement(item.content, {
                 onDelete: () => handleDeleteDroppedItem(item.id),
@@ -183,7 +287,6 @@ function ThreeImgTextAi({ generateAi = {}, ...props }) {
       )}
     </Card>
   );
-}
-
+};
 
 export default ThreeImgTextAi;

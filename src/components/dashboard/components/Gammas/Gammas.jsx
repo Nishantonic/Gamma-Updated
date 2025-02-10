@@ -19,7 +19,6 @@ const Gammas = ({ credits, setCredits }) => {
 
   // Handle clicking a card to navigate with slide data
   const handleCardClick = (slides, key) => {
-    console.log(slides);
     
     if (!slides || slides.length === 0) return
     navigate("/page", {
