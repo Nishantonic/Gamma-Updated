@@ -12,21 +12,22 @@ function TitleAi({ slideId, inputId, onUpdate, initialData,initialStyles}) {
 
   
   const handleChange = (value) => {
+  // Add null check for quillRef
+  if (!quillRef.current) return;
+  
   const quill = quillRef.current.getEditor();
   const styles = quill.getFormat();
   
   setEditorHtml(value);
   setEditorStyles(styles);
   
-  // Pass all necessary identifiers and data
   onUpdate(
-    value, // Raw text without HTML tags
+    value.replace(/<[^>]*>/g, ''), // Send plain text
     styles,
     slideId,
     inputId
   );
 };
-
 
   const modules = {
     toolbar: [

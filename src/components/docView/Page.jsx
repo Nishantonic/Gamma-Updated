@@ -167,7 +167,7 @@ export default function Page() {
     if (location.state?.slidesArray) {
       // Load saved presentation
       const savedSlides = location.state.slidesArray
-      console.log(savedSlides);
+      // console.log(savedSlides);
       
       setSlidesPreview(
         savedSlides.map((slide, index) => ({

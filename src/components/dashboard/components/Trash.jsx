@@ -55,7 +55,7 @@ function Trash() {
           {trashedSlides.map((slideGroup) => (
             <div key={slideGroup.key} className="relative">
               <Card
-                slide={slideGroup.slides[0]?.Slide?.props?.generateAi}
+                slide={slideGroup.slides[0]}
                 onClick={handleCardClick} // Disable navigation for trashed slides
               />
               <div className="absolute top-2 right-2 flex gap-2">

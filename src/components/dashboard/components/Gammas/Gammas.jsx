@@ -28,7 +28,6 @@ const Gammas = ({ credits, setCredits }) => {
           type: slide?.type,
           ...slide,
           id: slide?.id,
-          Slide: slide,
         })),
         key:key,
       },
