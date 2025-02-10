@@ -274,7 +274,7 @@ function ImageTextAi({ generateAi = {}, ...props }) {
           }}
         >
           <div>
-            <div className="relative overflow-visible z-50 w-full   ">
+            <div className=" overflow-visible z-50 w-full   ">
             <TitleAi
               initialData={title}
                 initialStyles={titleStyles}
@@ -284,7 +284,7 @@ function ImageTextAi({ generateAi = {}, ...props }) {
               className="title text-3xl font-bold text-white mb-4 relative overflow-visible"
             />
             </div>
-            <div className="relative overflow-visible z-50 w-full   ">
+            <div className=" overflow-visible z-50 w-full   ">
             <ParagraphAi
               initialData={description}
               initialStyles={descriptionStyles}
