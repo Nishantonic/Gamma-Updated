@@ -8,6 +8,10 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Image, Move } from "lucide-react"
+import { useDroppedItems} from "../../DroppedItemsContext"
+import TitleInput from "../../slidesView/CardComponents/TitleInput"
+import Heading from "../../slidesView/CardComponents/Heading"
+import ParagraphInput from "../../slidesView/CardComponents/ParagraphInput"
 import { v4 as uuidv4 } from "uuid";
 
 function AccentImageAi({ generateAi = {}, ...props }) {
@@ -20,11 +24,17 @@ function AccentImageAi({ generateAi = {}, ...props }) {
   const [titleStyles, setTitleStyles] = useState(generateAi.titleContainer?.styles || {})
   const [description, setDescription] = useState(generateAi.descriptionContainer?.description || "Start typing...")
   const [descriptionStyles, setDescriptionStyles] = useState(generateAi.descriptionContainer?.styles || {})
-  const [droppedItems, setDroppedItems] = useState([]) // To store dropped items
   const [isDeleted, setIsDeleted] = useState(false) // Added state for deletion
   const { draggedElement } = useContext(DragContext) // Access the dragged element context
+  const { droppedItems, addDroppedItem, removeDroppedItem, updateDroppedItem } = useDroppedItems();
+  const slideId = generateAi.id;
   const imageRef = useRef(null)
- 
+  const COMPONENT_MAP = {
+    title: TitleInput,
+    heading: Heading,
+    paragraph: ParagraphInput,
+  };
+  console.log(preview)
   
   useEffect(() => {
     if (generateAi.image && isValidImageUrl(generateAi.image)) {
@@ -175,24 +185,31 @@ const handleDescriptionUpdate = (newDescription, styles) => {
 
 
 
-  const handleDrop = (event) => {
-    event.preventDefault()
-    if (draggedElement?.template) {
-      const newItem = {
-        id: Date.now(), // Unique ID for each dropped item
-        content: draggedElement.template,
-      }
-      setDroppedItems((prev) => [...prev, newItem])
-    }
-  }
+const handleDrop = (event) => {
+  event.preventDefault();
+  const data = JSON.parse(event.dataTransfer.getData("application/json"));
 
-  const handleDragOver = (event) => {
-    event.preventDefault()
-  }
+  if (data.type) {
+    const newItem = {
+      id: uuidv4(), // Unique ID for the dropped item
+      type: data.type, // 'title', 'heading', or 'paragraph'
+      content: "", // Initial content (empty or default)
+      styles: {}, // Initial styles
+    };
 
-  const handleDeleteDroppedItem = (id) => {
-    setDroppedItems((prev) => prev.filter((item) => item.id !== id))
+    // Add the dropped item to the context and local storage
+    addDroppedItem(slideId, newItem);
   }
+};
+
+const handleDragOver = (event) => {
+  event.preventDefault()
+}
+
+const handleDeleteDroppedItem = (itemId) => {
+  removeDroppedItem(slideId, itemId);
+};
+
 
   const handleDelete = () => {
     setIsDeleted(true)
@@ -293,18 +310,37 @@ const handleDescriptionUpdate = (newDescription, styles) => {
           </div>
         </div>
 
-        {droppedItems.length > 0 && (
-          <div className="mt-6 space-y-4">
-            {droppedItems.map((item) => (
-              <div key={item.id} className="relative">
-                {/* Render the dropped item */}
-                {React.cloneElement(item.content, {
-                  onDelete: () => handleDeleteDroppedItem(item.id),
-                })}
-              </div>
-            ))}
-          </div>
-        )}
+        {(droppedItems[slideId] || []).map((item) => {
+          let Component;
+          switch (item.type) {
+            case "title":
+              Component = TitleInput;
+              break;
+            case "heading":
+              Component = Heading;
+              break;
+            case "paragraph":
+              Component = ParagraphInput;
+              break;
+            default:
+              Component = null;
+          }
+
+          return (
+            <div key={item.id}>
+              {Component && (
+                <Component
+                  slideId={slideId}
+                  inputId={item.id}
+                  onChange={(value, styles) => {
+                    // Update the item's content and style in the context
+                    updateDroppedItem(slideId, item.id, { content: value, styles });
+                  }}
+                />
+              )}
+            </div>
+          );
+        })}
       </CardContent>
     </Card>
   )

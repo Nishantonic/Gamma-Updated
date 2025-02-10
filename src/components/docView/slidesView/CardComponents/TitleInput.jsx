@@ -4,35 +4,40 @@ import "react-quill/dist/quill.snow.css";
 import "react-quill/dist/quill.bubble.css";
 import { Card, CardContent } from "../../../ui/card";
 
-
 export default function TitleInput({ slideId, inputId, onDelete, onChange }) {
-  const storageKey = `editor_${slideId}_${inputId}`;
   const quillRef = useRef(null);
-  const [editorHtml, setEditorHtml] = useState(null);
+  const [editorHtml, setEditorHtml] = useState("");
   const [editorStyles, setEditorStyles] = useState({});
 
   useEffect(() => {
-    const storedData = JSON.parse(localStorage.getItem(storageKey));
-    if (storedData) {
-      setEditorHtml(storedData.content);
+    // Load initial content and styles from droppedItems (if available)
+    const droppedItems = JSON.parse(localStorage.getItem("droppedItems") || "{}");
+    const slideItems = droppedItems[slideId] || [];
+    const item = slideItems.find((item) => item.id === inputId);
+
+    if (item) {
+      setEditorHtml(item.content || "");
+      setEditorStyles(item.styles || {});
     }
-  }, [storageKey]);
+  }, [slideId, inputId]);
 
   const handleChange = (value) => {
-  setEditorHtml(value);
+    setEditorHtml(value);
 
-  if (quillRef.current) {
-    const quill = quillRef.current.getEditor();
-    const styles = quill.getFormat();
-    localStorage.setItem(
-      storageKey,
-      JSON.stringify({ slideId, inputId, content: value, styles })
-    );
-    setEditorStyles(styles);
-    if (onChange) onChange(value, styles);
-  }
-};
+    if (quillRef.current) {
+      const quill = quillRef.current.getEditor();
+      const styles = quill.getFormat();
 
+      console.log("Content:", value);
+      console.log("Styles:", styles);
+      // Update the dropped item's content and styles in the context
+      if (onChange) {
+        onChange(value, styles);
+      }
+
+      setEditorStyles(styles);
+    }
+  };
 
   const modules = {
     toolbar: [
@@ -49,10 +54,8 @@ export default function TitleInput({ slideId, inputId, onDelete, onChange }) {
   };
 
   return (
-    <Card
-      className="w-full flex justify-start max-auto mb-2 bg-transparent relative border-transparent"
-    >
-      <CardContent className="w-full p-4 bg-transparent border-none rounded-lg ">
+    <Card className="w-full flex justify-start max-auto mb-2 bg-transparent relative border-transparent">
+      <CardContent className="w-full p-4 bg-transparent border-none rounded-lg">
         <ReactQuill
           ref={quillRef}
           value={editorHtml}
@@ -60,7 +63,7 @@ export default function TitleInput({ slideId, inputId, onDelete, onChange }) {
           modules={modules}
           theme="bubble"
           placeholder="Compose an epic..."
-          className="custom-quill-bubble w-full  text-lg"
+          className="custom-quill-bubble w-full text-lg"
         />
       </CardContent>
     </Card>
