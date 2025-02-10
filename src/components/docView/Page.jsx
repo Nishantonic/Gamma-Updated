@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from "react"
+import React, { useState, useEffect } from "react"
 import { Header } from "@/components/docView/Header"
 import { ResizableSidebar } from "@/components/docView/ResizableSidebar"
 import CardTemplates from "./slidesView/CardTemplates"
@@ -26,7 +26,6 @@ import { debounce } from "lodash"
 import { Card, CardContent } from "../ui/card"
 import pptxgen from "pptxgenjs"
 import { toast, Toaster } from "sonner"
-import { DroppedItemsProvider, DroppedItemsContext } from "./DroppedItemsContext"
 
 import { useLocation, useNavigate } from "react-router-dom"
 import AccentImageAi from "./GenerateAi/AiComponents/AccentImageAi"
@@ -51,7 +50,6 @@ export default function Page() {
   const [aiInputData, setAiInputData] = useState("")
   const [isAiGenerated, setIsAiGenerated] = useState(false)
   const [isImpressPresent,setIsImpressPresent] = useState(false)
-  const { droppedItems } = useContext(DroppedItemsContext);
   const [ArraySlides, setArraySlides] = useState(() => {
     const savedSlides = JSON.parse(localStorage.getItem("slides")) || []
     return savedSlides
@@ -105,7 +103,6 @@ export default function Page() {
           ...slide.descriptionContainer,
           styles: slide.descriptionContainer?.styles || {}
         },
-        droppedItems: droppedItems[slide.id] || [],
         ...slide,
       })),
     };
@@ -184,8 +181,7 @@ export default function Page() {
       descriptionContainer: {
         ...slide.descriptionContainer,
         styles: slide.descriptionContainer?.styles || {}
-      },
-      droppedItems: droppedItems[slide.id] || [],
+      }
     }));
 
     setSlidesPreview(
@@ -197,8 +193,7 @@ export default function Page() {
         content: renderSlideComponent(slide),
         onClick: () => setCurrentSlide(index + 1),
         titleContainer: slide.titleContainer,
-        descriptionContainer: slide.descriptionContainer,
-        droppedItems: droppedItems[slide.id] || [],
+        descriptionContainer: slide.descriptionContainer
       }))
     );
 
@@ -357,7 +352,7 @@ export default function Page() {
           addStyledText(pptSlide, title, titleHtml, {
             x: 0.5,
             y: 0.5,
-            w: "90%",
+            w: "60%",
             h: 1,
             fontSize: 24
           })
@@ -365,7 +360,7 @@ export default function Page() {
           addStyledText(pptSlide, description, descriptionHtml, {
             x: 0.5,
             y: 1.5,
-            w: "90%",
+            w: "60%",
             h: 3,
             fontSize: 14
           })
@@ -616,8 +611,7 @@ export default function Page() {
               ...slide.descriptionContainer?.styles,
               ...updatedData.descriptionContainer?.styles
             }
-          },
-          droppedItems: droppedItems[slide.id] || [],
+          }
         };
       }
       return slide;
@@ -646,8 +640,7 @@ export default function Page() {
               ...slide.descriptionContainer?.styles,
               ...updatedData.descriptionContainer?.styles
             }
-          },
-          droppedItems: droppedItems[slide.id] || [],
+          }
         };
         return {
           ...updatedSlide,
@@ -661,7 +654,6 @@ export default function Page() {
 
 
   return (
-    <DroppedItemsProvider>
     <div className="h-screen flex flex-col bg-background">
       <Header setGenerateAi={() => setShowPopup(true)} startPresentation={startPresentation} />
 
@@ -669,9 +661,9 @@ export default function Page() {
       {isPresentationMode && (
         <PresentationMode
           slides={slides}
-          slideImages={slideImages}
           startIndex={presentationStartIndex}
           onClose={() => setIsPresentationMode(false)}
+          renderSlide={renderSlideComponent} // Pass your existing render function
         />
       )}
       {/* {isImpressPresent && (
@@ -796,6 +788,5 @@ export default function Page() {
       </Dialog>
       <Home />
     </div>
-    </DroppedItemsProvider>
   )
 }
