@@ -88,30 +88,55 @@ export default function Page() {
   if (slides.length > 0) {
     const newEntry = {
       key: location.state?.key || Date.now(),
-      slides: slides.map((slide) => ({
-        id: slide.id,
-        type: slide.type || "custom",
-        title: slide?.titleContainer?.title.replace(/<[^>]*>/g, '') || "Untitled",
-        description: slide?.descriptionContainer?.description || "",
-        image: slide.image || null,
-        // Preserve style information
-        titleContainer: {
-          ...slide.titleContainer,
-          styles: slide.titleContainer?.styles || {}
-        },
-        descriptionContainer: {
-          ...slide.descriptionContainer,
-          styles: slide.descriptionContainer?.styles || {}
-        },
-        imageContainer: slide.imageContainer ? {
-            ...slide.imageContainer,
-            // Ensure image URL is properly stored
-            image: typeof slide.imageContainer.image === 'string' 
-              ? slide.imageContainer.image 
-              : slide.imageContainer.image?.src || null
-          } : null,
-        ...slide,
-      })),
+      slides: slides.map((slide) => {
+        // Create a clean slide object without React components and unnecessary properties
+        const cleanSlide = {
+          id: slide.id,
+          type: slide.type || "custom",
+          title: slide.titleContainer?.title?.replace(/<[^>]*>/g, '') || "Untitled",
+          titleContainer: {
+            titleId: slide.titleContainer?.titleId || uuidv4(),
+            title: slide.titleContainer?.title || "",
+            styles: slide.titleContainer?.styles || {}
+          },
+          descriptionContainer: {
+            descriptionId: slide.descriptionContainer?.descriptionId || uuidv4(),
+            description: slide.descriptionContainer?.description || "",
+            styles: slide.descriptionContainer?.styles || {}
+          },
+          imageContainer: {
+            imageId: slide.imageContainer?.imageId || uuidv4(),
+            image: slide.imageContainer?.image || null,
+            styles: slide.imageContainer?.styles || {}
+          }
+        };
+
+        // Add type-specific properties
+        if (slide.type === "twoColumn" && slide.columns) {
+          cleanSlide.columns = slide.columns.map(column => ({
+            id: column.id || uuidv4(),
+            content: column.content || "",
+            styles: column.styles || {}
+          }));
+        }
+
+        if (slide.type === "threeImgCard" && slide.cards) {
+          cleanSlide.cards = slide.cards.map(card => ({
+            id: card.id || uuidv4(),
+            headingContainer: {
+              heading: card.headingContainer?.heading || "",
+              styles: card.headingContainer?.styles || {}
+            },
+            descriptionContainer: {
+              description: card.descriptionContainer?.description || "",
+              styles: card.descriptionContainer?.styles || {}
+            },
+            image: card.image || null
+          }));
+        }
+
+        return cleanSlide;
+      })
     };
 
     setArraySlides((prevArraySlides) => {
@@ -126,7 +151,7 @@ export default function Page() {
         updatedArraySlides = [...prevArraySlides, newEntry];
       }
 
-      // Save to localStorage with style information
+      // Save to localStorage
       localStorage.setItem("slides", JSON.stringify(updatedArraySlides));
 
       // Update trash if needed
@@ -137,7 +162,10 @@ export default function Page() {
       return updatedArraySlides;
     });
 
+    toast.success("Presentation saved successfully!");
     navigate("/home");
+  } else {
+    toast.error("No slides to save!");
   }
 };
   

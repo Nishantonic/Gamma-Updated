@@ -1,211 +1,202 @@
-import React, { useContext, useState, useCallback } from "react";
+import React, { useContext, useState, useCallback, useEffect } from "react";
 import { Card } from "../../ui/card";
 import { Grid2X2, Sparkles } from 'lucide-react';
-import CardTemplateTwoColumn from "./CardTempletTwoColumn";
+import { DragContext } from "@/components/SidebarLeft/DragContext";
+import { CardMenu } from "./Menu/CardMenu";
+import TwoColumnAi from "../GenerateAi/AiComponents/TwoColumnAi";
 import CardTemplateImgHeadingThree from "./CardTemplateImgHeadingThree";
 import ImageCardText from "./ImageCardText";
-import { CardMenu } from "./Menu/CardMenu";
+import AccentImage from "./AccentImage";
+import TitleAi from "../GenerateAi/AiComponents/TitleAi";
 import card1 from "./assets/card1.png";
 import card2 from "./assets/card2.png";
 import card3 from "./assets/card3.png";
 import card4 from "./assets/card4.png";
-import { DragContext } from "@/components/SidebarLeft/DragContext";
-import AccentImage from "./AccentImage";
-import TitleAi from "../GenerateAi/AiComponents/TitleAi";
-import TitleINput from "./CardComponents/TitleInput";
+import { v4 as uuidv4 } from 'uuid';
+import ImageTextAi from "../GenerateAi/AiComponents/ImageTextAi";
+import AccentImageAi from "../GenerateAi/AiComponents/AccentImageAi";
+import ThreeImgTextAi from "../GenerateAi/AiComponents/ThreeColumnAi";
 
-export default function CardTemplates({ children, slidesPreview, setSlidesPreview, id, setCurrentSlide, generateAi = {}, setSlides, ...props }) {
+export default function CardTemplates({ 
+  children, 
+  slidesPreview, 
+  setSlidesPreview, 
+  id, 
+  setCurrentSlide, 
+  generateAi = {}, 
+  setSlides, 
+  ...props 
+}) {
+  // Initialize state with proper default values and IDs
   const [showTwoColumn, setShowTwoColumn] = useState(false);
   const [showImageText, setShowImageText] = useState(false);
-  const [title, setTitle] = useState(generateAi.title || "Untitled Card");
   const [showThreeColumn, setShowThreeColumn] = useState(false);
   const [showAccentImage, setShowAccentImage] = useState(false);
   const [replacedTemplate, setReplacedTemplate] = useState(null);
   const [droppedItems, setDroppedItems] = useState([]);
+  const [title, setTitle] = useState(generateAi.titleContainer?.title || "Untitled Card");
+  const [titleStyles, setTitleStyles] = useState(generateAi.titleContainer?.styles || {});
+
   const { draggedElement } = useContext(DragContext);
+  
+  useEffect(() => {
+  if (generateAi.titleContainer) {
+    
+    
+    setTitle(generateAi.titleContainer.title || "Untitled Card");
+    setTitleStyles(generateAi.titleContainer.styles || {});
+  }
+}, [generateAi.titleContainer]);
 
-  const handleDrop = useCallback((event) => {
-    event.preventDefault();
-    if (draggedElement?.template && draggedElement.type === "CardTemplate") {
-      setReplacedTemplate(draggedElement.template);
-    } else if (draggedElement?.template) {
-      const newElement = {
-        id: Date.now(),
-        content: draggedElement.template,
-        type: 'customElement'
-      };
-      setDroppedItems((prev) => [...prev, newElement]);
+
+  // Initialize titleContainer with proper IDs if not present
+  useEffect(() => {
+  const shouldInitialize = !generateAi.titleContainer?.titleId || !generateAi.id;
+  
+  if (shouldInitialize) {
+    const updatedGenerateAi = {
+      ...generateAi,
+      id: id || generateAi.id || uuidv4(),
+      titleContainer: {
+        ...generateAi.titleContainer,
+        titleId: generateAi.titleContainer?.titleId || uuidv4(),
+        title: generateAi.titleContainer?.title || title,
+        styles: generateAi.titleContainer?.styles || titleStyles
+      }
+    };
+    
+    if (generateAi.onEdit) {
+      generateAi.onEdit(updatedGenerateAi);
     }
-  }, [draggedElement]);
+  }
+}, [id, generateAi]);
 
-  const handleDragOver = useCallback((event) => {
-    event.preventDefault();
-  }, []);
+  const updateGenerateAiJson = (slideId, inputId, newData) => {
+  const updatedJson = {
+    ...generateAi,
+    id: slideId,
+    titleContainer: {
+      ...generateAi.titleContainer,
+      titleId: inputId,
+      ...newData
+    }
+  };
 
-  const handleDeleteDroppedItem = useCallback((id) => {
-    setDroppedItems((prev) => prev.filter((item) => item.id !== id));
-  }, []);
+  if (generateAi.onEdit) {
+    generateAi.onEdit(updatedJson);
+  }
+};
 
-  const handleEdit = useCallback(() => {
-    console.log("Edit clicked");
-  }, []);
-
-  const handleDelete = useCallback(() => {
-    // Update main slides state
-    setSlides((prevSlides) => {
-      const updatedSlides = prevSlides.filter((slide) => slide.id !== id);
-      localStorage.setItem('slides', JSON.stringify(updatedSlides));
-      return updatedSlides;
-    });
-
-    // Update slides preview
-    setSlidesPreview((prevSlidesPreview) => {
-      const updatedPreview = prevSlidesPreview.filter((slide) => slide.id !== id);
-      return updatedPreview.map((slide, index) => ({
-        ...slide,
-        number: index + 1
-      }));
-    });
-  }, [id, setSlides, setSlidesPreview]);
+const handleTitleUpdate = (newTitle, styles) => {
+  const titleId = generateAi.titleContainer?.titleId || uuidv4();
+  const slideId = id || generateAi.id || uuidv4();
+  
+  // Update local state immediately
+  setTitle(newTitle);
+  setTitleStyles(styles);
+  
+  // Propagate changes to parent
+  updateGenerateAiJson(slideId, titleId, {
+    title: newTitle,
+    styles: styles
+  });
+};
 
   const updateSlidesPreview = useCallback((Component, templateType) => {
-    setSlidesPreview((prevSlidesPreview) =>
-      prevSlidesPreview.map((slide) => {
-        if (slide.id === id) {
-          const updatedSlide = {
-            ...slide,
-            type: templateType,
-            content: (
-              <div className="flex justify-center">
-                <Component
-                  {...props}
-                  slidesPreview={prevSlidesPreview}
-                  setSlides={setSlides}
-                  id={slide.id}
-                  setSlidesPreview={setSlidesPreview}
-                />
-              </div>
-            ),
-            onClick: () => setCurrentSlide(slide.id)
-          };
+  setSlidesPreview(prevSlidesPreview => 
+    prevSlidesPreview.map(slide => {
+      if (slide.id === (id || generateAi.id)) {
+        const updatedSlide = {
+          ...slide,
+          type: templateType,
+          titleContainer: {
+            titleId: generateAi.titleContainer?.titleId || uuidv4(),
+            title: title,
+            styles: titleStyles
+          },
+          content: (
+            <Component
+              {...props}
+              id={slide.id}
+              generateAi={{
+                ...generateAi,
+                id: slide.id,
+                titleContainer: {
+                  titleId: generateAi.titleContainer?.titleId || uuidv4(),
+                  title: title,
+                  styles: titleStyles
+                },
+                imageContainer: {
+                imageId: uuidv4(),
+                image: slide.image || "",
+                styles: {}
+              },
+              }}
+            />
+          )
+        };
 
-          // Update main slides state with type
-          setSlides(prevSlides => 
-            prevSlides.map(s => 
-              s.id === id ? {...s, type: templateType} : s
-            )
-          );
+        // Update main slides state
+        setSlides(prevSlides => 
+          prevSlides.map(s => 
+            s.id === updatedSlide.id ? updatedSlide : s
+          )
+        );
 
-          return updatedSlide;
-        }
-        return slide;
-      })
-    );
-  }, [id, setCurrentSlide, setSlides, setSlidesPreview, props]);
+        return updatedSlide;
+      }
+      return slide;
+    })
+  );
+}, [id, generateAi, title, titleStyles, setSlides, setSlidesPreview]);
 
-  // Template handlers with type management
+  // Template handlers
   const handleTwoColumn = useCallback(() => {
     setShowTwoColumn(true);
-    updateSlidesPreview(CardTemplateTwoColumn, 'twoColumnManual');
+    updateSlidesPreview(TwoColumnAi, 'twoColumn');
   }, [updateSlidesPreview]);
 
   const handleImageText = useCallback(() => {
     setShowImageText(true);
-    updateSlidesPreview(ImageCardText, 'imageTextManual');
+    updateSlidesPreview(ImageCardText, 'imageCardText');
   }, [updateSlidesPreview]);
 
   const handleAccentImage = useCallback(() => {
     setShowAccentImage(true);
-    updateSlidesPreview(AccentImage, 'accentImageManual');
+    updateSlidesPreview(AccentImage, 'accentImage');
   }, [updateSlidesPreview]);
 
   const handleThreeColumn = useCallback(() => {
     setShowThreeColumn(true);
-    updateSlidesPreview(CardTemplateImgHeadingThree, 'threeColumnManual');
+    updateSlidesPreview(CardTemplateImgHeadingThree, 'threeImgCard');
   }, [updateSlidesPreview]);
 
-  if (showTwoColumn) {
-    return <CardTemplateTwoColumn 
-      {...props}
-      id={id}
-      slidesPreview={slidesPreview}
-      setSlidesPreview={setSlidesPreview}
-      setSlides={setSlides}
-    />;
-  }
-
-  if (showImageText) {
-    return <ImageCardText
-      {...props}
-      id={id}
-      slidesPreview={slidesPreview}
-      setSlidesPreview={setSlidesPreview}
-      setSlides={setSlides}
-    />;
-  }
-
-  if (showAccentImage) {
-    console.log("AccentImage Clicked");
-    
-    return <AccentImage 
-      {...props}
-      type='accentImage'
-      id={id}
-      slidesPreview={slidesPreview}
-      setSlidesPreview={setSlidesPreview}
-      setSlides={setSlides}
-    />;
-  }
-
-  if (showThreeColumn) {
-    return <CardTemplateImgHeadingThree 
-      {...props}
-      id={id}
-      slidesPreview={slidesPreview}
-      setSlidesPreview={setSlidesPreview}
-      setSlides={setSlides}
-    />;
-  }
-
-  if (replacedTemplate) {
-    return <div>{replacedTemplate}</div>;
-  }
-  const handleDuplicate = () =>{
-    console.log("duplicate");
-    
-  }
-  const handleShare = () =>{
-    console.log("duplicate");
-    
-  }
-  const handleDownload = () =>{
-    console.log("duplicate");
-    
-  }
+  // Return appropriate template component based on state
+  if (showTwoColumn) return <TwoColumnAi {...props} id={id} slidesPreview={slidesPreview} setSlidesPreview={setSlidesPreview} setSlides={setSlides} generateAi={generateAi} />;
+  if (showImageText) return <ImageTextAi {...props} id={id} slidesPreview={slidesPreview} setSlidesPreview={setSlidesPreview} setSlides={setSlides} generateAi={generateAi} />;
+  if (showAccentImage) return <AccentImageAi {...props} id={id} slidesPreview={slidesPreview} setSlidesPreview={setSlidesPreview} setSlides={setSlides} generateAi={generateAi} />;
+  if (showThreeColumn) return <ThreeImgTextAi {...props} id={id} slidesPreview={slidesPreview} setSlidesPreview={setSlidesPreview} setSlides={setSlides} generateAi={generateAi} />;
+  if (replacedTemplate) return <div>{replacedTemplate}</div>;
 
   return (
-    <div onDragOver={handleDragOver} onDrop={handleDrop}>
+    <div>
       <div className="min-h-screen w-full md:min-h-[25vw] md:mt-[3vh] md:mb-[3vh] rounded-lg px-1 bg-[#342c4e] p-6 relative max-w-4xl mx-auto">
         <div className="absolute top-4 left-11">
           <CardMenu
-            onEdit={handleEdit}
-            onDelete={handleDelete}
-            onDuplicate={handleDuplicate}
-            onShare={handleShare}
-            onDownload={handleDownload}
+            
           />
         </div>
         <div className="mt-10">
-          <TitleINput 
-            initialData={title} 
-            onUpdate={(newTitle) => {
-              setTitle(newTitle);
-              // Update title in slides state
-              setSlides(prev => prev.map(slide => 
-                slide.id === id ? {...slide, title: newTitle} : slide
-              ));
-            }}
-          />
+          <div className="relative overflow-visible z-50 w-full   ">
+            <TitleAi
+              initialData={generateAi.titleContainer?.title || title}
+              initialStyles={generateAi.titleContainer?.styles || titleStyles}
+              onUpdate={handleTitleUpdate}
+              slideId={id || generateAi.id}
+              inputId={generateAi.titleContainer?.titleId}
+              className="title text-3xl font-bold text-white mb-4 relative overflow-visible"
+            />
+            </div>
         </div>
         {droppedItems.length > 0 ? (
           <div className="mt-6 space-y-4">
