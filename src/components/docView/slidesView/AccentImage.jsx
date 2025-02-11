@@ -205,6 +205,7 @@ function AccentImage ({
             {React.cloneElement(item.content, {
               onDelete: () => handleDeleteDroppedItem(item.id),
             })}
+            
           </div>
         ))}
       </div>

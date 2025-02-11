@@ -19,6 +19,7 @@ import {
 } from "../ui/dialog"
 import { Input } from "../ui/input"
 import { PresentationMode } from "./PresentationMode"
+// import ImpressPresentation from "./ImpressPresentation"
 import AddButtonAi from "./GenerateAi/AiComponents/AddButtonAi"
 import html2canvas from "html2canvas"
 import { debounce } from "lodash"
@@ -32,7 +33,7 @@ import TwoColumnAi from "./GenerateAi/AiComponents/TwoColumnAi"
 import ImageTextAi from "./GenerateAi/AiComponents/ImageTextAi"
 import ThreeColumnAi from "./GenerateAi/AiComponents/ThreeColumnAi"
 import DefaultAi from "./GenerateAi/AiComponents/DefaultAi"
-
+import { v4 as uuidv4 } from "uuid"
 export default function Page() {
   const [currentSlide, setCurrentSlide] = useState(1)
   const [slidesPreview, setSlidesPreview] = useState([])
@@ -48,7 +49,7 @@ export default function Page() {
   const [showPopup, setShowPopup] = useState(false)
   const [aiInputData, setAiInputData] = useState("")
   const [isAiGenerated, setIsAiGenerated] = useState(false)
-
+  const [isImpressPresent,setIsImpressPresent] = useState(false)
   const [ArraySlides, setArraySlides] = useState(() => {
     const savedSlides = JSON.parse(localStorage.getItem("slides")) || []
     return savedSlides
@@ -84,102 +85,171 @@ export default function Page() {
   }, [currentSlide])
 
   const handleSaveSlide = () => {
-    if (location.state) {
-      let storedSlides = JSON.parse(localStorage.getItem("slides")) || [];
-      storedSlides = storedSlides.filter((slide) => slide.key !== location.state.key);
-      localStorage.setItem("slides", JSON.stringify(storedSlides));
-    }
-  
-    if (slides.length > 0) {
-      const newEntry = {
-        key: Date.now(),
-        slides: slides.map(slide => ({
+  if (slides.length > 0) {
+    const newEntry = {
+      key: location.state?.key || Date.now(),
+      slides: slides.map((slide) => {
+        // Create a clean slide object without React components and unnecessary properties
+        const cleanSlide = {
           id: slide.id,
-          type: slide.type || 'custom', // Preserve type information
-          ...slide
-        }))
-      };
-  
-      let existingSlides = JSON.parse(localStorage.getItem("slides")) || [];
-  
-      const updatedSlides = [...existingSlides, newEntry];
-  
-      setArraySlides(updatedSlides);
-      setSlides([]); 
-        localStorage.setItem("slides", JSON.stringify(updatedSlides));
-    }
-  
+          type: slide.type || "custom",
+          title: slide.titleContainer?.title?.replace(/<[^>]*>/g, '') || "Untitled",
+          titleContainer: {
+            titleId: slide.titleContainer?.titleId || uuidv4(),
+            title: slide.titleContainer?.title || "",
+            styles: slide.titleContainer?.styles || {}
+          },
+          descriptionContainer: {
+            descriptionId: slide.descriptionContainer?.descriptionId || uuidv4(),
+            description: slide.descriptionContainer?.description || "",
+            styles: slide.descriptionContainer?.styles || {}
+          },
+          imageContainer: {
+            imageId: slide.imageContainer?.imageId || uuidv4(),
+            image: slide.imageContainer?.image || null,
+            styles: slide.imageContainer?.styles || {}
+          }
+        };
+
+        // Add type-specific properties
+        if (slide.type === "twoColumn" && slide.columns) {
+          cleanSlide.columns = slide.columns.map(column => ({
+            id: column.id || uuidv4(),
+            content: column.content || "",
+            styles: column.styles || {}
+          }));
+        }
+
+        if (slide.type === "threeImgCard" && slide.cards) {
+          cleanSlide.cards = slide.cards.map(card => ({
+            id: card.id || uuidv4(),
+            headingContainer: {
+              heading: card.headingContainer?.heading || "",
+              styles: card.headingContainer?.styles || {}
+            },
+            descriptionContainer: {
+              description: card.descriptionContainer?.description || "",
+              styles: card.descriptionContainer?.styles || {}
+            },
+            image: card.image || null
+          }));
+        }
+
+        return cleanSlide;
+      })
+    };
+
+    setArraySlides((prevArraySlides) => {
+      const existingIndex = prevArraySlides.findIndex(group => group.key === newEntry.key);
+      let updatedArraySlides;
+
+      if (existingIndex !== -1) {
+        updatedArraySlides = prevArraySlides.map(group =>
+          group.key === newEntry.key ? newEntry : group
+        );
+      } else {
+        updatedArraySlides = [...prevArraySlides, newEntry];
+      }
+
+      // Save to localStorage
+      localStorage.setItem("slides", JSON.stringify(updatedArraySlides));
+
+      // Update trash if needed
+      const trash = JSON.parse(localStorage.getItem("trash") || "[]");
+      const updatedTrash = trash.filter(slide => slide.key !== newEntry.key);
+      localStorage.setItem("trash", JSON.stringify(updatedTrash));
+
+      return updatedArraySlides;
+    });
+
+    toast.success("Presentation saved successfully!");
     navigate("/home");
-  };
+  } else {
+    toast.error("No slides to save!");
+  }
+};
   
   const renderSlideComponent = (slideData) => {
-    if (slideData.type === 'custom') { // Manual slides
-    return (
-      <CardTemplates
-        key={slideData.id}
-        slidesPreview={slidesPreview}
-        id={slideData.id}
-        setSlides={setSlides}
-        setCurrentSlide={setCurrentSlide}
-        setSlidesPreview={setSlidesPreview}
-      />
-    );
-  }
+    if (!slideData) return null
 
-  // AI-generated slides
-  const commonProps = {
-    generateAi: slideData,
-    key: slideData.id,
-    onEdit: (updated) => handleSlideUpdate(slideData.id, updated),
-    onDelete: () => deleteSlide(slideData.id),
-  };
-
-    switch (slideData.type) {
-      case "accentImage":
-        return <AccentImageAi {...commonProps} />
-      case "twoColumn":
-        return <TwoColumnAi {...commonProps} />
-      case "imageCardText":
-        return <ImageTextAi {...commonProps} />
-      case "threeImgCard":
-        return <ThreeColumnAi {...commonProps} />
-      default:
-        return <DefaultAi {...commonProps} />
+    if (slideData.type === "custom") {
+      return (
+        <CardTemplates
+          key={slideData.id}
+          slidesPreview={slidesPreview}
+          id={slideData.id}
+          setSlides={setSlides}
+          setCurrentSlide={setCurrentSlide}
+          setSlidesPreview={setSlidesPreview}
+        />
+      )
     }
+
+    const commonProps = {
+      generateAi: {
+        ...slideData,
+        onEdit: (updated) => handleSlideUpdate(slideData.id, updated),
+        onDelete: () => deleteSlide(slideData.id),
+      }
+    }
+
+    const components = {
+      accentImage: AccentImageAi,
+      twoColumn: TwoColumnAi,
+      imageCardText: ImageTextAi,
+      threeImgCard: ThreeColumnAi,
+      default: DefaultAi,
+    }
+
+    const Component = components[slideData.type] || components.default
+    return <Component {...commonProps} key={slideData.id} />
   }
+  
   useEffect(() => {
     if (location.state?.slidesArray) {
-      // Load saved presentation
-      const savedSlides = location.state.slidesArray
-      setSlidesPreview(
-        savedSlides.map((slide, index) => ({
-          number: index + 1,
-          id: slide.id,
-          title: slide.title,
-          content: renderSlideComponent(slide),
-          onClick: () => setCurrentSlide(index + 1),
-        })),
-      )
+    const savedSlides = location.state.slidesArray.map(slide => ({
+      ...slide,
+      titleContainer: {
+        ...slide.titleContainer,
+        styles: slide.titleContainer?.styles || {}
+      },
+      descriptionContainer: {
+        ...slide.descriptionContainer,
+        styles: slide.descriptionContainer?.styles || {}
+      }
+    }));
 
-      setSlides(savedSlides)
+    setSlidesPreview(
+      savedSlides.map((slide, index) => ({
+        number: index + 1,
+        id: slide.id,
+        title: slide?.titleContainer?.title.replace(/<[^>]*>/g, '') || "Untitled",
+        type: slide.type || "custom",
+        content: renderSlideComponent(slide),
+        onClick: () => setCurrentSlide(index + 1),
+        titleContainer: slide.titleContainer,
+        descriptionContainer: slide.descriptionContainer
+      }))
+    );
+
+    setSlides(savedSlides);
     } else {
-      // Default initialization
+      // Default initialization for new presentation
       const initialSlides = [
         {
           number: 1,
-          id: 1,
+          id: uuidv4(),
           title: "Customer Targeting Strategy",
+          type: "custom",
           content: (
-            <div className="flex justify-center">
               <CardTemplates
                 slidesPreview={slidesPreview}
                 id={1}
-                type= 'custom'
+                type="custom"
                 setSlides={setSlides}
                 setCurrentSlide={setCurrentSlide}
                 setSlidesPreview={setSlidesPreview}
               />
-            </div>
           ),
           onClick: () => setCurrentSlide(1),
         },
@@ -189,35 +259,43 @@ export default function Page() {
         initialSlides.map((slide) => ({
           Slide: slide.content,
           id: slide.id,
-        })),
+          type: slide.type,
+          title: slide.title,
+        }))
       )
-      updateSlideImages()
     }
+    updateSlideImages()
   }, [location.state])
 
   const handleDragEnd = (e) => {
-    const { active, over } = e
-    if (!over || active.id === over.id) return
+  const { active, over } = e;
+  if (!over || active.id === over.id) return;
 
-    setSlidesPreview((prev) => {
-      const originalPos = prev.findIndex((item) => item.id === active.id)
-      const currentPos = prev.findIndex((item) => item.id === over.id)
-      const updatedPreview = arrayMove(prev, originalPos, currentPos)
+  // Update main slides state
+  setSlides((prev) => {
+    const originalPos = prev.findIndex((item) => item.id === active.id);
+    const newPos = prev.findIndex((item) => item.id === over.id);
+    return arrayMove(prev, originalPos, newPos);
+  });
 
-      // Sync main slides
-      setSlides(
-        updatedPreview.map((item) => ({
-          Slide: item.content,
-          id: item.id,
-        })),
-      )
+  // Update slides preview state
+  setSlidesPreview((prev) => {
+    const originalPos = prev.findIndex((item) => item.id === active.id);
+    const newPos = prev.findIndex((item) => item.id === over.id);
+    return arrayMove(prev, originalPos, newPos);
+  });
+};
 
-      return updatedPreview.map((item, index) => ({
-        ...item,
-        number: index + 1,
-      }))
-    })
-  }
+useEffect(() => {
+  // Update slide numbers in preview
+  setSlidesPreview(prev => 
+    prev.map((slide, index) => ({
+      ...slide,
+      number: index + 1,
+      onClick: () => setCurrentSlide(index + 1)
+    }))
+  );
+}, [slides.length]); // Trigger when slide count changes
 
   const handleAiPopupSubmit = () => {
     const currentCredits = Number.parseInt(localStorage.getItem("credits") || "50")
@@ -257,228 +335,212 @@ export default function Page() {
   }
 
   const downloadPPT = async () => {
-    console.log("Initial slides data:", JSON.stringify(slides, null, 2))
+  console.log("Starting PowerPoint generation...")
+  try {
+    const pptx = new pptxgen()
 
-    console.log("Starting PowerPoint generation...")
-    try {
-      const pptx = new pptxgen()
-
-      for (let index = 0; index < slides.length; index++) {
-        const slideData = slides[index]
-        const generateAi = slideData.Slide?.props?.generateAi || {}
-        const slideType = generateAi.type || "default"
-
-        // Debug logging for slide data
-        console.log(`Slide ${index + 1} data:`, {
-          slideId: slideData.id,
-          type: slideType,
-          generateAi: generateAi,
-          title: generateAi.title,
-          description: generateAi.description,
-        })
-
-        const pptSlide = pptx.addSlide()
-        pptSlide.background = { color: "#342c4e" }
-
-        const addStyledText = (text, options) => {
-          if (text && typeof text === "string") {
-            console.log("Adding text to slide:", text)
-            pptSlide.addText(text, {
-              color: "#FFFFFF",
-              fontFace: "Arial",
-              fontSize: 12,
-              ...options,
-            })
-          } else {
-            console.log("Skipping empty or invalid text:", text)
-          }
-        }
-
-        // Get title and description from generateAi
-        const title = generateAi.title || ""
-        const description = generateAi.description || ""
-
-        switch (slideType) {
-          case "accentImage": {
-            console.log("Processing accentImage slide:", { title, description })
-
-            addStyledText(title, {
-              x: 0.5,
-              y: 0.5,
-              w: "50%",
-              h: 1,
-            })
-
-            addStyledText(description, {
-              x: 0.5,
-              y: 1.5,
-              w: "50%",
-              h: 3,
-            })
-
-            if (generateAi.image) {
-              try {
-                const base64Image = await getBase64FromImgElement(generateAi.image)
-                if (base64Image) {
-                  pptSlide.addImage({
-                    data: base64Image,
-                    x: 5.5,
-                    y: 1.5,
-                    w: 4,
-                    h: 3,
-                  })
-                }
-              } catch (error) {
-                console.error("Failed to add image:", error)
-              }
-            }
-            break
-          }
-
-          case "twoColumn": {
-            console.log("Processing twoColumn slide:", { title, description })
-
-            addStyledText(title, {
-              x: 0.5,
-              y: 0.5,
-              w: "90%",
-              h: 1,
-            })
-
-            if (generateAi.columns?.[0]?.content) {
-              addStyledText(generateAi.columns[0].content, {
-                x: 0.5,
-                y: 1.5,
-                w: "45%",
-                h: 3,
-              })
-            }
-
-            if (generateAi.columns?.[1]?.content) {
-              addStyledText(generateAi.columns[1].content, {
-                x: 5.5,
-                y: 1.5,
-                w: "45%",
-                h: 3,
-              })
-            }
-            break
-          }
-
-          case "imageCardText": {
-            console.log("Processing imageCardText slide:", { title, description })
-
-            if (generateAi.image) {
-              try {
-                const base64Image = await getBase64FromImgElement(generateAi.image)
-                if (base64Image) {
-                  pptSlide.addImage({
-                    data: base64Image,
-                    x: 0.5,
-                    y: 0.5,
-                    w: 4,
-                    h: 3,
-                  })
-                }
-              } catch (error) {
-                console.error("Failed to add image:", error)
-              }
-            }
-
-            addStyledText(title, {
-              x: 5.5,
-              y: 0.5,
-              w: "45%",
-              h: 1,
-            })
-
-            addStyledText(description, {
-              x: 5.5,
-              y: 1.5,
-              w: "45%",
-              h: 3,
-            })
-            break
-          }
-
-          case "threeImgCard": {
-            console.log("Processing threeImgCard slide:", { title })
-
-            addStyledText(title, {
-              x: 0.5,
-              y: 0.5,
-              w: "90%",
-              h: 1,
-            })
-
-            if (generateAi.cards) {
-              for (let i = 0; i < generateAi.cards.length; i++) {
-                const card = generateAi.cards[i]
-                const xOffset = i * 3.3
-
-                if (card.image) {
-                  try {
-                    const base64Image = await getBase64FromImgElement(card.image)
-                    if (base64Image) {
-                      pptSlide.addImage({
-                        data: base64Image,
-                        x: 0.5 + xOffset,
-                        y: 1.5,
-                        w: 3,
-                        h: 2,
-                      })
-                    }
-                  } catch (error) {
-                    console.error("Failed to add card image:", error)
-                  }
-                }
-
-                addStyledText(card.heading, {
-                  x: 0.5 + xOffset,
-                  y: 3.5,
-                  w: 3,
-                  h: 0.5,
-                })
-
-                addStyledText(card.description, {
-                  x: 0.5 + xOffset,
-                  y: 4,
-                  w: 3,
-                  h: 1,
-                })
-              }
-            }
-            break
-          }
-
-          default: {
-            console.log("Processing default slide:", { title, description })
-
-            addStyledText(title, {
-              x: 0.5,
-              y: 0.5,
-              w: "90%",
-              h: 1,
-            })
-
-            addStyledText(description, {
-              x: 0.5,
-              y: 1.5,
-              w: "90%",
-              h: 4,
-            })
-          }
+    // Helper function to parse styles from HTML content
+    const parseStyles = (htmlContent, defaultStyles = {}) => {
+      const styles = { ...defaultStyles }
+      
+      if (htmlContent?.includes('color:')) {
+        const colorMatch = htmlContent.match(/color:\s*rgb\(([^)]+)\)/)
+        if (colorMatch) {
+          const [r, g, b] = colorMatch[1].split(',').map(n => parseInt(n.trim()))
+          styles.color = `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`
         }
       }
-
-      console.log("Saving PowerPoint file...")
-      await pptx.writeFile({ fileName: "generated_presentation.pptx" })
-      console.log("PowerPoint generation completed successfully.")
-    } catch (error) {
-      console.error("PPT Generation Error:", error)
-      throw new Error("Failed to generate PowerPoint. Please check console for details.")
+      
+      if (htmlContent?.includes('<strong>')) styles.bold = true
+      if (htmlContent?.includes('<em>')) styles.italic = true
+      if (htmlContent?.includes('<sup>')) styles.superscript = true
+      if (htmlContent?.includes('<sub>')) styles.subscript = true
+      if (htmlContent?.includes('class="ql-align-center"')) styles.align = 'center'
+      if (htmlContent?.includes('class="ql-align-right"')) styles.align = 'right'
+      
+      return styles
     }
+
+    // Helper function to add text with styles
+    const addStyledText = (pptSlide, text, htmlContent, options) => {
+      if (text && typeof text === "string") {
+        const styles = parseStyles(htmlContent)
+        pptSlide.addText(text.trim(), {
+          color: "#FFFFFF",
+          fontFace: "Arial",
+          fontSize: 12,
+          ...styles,
+          ...options,
+        })
+      }
+    }
+
+    for (let index = 0; index < slides.length; index++) {
+      const slideData = slides[index]
+      const type = slideData.type || "default"
+      
+      // Strip HTML but keep original HTML for style parsing
+      const title = slideData.titleContainer?.title?.replace(/<[^>]+>/g, '') || ''
+      const titleHtml = slideData.titleContainer?.title || ''
+      const description = slideData.descriptionContainer?.description?.replace(/<[^>]+>/g, '') || ''
+      const descriptionHtml = slideData.descriptionContainer?.description || ''
+      const image = slideData.imageContainer?.image || null
+
+      const pptSlide = pptx.addSlide()
+      pptSlide.background = { color: "#342c4e" }
+
+      switch (type) {
+        case "accentImage": {
+          addStyledText(pptSlide, title, titleHtml, {
+            x: 0.5,
+            y: 0.5,
+            w: "60%",
+            h: 1,
+            fontSize: 24
+          })
+
+          addStyledText(pptSlide, description, descriptionHtml, {
+            x: 0.5,
+            y: 1.5,
+            w: "60%",
+            h: 3,
+            fontSize: 14
+          })
+
+          const imageUrl = slideData.imageContainer?.image
+          if (imageUrl) {
+            try {
+              const base64Image = await getBase64FromImgElement(imageUrl)
+              if (base64Image) {
+                pptSlide.addImage({
+                  data: base64Image,
+                  x: 5.5,
+                  y: 1.5,
+                  w: 4,
+                  h: 3,
+                })
+              }
+            } catch (error) {
+              console.error("Failed to add image:", error)
+            }
+          }
+          break
+        }
+
+        case "twoColumn": {
+          addStyledText(pptSlide, title, titleHtml, {
+            x: 0.5,
+            y: 0.5,
+            w: "90%",
+            h: 1,
+            fontSize: 24
+          })
+
+          slideData.columns?.forEach((column, idx) => {
+            const content = column.content?.replace(/<[^>]+>/g, '') || ''
+            addStyledText(pptSlide, content, column.content, {
+              x: idx === 0 ? 0.5 : 5.5,
+              y: 1.5,
+              w: "45%",
+              h: 3,
+              fontSize: 14
+            })
+          })
+          break
+        }
+
+        case "threeImgCard": {
+          // Add title with proper spacing
+          addStyledText(pptSlide, title, titleHtml, {
+            x: 0.5,
+            y: 0.3,
+            w: "90%",
+            h: 0.8,
+            align: 'center'
+          })
+
+          // Process cards synchronously to ensure all cards are added
+          const processCards = async () => {
+            const cardPromises = slideData.cards?.map(async (card, idx) => {
+              const xOffset = 0.5 + (idx * 3.3)
+              
+              // Add image first
+              if (card.image) {
+                try {
+                  const base64Image = await getBase64FromImgElement(card.image)
+                  if (base64Image) {
+                    pptSlide.addImage({
+                      data: base64Image,
+                      x: xOffset,
+                      y: 1.3,
+                      w: 2.8,
+                      h: 2,
+                    })
+                  }
+                } catch (error) {
+                  console.error(`Failed to add image for card ${idx}:`, error)
+                }
+              }
+
+              // Add heading
+              const heading = card.headingContainer?.heading?.replace(/<[^>]+>/g, '') || ''
+              addStyledText(pptSlide, heading, card.headingContainer?.heading, {
+                x: xOffset,
+                y: 3.4,
+                w: 2.8,
+                h: 0.6,
+                align: 'center',
+                fontSize: 14,
+                bold: true
+              })
+
+              // Add description
+              const cardDesc = card.descriptionContainer?.description?.replace(/<[^>]+>/g, '') || ''
+              addStyledText(pptSlide, cardDesc, card.descriptionContainer?.description, {
+                x: xOffset,
+                y: 4.1,
+                w: 2.8,
+                h: 1,
+                align: 'center',
+                fontSize: 12
+              })
+            }) || []
+
+            await Promise.all(cardPromises)
+          }
+
+          await processCards()
+          break
+        }
+
+        default: {
+          addStyledText(pptSlide, title, titleHtml, {
+            x: 0.5,
+            y: 0.5,
+            w: "90%",
+            h: 1,
+            fontSize: 24
+          })
+
+          addStyledText(pptSlide, description, descriptionHtml, {
+            x: 0.5,
+            y: 1.5,
+            w: "90%",
+            h: 4,
+            fontSize: 14
+          })
+        }
+      }
+    }
+
+    console.log("Saving PowerPoint file...")
+    await pptx.writeFile({ fileName: "generated_presentation.pptx" })
+    console.log("PowerPoint generation completed successfully.")
+  } catch (error) {
+    console.error("PPT Generation Error:", error)
+    throw new Error("Failed to generate PowerPoint. Please check console for details.")
   }
+}
 
   const generateSlidePreview = async (slideElement) => {
     if (slideElement) {
@@ -506,51 +568,31 @@ export default function Page() {
 
   const addNewSlide = async (index) => {
     const newSlide = {
-    number: index + 1,
-    id: Date.now(),
-    type: 'custom', // Add type identifier
-    title: "New Slide",
-    content: (
-      <div className="flex justify-center">
-        <CardTemplates
-          slidesPreview={slidesPreview}
-          id={Date.now()}
-          setSlides={setSlides}
-          setCurrentSlide={setCurrentSlide}
-          setSlidesPreview={setSlidesPreview}
-        />
-      </div>
-    ),
-    onClick: () => setCurrentSlide(index + 1),
-  };
+      number: index + 1,
+      id: uuidv4(),
+      type: "custom", // Add type identifier
+      title: "New Slide",
+      content: (
+        <div className="flex justify-center">
+          <CardTemplates
+            slidesPreview={slidesPreview}
+            id={Date.now()}
+            setSlides={setSlides}
+            setCurrentSlide={setCurrentSlide}
+            setSlidesPreview={setSlidesPreview}
+          />
+        </div>
+      ),
+      onClick: () => setCurrentSlide(index + 1),
+    }
 
-    setSlidesPreview((prevSlides) => {
-      const updatedSlides = [
-        ...prevSlides.slice(0, index),
-        newSlide,
-        ...prevSlides.slice(index).map((slide) => ({ ...slide, number: slide.number + 1 })),
-      ]
-      return updatedSlides
-    })
-
-    setSlides((prevSlides) => {
-      const newSlides = [
-        ...prevSlides.slice(0, index),
-        { Slide: newSlide.content, id: newSlide.id },
-        ...prevSlides.slice(index),
-      ]
-      debouncedUpdateSlideImages()
-      return newSlides
-    })
+    setSlides(prev => [...prev.slice(0, index), newSlide, ...prev.slice(index)]);
+    setSlidesPreview(prev => [...prev.slice(0, index), newSlide, ...prev.slice(index)]);
   }
 
-  const deleteSlide = (id) => {
-    setSlidesPreview((prevSlides) => prevSlides.filter((slide) => slide.id !== id))
-    setSlides((prevSlides) => {
-      const newSlides = prevSlides.filter((slide) => slide.id !== id)
-      debouncedUpdateSlideImages()
-      return newSlides
-    })
+  const deleteSlide = (slideId) => {
+    setSlides(prevSlides => prevSlides.filter(slide => slide.id !== slideId))
+    setSlidesPreview(prevSlides => prevSlides.filter(slide => slide.id !== slideId))
   }
 
   useEffect(() => {
@@ -567,6 +609,76 @@ export default function Page() {
     }))
   })));
 }, []);
+
+  // const startImpress = () => {
+  //   setIsImpressPresent(true);
+  // }
+
+  const handleSlideUpdate = (slideId, updatedData) => {
+  // Preserve all styling information when updating slides
+  setSlides(prevSlides => 
+    prevSlides.map(slide => {
+      if (slide.id === slideId) {
+        return {
+          ...slide,
+          ...updatedData,
+          titleContainer: {
+            ...slide.titleContainer,
+            ...updatedData.titleContainer,
+            styles: {
+              ...slide.titleContainer?.styles,
+              ...updatedData.titleContainer?.styles
+            }
+          },
+          descriptionContainer: {
+            ...slide.descriptionContainer,
+            ...updatedData.descriptionContainer,
+            styles: {
+              ...slide.descriptionContainer?.styles,
+              ...updatedData.descriptionContainer?.styles
+            }
+          }
+        };
+      }
+      return slide;
+    })
+  );
+
+  // Update preview with preserved styles
+  setSlidesPreview(prevSlides =>
+    prevSlides.map(slide => {
+      if (slide.id === slideId) {
+        const updatedSlide = {
+          ...slide,
+          ...updatedData,
+          titleContainer: {
+            ...slide.titleContainer,
+            ...updatedData.titleContainer,
+            styles: {
+              ...slide.titleContainer?.styles,
+              ...updatedData.titleContainer?.styles
+            }
+          },
+          descriptionContainer: {
+            ...slide.descriptionContainer,
+            ...updatedData.descriptionContainer,
+            styles: {
+              ...slide.descriptionContainer?.styles,
+              ...updatedData.descriptionContainer?.styles
+            }
+          }
+        };
+        return {
+          ...updatedSlide,
+          content: renderSlideComponent(updatedSlide)
+        };
+      }
+      return slide;
+    })
+  );
+};
+
+
   return (
     <div className="h-screen flex flex-col bg-background">
       <Header setGenerateAi={() => setShowPopup(true)} startPresentation={startPresentation} />
@@ -575,11 +687,18 @@ export default function Page() {
       {isPresentationMode && (
         <PresentationMode
           slides={slides}
-          slideImages={slideImages}
           startIndex={presentationStartIndex}
           onClose={() => setIsPresentationMode(false)}
+          renderSlide={renderSlideComponent} // Pass your existing render function
         />
       )}
+      {/* {isImpressPresent && (
+        <ImpressPresentation 
+          slides={slides} 
+          onClose={() => setIsImpressPresent(false)} 
+        />
+        )
+      } */}
       <div className="flex flex-1 overflow-hidden">
         <DndContext collisionDetection={closestCorners} onDragEnd={handleDragEnd}>
           {slidesPreview.length > 0 && (
@@ -593,42 +712,54 @@ export default function Page() {
           )}
         </DndContext>
         <main className="flex-1 overflow-y-auto">
-          {generateAi ? (
-            <GenerateAi
-              key={`ai-${aiInputData}-${Date.now()}`}
-              inputData={aiInputData}
-              setShowPopup={setShowPopup}
-              setIsLoadingCopy={setIsLoadingCopy}
-              setSlidesPreview={setSlidesPreview}
-              setSlides={setSlides}
-              setGenerateAi={setGenerateAi}
-              onError={() => {
-                setIsGenerating(false)
-                setIsLoadingCopy(false)
-                toast.error("Generation failed. Please try again.")
-              }}
-            />
-          ) : (
-            <div>
-              {slides.map((slideData, index) => (
-                <React.Fragment key={slideData.id}>
-                  <div id={`at-${slideData.id}`}>{renderSlideComponent(slideData)}</div>
-                  <div className="flex justify-center align-middle justify-self-center ">
+        {generateAi ? (
+          <div className="space-y-4">
+          <GenerateAi
+            inputData={aiInputData}
+            setShowPopup={setShowPopup}
+            setIsLoadingCopy={setIsLoadingCopy}
+            setSlidesPreview={setSlidesPreview}
+            setSlides={setSlides}
+            setGenerateAi={setGenerateAi}
+            onError={() => {
+              setIsGenerating(false)
+              setIsLoadingCopy(false)
+              toast.error("Generation failed. Please try again.")
+            }}
+            onComplete={() => {
+              setIsGenerating(false)
+              setIsAiGenerated(true)
+            }}
+          />
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {slides.map((slideData, index) => (
+              <div key={slideData.id} className="relative">
+                <div id={`slide-${slideData.id}`} className="mb-4">
+                  {renderSlideComponent(slideData)}
+                </div>
+                <div className="flex justify-center align-middle justify-self-center ">
                     <AddButtonAi index={index} addNewSlide={addNewSlide} />
                   </div>
-                </React.Fragment>
-              ))}
-              {/* {isAiGenerated && ( */}
+              </div>
+            ))}
+            
+            {slides.length > 0 && (
               <Card className="bg-white/10 backdrop-blur-lg border-0">
-                <CardContent className="p-6 flex justify-center">
-                  <Button onClick={downloadPPT} className="bg-green-600 hover:bg-green-700 text-white" size="lg">
+                <CardContent className="p-6 flex justify-center gap-4">
+                  <Button 
+                    onClick={downloadPPT} 
+                    className="bg-green-600 hover:bg-green-700 text-white" 
+                    size="lg"
+                  >
                     <Download className="mr-2 h-4 w-4" />
                     Download Presentation
                   </Button>
 
                   <Button
                     onClick={handleSaveSlide}
-                    className="bg-green-600 hover:bg-green-700 ml-2 text-white"
+                    className="bg-green-600 hover:bg-green-700 text-white"
                     size="lg"
                   >
                     <Save className="mr-2 h-4 w-4" />
@@ -636,10 +767,10 @@ export default function Page() {
                   </Button>
                 </CardContent>
               </Card>
-              {/* )} */}
-            </div>
-          )}
-        </main>
+            )}
+          </div>
+        )}
+      </main>
       </div>
 
       {/* AI Input Dialog */}
@@ -687,4 +818,3 @@ export default function Page() {
     </div>
   )
 }
-

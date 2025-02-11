@@ -24,10 +24,20 @@ const BasicBlock = () => {
     };
   }, []);
 
-  const handleDragStart = (event, cardData) => {
-    setDraggedElement(cardData);
-    event.dataTransfer.effectAllowed = "move";
-    event.dataTransfer.setData("text/plain", "dragged-element");
+  const handleDragStart = (event, componentType) => {
+    const draggedElement = {
+      type: componentType, // 'title', 'heading', or 'paragraph'
+      data: {
+        value: "Default Value", // Default content
+        style: {}, // Default style
+      },
+    };
+  
+    // Set the dragged element in the context
+    setDraggedElement(draggedElement);
+  
+    // Set the drag data
+    event.dataTransfer.setData("application/json", JSON.stringify(draggedElement));
   };
 
   return (
@@ -53,9 +63,7 @@ const BasicBlock = () => {
             <div
               className="col-span-1 border-b pb-2 last:border-b-0 bg-gray-100 rounded transform transition-all duration-300 hover:scale-105 hover:shadow-xl p-2 flex flex-col items-center"
               draggable
-              onDragStart={(e) =>
-                handleDragStart(e, { template: <TitleInput /> })
-              }
+              onDragStart={(e) => handleDragStart(e, "title")}
             >
               <Type className="text-red-500 w-5 h-5 mr-2" />
               <h1 className="text-black">Add Title</h1>
@@ -64,9 +72,7 @@ const BasicBlock = () => {
             <div
               className="col-span-1 border-b pb-2 last:border-b-0 bg-gray-100 rounded transform transition-all duration-300 hover:scale-105 hover:shadow-xl p-2 flex flex-col items-center"
               draggable
-              onDragStart={(e) =>
-                handleDragStart(e, { template: <Headings /> })
-              }
+              onDragStart={(e) => handleDragStart(e, "heading")}
             >
               <Heading className="text-blue-500 w-5 h-5 mr-2" />
               <h1 className="text-black">Add Heading</h1>
@@ -75,9 +81,7 @@ const BasicBlock = () => {
             <div
               className="col-span-1 border-b pb-2 last:border-b-0 bg-gray-100 rounded transform transition-all duration-300 hover:scale-105 hover:shadow-xl p-2 flex flex-col items-center"
               draggable
-              onDragStart={(e) =>
-                handleDragStart(e, { template: <ParagraphInput /> })
-              }
+              onDragStart={(e) => handleDragStart(e, "paragraph")}
             >
               <AlignJustify className="text-green-500 w-5 h-5 mr-2" />
               <blockquote className="text-black">BlockQuote</blockquote>

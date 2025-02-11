@@ -19,14 +19,14 @@ const Gammas = ({ credits, setCredits }) => {
 
   // Handle clicking a card to navigate with slide data
   const handleCardClick = (slides, key) => {
+    
     if (!slides || slides.length === 0) return
     navigate("/page", {
       state: {
         slidesArray: slides.map((slide) => ({
-          type: slide?.Slide?.props?.generateAi?.type,
-          ...slide?.Slide?.props?.generateAi,
+          type: slide?.type,
+          ...slide,
           id: slide?.id,
-          Slide: slide?.Slide,
         })),
         key:key,
       },
@@ -35,9 +35,15 @@ const Gammas = ({ credits, setCredits }) => {
 
   // Handle deleting a slide
   const handleDeleteSlide = (id) => {
+    const slideToDelete = ArraySlides.find((slide) => slide.key === id)
     const updatedSlides = ArraySlides.filter((slide) => slide.key !== id)
     setArraySlides(updatedSlides)
     localStorage.setItem("slides", JSON.stringify(updatedSlides))
+
+    // Add the deleted slide to trash
+    const trash = JSON.parse(localStorage.getItem("trash") || "[]")
+    trash.push(slideToDelete)
+    localStorage.setItem("trash", JSON.stringify(trash))
   }
 
   // Handle AI Generation navigation
@@ -140,8 +146,8 @@ const Gammas = ({ credits, setCredits }) => {
             slideGroup.slides && slideGroup.slides.length > 0 ? (
               <Card
                 key={slideGroup.key}
-                slide={slideGroup.slides[0]?.Slide?.props?.generateAi}
-                onClick={() => handleCardClick(slideGroup.slides, slideGroup.key)}
+                slide={slideGroup?.slides[0]}
+                onClick={() => handleCardClick(slideGroup.slides,ArraySlides.key)}
                 onDelete={() => handleDeleteSlide(slideGroup.key)}
               />
             ) : null,
@@ -153,4 +159,3 @@ const Gammas = ({ credits, setCredits }) => {
 }
 
 export default Gammas
-
