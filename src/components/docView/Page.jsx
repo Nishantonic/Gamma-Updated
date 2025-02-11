@@ -384,6 +384,7 @@ useEffect(() => {
       const titleHtml = slideData.titleContainer?.title || ''
       const description = slideData.descriptionContainer?.description?.replace(/<[^>]+>/g, '') || ''
       const descriptionHtml = slideData.descriptionContainer?.description || ''
+      const image = slideData.imageContainer?.image || null
 
       const pptSlide = pptx.addSlide()
       pptSlide.background = { color: "#342c4e" }
