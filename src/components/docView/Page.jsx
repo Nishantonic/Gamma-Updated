@@ -91,8 +91,8 @@ export default function Page() {
       slides: slides.map((slide) => ({
         id: slide.id,
         type: slide.type || "custom",
-        title: slide.title || "Untitled",
-        description: slide.description || "",
+        title: slide?.titleContainer?.title.replace(/<[^>]*>/g, '') || "Untitled",
+        description: slide?.descriptionContainer?.description || "",
         image: slide.image || null,
         // Preserve style information
         titleContainer: {
@@ -103,6 +103,13 @@ export default function Page() {
           ...slide.descriptionContainer,
           styles: slide.descriptionContainer?.styles || {}
         },
+        imageContainer: slide.imageContainer ? {
+            ...slide.imageContainer,
+            // Ensure image URL is properly stored
+            image: typeof slide.imageContainer.image === 'string' 
+              ? slide.imageContainer.image 
+              : slide.imageContainer.image?.src || null
+          } : null,
         ...slide,
       })),
     };
@@ -236,12 +243,31 @@ export default function Page() {
   const { active, over } = e;
   if (!over || active.id === over.id) return;
 
-  setSlides(prev => {
-    const originalPos = prev.findIndex(item => item.id === active.id);
-    const newPos = prev.findIndex(item => item.id === over.id);
+  // Update main slides state
+  setSlides((prev) => {
+    const originalPos = prev.findIndex((item) => item.id === active.id);
+    const newPos = prev.findIndex((item) => item.id === over.id);
+    return arrayMove(prev, originalPos, newPos);
+  });
+
+  // Update slides preview state
+  setSlidesPreview((prev) => {
+    const originalPos = prev.findIndex((item) => item.id === active.id);
+    const newPos = prev.findIndex((item) => item.id === over.id);
     return arrayMove(prev, originalPos, newPos);
   });
 };
+
+useEffect(() => {
+  // Update slide numbers in preview
+  setSlidesPreview(prev => 
+    prev.map((slide, index) => ({
+      ...slide,
+      number: index + 1,
+      onClick: () => setCurrentSlide(index + 1)
+    }))
+  );
+}, [slides.length]); // Trigger when slide count changes
 
   const handleAiPopupSubmit = () => {
     const currentCredits = Number.parseInt(localStorage.getItem("credits") || "50")
@@ -531,24 +557,8 @@ export default function Page() {
       onClick: () => setCurrentSlide(index + 1),
     }
 
-    setSlidesPreview((prevSlides) => {
-      const updatedSlides = [
-        ...prevSlides.slice(0, index),
-        newSlide,
-        ...prevSlides.slice(index).map((slide) => ({ ...slide, number: slide.number + 1 })),
-      ]
-      return updatedSlides
-    })
-
-    setSlides((prevSlides) => {
-      const newSlides = [
-        ...prevSlides.slice(0, index),
-        { Slide: newSlide.content, id: newSlide.id },
-        ...prevSlides.slice(index),
-      ]
-      debouncedUpdateSlideImages()
-      return newSlides
-    })
+    setSlides(prev => [...prev.slice(0, index), newSlide, ...prev.slice(index)]);
+    setSlidesPreview(prev => [...prev.slice(0, index), newSlide, ...prev.slice(index)]);
   }
 
   const deleteSlide = (slideId) => {
@@ -674,6 +684,7 @@ export default function Page() {
         </DndContext>
         <main className="flex-1 overflow-y-auto">
         {generateAi ? (
+          <div className="space-y-4">
           <GenerateAi
             inputData={aiInputData}
             setShowPopup={setShowPopup}
@@ -691,6 +702,7 @@ export default function Page() {
               setIsAiGenerated(true)
             }}
           />
+          </div>
         ) : (
           <div className="space-y-4">
             {slides.map((slideData, index) => (
