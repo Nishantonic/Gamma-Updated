@@ -28,7 +28,7 @@ function AccentImageAi({ generateAi = {}, ...props }) {
   const [descriptionStyles, setDescriptionStyles] = useState(generateAi.descriptionContainer?.styles || {})
   const [isDeleted, setIsDeleted] = useState(false)
   const { draggedElement } = useContext(DragContext)
-  const { droppedItems, addDroppedItem, removeDroppedItem, updateDroppedItem } = useDroppedItems()
+  // const { droppedItems} = useDroppedItems()
   const slideId = generateAi.id
   const imageRef = useRef(null)
   const COMPONENT_MAP = {
@@ -117,14 +117,14 @@ function AccentImageAi({ generateAi = {}, ...props }) {
     }
   }
 
-  useEffect(() => {
-    updateParent({
-      titleContainer: { styles: titleStyles },
-      descriptionContainer: { styles: descriptionStyles },
-      imageContainer: { styles: { width: imageSize.width, height: imageSize.height } },
-      dropContainer: { dropItems: droppedItems[slideId] || [] },
-    })
-  }, [titleStyles, descriptionStyles, imageSize, droppedItems, droppedItems[slideId]])
+  // useEffect(() => {
+  //   updateParent({
+  //     titleContainer: { styles: titleStyles },
+  //     descriptionContainer: { styles: descriptionStyles },
+  //     imageContainer: { styles: { width: imageSize.width, height: imageSize.height } },
+  //     dropContainer: { dropItems: droppedItems[slideId] || [] },
+  //   })
+  // }, [titleStyles, descriptionStyles, imageSize, droppedItems, droppedItems[slideId]])
 
   const updateGenerateAiJson = (generateAi, slideId, inputId, newData) => {
     if (!slideId || !inputId) {
@@ -188,17 +188,14 @@ function AccentImageAi({ generateAi = {}, ...props }) {
       styles: {},
     };
 
-    const currentItems = generateAi.dropContainer?.dropItems || [];
-    const updatedGenerateAi = {
+    // Update the slide's dropContainer via onEdit
+    const updatedData = {
       ...generateAi,
       dropContainer: {
-        dropItems: [...currentItems, newItem]
+        dropItems: [...(generateAi.dropContainer?.dropItems || []), newItem]
       }
     };
-
-    if (generateAi.onEdit) {
-      generateAi.onEdit(updatedGenerateAi);
-    }
+    generateAi.onEdit(updatedData);
   }
 };
 
@@ -207,34 +204,26 @@ function AccentImageAi({ generateAi = {}, ...props }) {
   }
 
   const handleUpdateDroppedItem = (itemId, updates) => {
-    const updatedItems = (generateAi.dropContainer?.dropItems || []).map(item => 
-      item.id === itemId ? { ...item, ...updates } : item
-    )
+  const updatedItems = generateAi.dropContainer?.dropItems?.map(item => 
+    item.id === itemId ? { ...item, ...updates } : item
+  ) || [];
 
-    const updatedGenerateAi = {
-      ...generateAi,
-      dropContainer: {
-        dropItems: updatedItems
-      }
-    }
-
-    if (generateAi.onEdit) {
-      generateAi.onEdit(updatedGenerateAi)
-    }
-  }
+  generateAi.onEdit({
+    ...generateAi,
+    dropContainer: { dropItems: updatedItems }
+  });
+};
+  useEffect(() => {
+  console.log('AccentImageAi generateAi:', generateAi.dropContainer?.dropItems);
+}, [generateAi.dropContainer?.dropItems]);
 
   const handleDeleteDroppedItem = (itemId) => {
-    const updatedGenerateAi = {
-      ...generateAi,
-      dropContainer: {
-        dropItems: (generateAi.dropContainer?.dropItems || []).filter(item => item.id !== itemId)
-      }
-    }
-
-    if (generateAi.onEdit) {
-      generateAi.onEdit(updatedGenerateAi)
-    }
-  }
+  const updatedItems = generateAi.dropContainer?.dropItems?.filter(item => item.id !== itemId) || [];
+  generateAi.onEdit({
+    ...generateAi,
+    dropContainer: { dropItems: updatedItems }
+  });
+};
 
   const renderDroppedItems = () => {
   return (generateAi.dropContainer?.dropItems || []).map((item) => {
@@ -247,9 +236,9 @@ function AccentImageAi({ generateAi = {}, ...props }) {
         <Component
           slideId={slideId}
           inputId={item.id}
-          initialData={item.content.replace(/<[^>]*>/g, '')}
+          initialData={item.content}
           initialStyles={item.styles}
-          onChange={(value, styles) => {
+          onUpdate={(value, styles) => {
             handleUpdateDroppedItem(item.id, { 
               content: value,
               styles: styles 

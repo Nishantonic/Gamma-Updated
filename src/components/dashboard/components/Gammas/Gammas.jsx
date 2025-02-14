@@ -28,10 +28,8 @@ const Gammas = ({ credits, setCredits }) => {
           ...slide,
           // Transform array dropContainer to object structure if needed
           dropContainer: {
-            dropItems: Array.isArray(slide.dropContainer) 
-              ? slide.dropContainer 
-              : slide.dropContainer?.dropItems || []
-          },
+                    dropItems: slide.dropContainer?.dropItems || []
+                },  
           id: slide.id,
           type: slide.type,
           titleContainer: slide.titleContainer,

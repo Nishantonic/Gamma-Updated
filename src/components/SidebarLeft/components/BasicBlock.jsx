@@ -1,9 +1,7 @@
 import React, { useState, useRef, useEffect, useContext } from "react";
 import { CaseSensitive, AlignJustify, Heading, Type } from "lucide-react";
 import { DragContext } from "../DragContext";
-import Headings from "@/components/docView/slidesView/CardComponents/Heading";
-import TitleInput from "@/components/docView/slidesView/CardComponents/TitleInput";
-import ParagraphInput from "@/components/docView/slidesView/CardComponents/ParagraphInput";
+
 
 const BasicBlock = () => {
   const [isCardVisible, setIsCardVisible] = useState(false);

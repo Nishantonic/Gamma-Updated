@@ -367,7 +367,7 @@ useEffect(() => {
     const newPos = prev.findIndex((item) => item.id === over.id);
     return arrayMove(prev, originalPos, newPos);
   });
-};
+};      
 
 useEffect(() => {
   // Update slide numbers in preview
@@ -680,11 +680,11 @@ useEffect(() => {
 
   useEffect(() => {
     debouncedUpdateSlideImages()
-  }, [slides])    
+  }, [slides])      
 
   useEffect(() => {
   const savedSlides = JSON.parse(localStorage.getItem("slides")) || [];
-  setArraySlides(savedSlides.map(slideGroup => ({
+  setArraySlides(savedSlides.map(slideGroup => ({ 
     ...slideGroup,
     slides: slideGroup.slides.map(slide => ({
       type: slide.type || 'custom', // Handle legacy slides
@@ -698,6 +698,8 @@ useEffect(() => {
   // }
 
   const handleSlideUpdate = (slideId, updatedData) => {
+    console.log("slide Update : ",slideId);
+    
     setSlides(prevSlides =>
     prevSlides.map(slide => {
       if (slide.id === slideId) {
@@ -818,7 +820,7 @@ useEffect(() => {
               slidesPreview={slidesPreview}
               setSlidesPreview={setSlidesPreview}
               deleteSlide={deleteSlide}
-              slideImages={slideImages}
+              slideImages={slideImages}   
             />
           )}
         </DndContext>

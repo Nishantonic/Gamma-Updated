@@ -77,7 +77,7 @@ function TitleAi({ slideId, inputId, onUpdate, initialData,initialStyles}) {
         />
       </div>
     </div>
-  );
+  );  
 }
 
 export default TitleAi;
