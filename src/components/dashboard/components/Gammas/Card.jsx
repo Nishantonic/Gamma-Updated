@@ -1,13 +1,15 @@
 import { Trash2 } from "lucide-react"
 
 const Card = ({ slide, onClick, onDelete }) => {
+  console.log(slide);
+  
   return (
     <div className="relative bg-white rounded-lg shadow-md p-4 w-64 cursor-pointer hover:shadow-lg transition-shadow duration-300">
       <div onClick={onClick}>
-        {slide.imageContainer.image && (
+        {slide.imageContainer?.image && (
           <img
-            src={slide.imageContainer.image || "/placeholder.svg"}
-            alt={slide.titleContainer.title.replace(/<[^>]*>/g, '') || "Slide"}
+            src={slide.imageContainer?.image || "/placeholder.svg"}
+            alt={slide.titleContainer?.title.replace(/<[^>]*>/g, '') || "Slide"}
             className="w-full h-40 object-cover rounded-lg mb-2"
           />
         )}

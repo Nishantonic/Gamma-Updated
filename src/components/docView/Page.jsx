@@ -34,6 +34,7 @@ import ImageTextAi from "./GenerateAi/AiComponents/ImageTextAi"
 import ThreeColumnAi from "./GenerateAi/AiComponents/ThreeColumnAi"
 import DefaultAi from "./GenerateAi/AiComponents/DefaultAi"
 import { v4 as uuidv4 } from "uuid"
+import { useDroppedItems } from "./DroppedItemsContext"
 export default function Page() {
   const [currentSlide, setCurrentSlide] = useState(1)
   const [slidesPreview, setSlidesPreview] = useState([])
@@ -55,6 +56,8 @@ export default function Page() {
     return savedSlides
   })
   const location = useLocation()
+  const { droppedItems } = useDroppedItems();
+
   // const { slidesArray } = location.state || {}; // Extract slidesArray
   // useEffect(() => {
   //   console.log(slidesArray)
@@ -85,11 +88,24 @@ export default function Page() {
   }, [currentSlide])
 
   const handleSaveSlide = () => {
-  if (slides.length > 0) {
+  try {
+    // Validate slides before proceeding
+    if (!slides || slides.length === 0) {
+      toast.error("No slides to save!");
+      return;
+    }
+
+    // Create a clean slide entry
     const newEntry = {
       key: location.state?.key || Date.now(),
       slides: slides.map((slide) => {
-        // Create a clean slide object without React components and unnecessary properties
+        // Validate and clean slide data
+        if (!slide.id) {
+          console.warn("Slide missing ID, generating new one:", slide);
+          slide.id = uuidv4();
+        }
+        
+        // Base slide structure
         const cleanSlide = {
           id: slide.id,
           type: slide.type || "custom",
@@ -108,64 +124,94 @@ export default function Page() {
             imageId: slide.imageContainer?.imageId || uuidv4(),
             image: slide.imageContainer?.image || null,
             styles: slide.imageContainer?.styles || {}
+          },
+          dropContainer: {
+            dropItems: (slide.dropContainer?.dropItems || []).map(item => ({
+              id: item.id || uuidv4(), // Ensure ID exists
+              type: item.type || "text", // Default type
+              content: item.content || "",
+              styles: item.styles || {}
+            }))
           }
         };
 
-        // Add type-specific properties
-        if (slide.type === "twoColumn" && slide.columns) {
-          cleanSlide.columns = slide.columns.map(column => ({
-            id: column.id || uuidv4(),
-            content: column.content || "",
-            styles: column.styles || {}
-          }));
-        }
+        // Handle type-specific properties
+        switch (slide.type) {
+          case "twoColumn":
+            if (slide.columns) {
+              cleanSlide.columns = slide.columns.map(column => ({
+                id: column.id || uuidv4(),
+                content: column.content || "",
+                styles: column.styles || {}
+              }));
+            }
+            break;
 
-        if (slide.type === "threeImgCard" && slide.cards) {
-          cleanSlide.cards = slide.cards.map(card => ({
-            id: card.id || uuidv4(),
-            headingContainer: {
-              heading: card.headingContainer?.heading || "",
-              styles: card.headingContainer?.styles || {}
-            },
-            descriptionContainer: {
-              description: card.descriptionContainer?.description || "",
-              styles: card.descriptionContainer?.styles || {}
-            },
-            image: card.image || null
-          }));
+          case "threeImgCard":
+            if (slide.cards) {
+              cleanSlide.cards = slide.cards.map(card => ({
+                id: card.id || uuidv4(),
+                headingContainer: {
+                  heading: card.headingContainer?.heading || "",
+                  styles: card.headingContainer?.styles || {}
+                },
+                descriptionContainer: {
+                  description: card.descriptionContainer?.description || "",
+                  styles: card.descriptionContainer?.styles || {}
+                },
+                image: card.image || null
+              }));
+            }
+            break;
+
+          default:
+            // No additional processing for other types
+            break;
         }
 
         return cleanSlide;
       })
     };
 
+    // Update state and storage
     setArraySlides((prevArraySlides) => {
       const existingIndex = prevArraySlides.findIndex(group => group.key === newEntry.key);
       let updatedArraySlides;
 
       if (existingIndex !== -1) {
+        // Update existing entry
         updatedArraySlides = prevArraySlides.map(group =>
           group.key === newEntry.key ? newEntry : group
         );
       } else {
+        // Add new entry
         updatedArraySlides = [...prevArraySlides, newEntry];
       }
 
-      // Save to localStorage
-      localStorage.setItem("slides", JSON.stringify(updatedArraySlides));
-
-      // Update trash if needed
-      const trash = JSON.parse(localStorage.getItem("trash") || "[]");
-      const updatedTrash = trash.filter(slide => slide.key !== newEntry.key);
-      localStorage.setItem("trash", JSON.stringify(updatedTrash));
+      // Save to localStorage with error handling
+      try {
+        localStorage.setItem("slides", JSON.stringify(updatedArraySlides));
+        
+        // Update trash collection
+        const trash = JSON.parse(localStorage.getItem("trash") || "[]");
+        const updatedTrash = trash.filter(slide => slide.key !== newEntry.key);
+        localStorage.setItem("trash", JSON.stringify(updatedTrash));
+      } catch (storageError) {
+        console.error("Failed to save to localStorage:", storageError);
+        toast.error("Failed to save presentation!");
+        return prevArraySlides; // Return previous state if save fails
+      }
 
       return updatedArraySlides;
     });
 
+    // Success feedback and navigation
     toast.success("Presentation saved successfully!");
     navigate("/home");
-  } else {
-    toast.error("No slides to save!");
+
+  } catch (error) {
+    console.error("Error saving presentation:", error);
+    toast.error("Failed to save presentation!");
   }
 };
   
@@ -205,68 +251,105 @@ export default function Page() {
     return <Component {...commonProps} key={slideData.id} />
   }
   
-  useEffect(() => {
-    if (location.state?.slidesArray) {
-    const savedSlides = location.state.slidesArray.map(slide => ({
-      ...slide,
+ useEffect(() => {
+  if (location.state?.slidesArray) {
+    const normalizedSlides = location.state.slidesArray.map(slide => ({
+      id: slide.id || uuidv4(),
+      type: slide.type || 'custom',
       titleContainer: {
-        ...slide.titleContainer,
+        titleId: slide.titleContainer?.titleId || uuidv4(),
+        title: slide.titleContainer?.title || 'Untitled',
         styles: slide.titleContainer?.styles || {}
       },
       descriptionContainer: {
-        ...slide.descriptionContainer,
+        descriptionId: slide.descriptionContainer?.descriptionId || uuidv4(),
+        description: slide.descriptionContainer?.description || '',
         styles: slide.descriptionContainer?.styles || {}
+      },
+      imageContainer: {
+        imageId: slide.imageContainer?.imageId || uuidv4(),
+        image: slide.imageContainer?.image || null,
+        styles: {
+          ...(slide.imageContainer?.styles || {}),
+          width: slide.imageContainer?.styles?.width || 300,
+          height: slide.imageContainer?.styles?.height || 210
+        }
+      },
+      dropContainer: {
+        dropItems: (slide.dropContainer?.dropItems || []).map(item => ({
+          id: item.id || uuidv4(),
+          type: item.type || 'text',
+          content: item.content || '',
+          styles: item.styles || {}
+        }))
       }
     }));
 
-    setSlidesPreview(
-      savedSlides.map((slide, index) => ({
-        number: index + 1,
-        id: slide.id,
-        title: slide?.titleContainer?.title.replace(/<[^>]*>/g, '') || "Untitled",
-        type: slide.type || "custom",
-        content: renderSlideComponent(slide),
-        onClick: () => setCurrentSlide(index + 1),
-        titleContainer: slide.titleContainer,
-        descriptionContainer: slide.descriptionContainer
-      }))
-    );
+    setSlides(normalizedSlides);
 
-    setSlides(savedSlides);
-    } else {
-      // Default initialization for new presentation
-      const initialSlides = [
-        {
-          number: 1,
-          id: uuidv4(),
-          title: "Customer Targeting Strategy",
-          type: "custom",
-          content: (
-              <CardTemplates
-                slidesPreview={slidesPreview}
-                id={1}
-                type="custom"
-                setSlides={setSlides}
-                setCurrentSlide={setCurrentSlide}
-                setSlidesPreview={setSlidesPreview}
-              />
-          ),
-          onClick: () => setCurrentSlide(1),
-        },
-      ]
-      setSlidesPreview(initialSlides)
-      setSlides(
-        initialSlides.map((slide) => ({
-          Slide: slide.content,
-          id: slide.id,
-          type: slide.type,
-          title: slide.title,
-        }))
-      )
-    }
-    updateSlideImages()
-  }, [location.state])
+    const newSlidesPreview = normalizedSlides.map((slide, index) => ({
+      number: index + 1,
+      id: slide.id,
+      title: slide.titleContainer?.title || 'Untitled',
+      type: slide.type,
+      content: renderSlideComponent(slide),
+      onClick: () => setCurrentSlide(index + 1),
+      titleContainer: slide.titleContainer,
+      descriptionContainer: slide.descriptionContainer,
+      imageContainer: slide.imageContainer,
+      dropContainer: slide.dropContainer
+    }));
 
+    setSlidesPreview(newSlidesPreview);
+  } else {
+    const defaultSlide = {
+      id: uuidv4(),
+      type: 'custom',
+      titleContainer: {
+        titleId: uuidv4(),
+        title: 'New Presentation',
+        styles: {}
+      },
+      descriptionContainer: {
+        descriptionId: uuidv4(),
+        description: '',
+        styles: {}
+      },
+      imageContainer: {
+        imageId: uuidv4(),
+        image: null,
+        styles: {
+          width: 300,
+          height: 210
+        }
+      },
+      dropContainer: {
+        dropItems: []
+      }
+    };
+
+    setSlides([defaultSlide]);
+    setSlidesPreview([{
+      number: 1,
+      id: defaultSlide.id,
+      title: 'New Presentation',
+      type: 'custom',
+      content: renderSlideComponent(defaultSlide),
+      onClick: () => setCurrentSlide(1),
+      titleContainer: defaultSlide.titleContainer,
+      descriptionContainer: defaultSlide.descriptionContainer,
+      imageContainer: defaultSlide.imageContainer,
+      dropContainer: defaultSlide.dropContainer
+    }]);
+  }
+}, [location.state?.slidesArray]);
+  // console.log('Slides state updated:', slides);
+
+// Add a verification useEffect
+useEffect(() => {
+  slides.length >0 ? console.log("Slide : ",slides):null;
+}, [slides]);
+  
   const handleDragEnd = (e) => {
   const { active, over } = e;
   if (!over || active.id === over.id) return;
@@ -597,7 +680,7 @@ useEffect(() => {
 
   useEffect(() => {
     debouncedUpdateSlideImages()
-  }, [slides])
+  }, [slides])    
 
   useEffect(() => {
   const savedSlides = JSON.parse(localStorage.getItem("slides")) || [];
@@ -615,68 +698,96 @@ useEffect(() => {
   // }
 
   const handleSlideUpdate = (slideId, updatedData) => {
-  // Preserve all styling information when updating slides
-  setSlides(prevSlides => 
+    setSlides(prevSlides =>
     prevSlides.map(slide => {
       if (slide.id === slideId) {
         return {
           ...slide,
           ...updatedData,
+          // Merge existing titleContainer with updates
           titleContainer: {
             ...slide.titleContainer,
             ...updatedData.titleContainer,
             styles: {
               ...slide.titleContainer?.styles,
-              ...updatedData.titleContainer?.styles
-            }
+              ...updatedData.titleContainer?.styles,
+            },
           },
+          // Merge existing descriptionContainer with updates
           descriptionContainer: {
             ...slide.descriptionContainer,
             ...updatedData.descriptionContainer,
             styles: {
               ...slide.descriptionContainer?.styles,
-              ...updatedData.descriptionContainer?.styles
-            }
-          }
+              ...updatedData.descriptionContainer?.styles,
+            },
+          },
+          // Merge existing imageContainer with updates
+          imageContainer: {
+            ...slide.imageContainer,
+            ...updatedData.imageContainer,
+            styles: {
+              ...slide.imageContainer?.styles,
+              ...updatedData.imageContainer?.styles,
+            },
+          },
+          // Preserve existing dropItems if not in update
+          dropContainer: {
+            ...slide.dropContainer, // Preserve existing properties
+            ...updatedData.dropContainer, // Merge new properties
+            dropItems: 
+              updatedData.dropContainer?.dropItems || // Use new dropItems if provided
+              slide.dropContainer?.dropItems || [] // Fallback to existing or empty array
+          },
         };
       }
       return slide;
     })
   );
 
-  // Update preview with preserved styles
-  setSlidesPreview(prevSlides =>
-    prevSlides.map(slide => {
-      if (slide.id === slideId) {
-        const updatedSlide = {
-          ...slide,
-          ...updatedData,
-          titleContainer: {
-            ...slide.titleContainer,
-            ...updatedData.titleContainer,
-            styles: {
-              ...slide.titleContainer?.styles,
-              ...updatedData.titleContainer?.styles
+    setSlidesPreview(prevPreviews =>
+      prevPreviews.map(preview => {
+        if (preview.id === slideId) {
+          const updatedPreview = {
+            ...preview,
+            title: updatedData.titleContainer?.title || preview.title,
+            titleContainer: {
+              ...preview.titleContainer,
+              ...updatedData.titleContainer,
+              styles: {
+                ...preview.titleContainer?.styles,
+                ...updatedData.titleContainer?.styles
+              }
+            },
+            descriptionContainer: {
+              ...preview.descriptionContainer,
+              ...updatedData.descriptionContainer,
+              styles: {
+                ...preview.descriptionContainer?.styles,
+                ...updatedData.descriptionContainer?.styles
+              }
+            },
+            imageContainer: {
+              ...preview.imageContainer,
+              ...updatedData.imageContainer,
+              styles: {
+                ...preview.imageContainer?.styles,
+                ...updatedData.imageContainer?.styles
+              }
+            },
+            dropContainer: {
+              dropItems: updatedData.dropContainer?.dropItems || []
             }
-          },
-          descriptionContainer: {
-            ...slide.descriptionContainer,
-            ...updatedData.descriptionContainer,
-            styles: {
-              ...slide.descriptionContainer?.styles,
-              ...updatedData.descriptionContainer?.styles
-            }
-          }
-        };
-        return {
-          ...updatedSlide,
-          content: renderSlideComponent(updatedSlide)
-        };
-      }
-      return slide;
-    })
-  );
-};
+          };
+          return {
+            ...updatedPreview,
+            content: renderSlideComponent(updatedPreview)
+          };
+        }
+        return preview;
+      })
+    );
+  };
 
 
   return (

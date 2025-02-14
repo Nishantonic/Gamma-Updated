@@ -15,23 +15,33 @@ const Gammas = ({ credits, setCredits }) => {
     if (savedSlides) {
       setArraySlides(JSON.parse(savedSlides))
     }
-  }, [])
-
-  // Handle clicking a card to navigate with slide data
-  const handleCardClick = (slides, key) => {
     
-    if (!slides || slides.length === 0) return
+  }, [])
+{console.log(ArraySlides);}
+  // Handle clicking a card to navigate with slide data
+  // In Gammas.jsx
+  const handleCardClick = (slides, key) => {
+    if (!slides || slides.length === 0) return;
     navigate("/page", {
       state: {
         slidesArray: slides.map((slide) => ({
-          type: slide?.type,
           ...slide,
-          id: slide?.id,
+          // Transform array dropContainer to object structure if needed
+          dropContainer: {
+            dropItems: Array.isArray(slide.dropContainer) 
+              ? slide.dropContainer 
+              : slide.dropContainer?.dropItems || []
+          },
+          id: slide.id,
+          type: slide.type,
+          titleContainer: slide.titleContainer,
+          descriptionContainer: slide.descriptionContainer,
+          imageContainer: slide.imageContainer
         })),
-        key:key,
+        key: key,
       },
-    })
-  }
+    });
+  };
 
   // Handle deleting a slide
   const handleDeleteSlide = (id) => {
@@ -143,10 +153,13 @@ const Gammas = ({ credits, setCredits }) => {
           <p className="text-gray-500">No slides available</p>
         ) : (
           ArraySlides.map((slideGroup) =>
+            
+            
             slideGroup.slides && slideGroup.slides.length > 0 ? (
+              
               <Card
                 key={slideGroup.key}
-                slide={slideGroup?.slides[0]}
+                slide={slideGroup?.slides[0] || {}}
                 onClick={() => handleCardClick(slideGroup.slides,ArraySlides.key)}
                 onDelete={() => handleDeleteSlide(slideGroup.key)}
               />

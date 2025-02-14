@@ -1,6 +1,7 @@
-import React, { useState, useEffect, useRef, useContext } from "react"
+"use client"
+
+import { useState, useEffect, useRef, useContext } from "react"
 import { CardMenu } from "../../slidesView/Menu/CardMenu"
-import TitleAi from "./TitleAi.jsx"
 import ParagraphAi from "./ParagraphAi.jsx"
 import { DragContext } from "@/components/SidebarLeft/DragContext"
 import { Button } from "@/components/ui/button"
@@ -8,11 +9,12 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Image, Move } from "lucide-react"
-import { useDroppedItems} from "../../DroppedItemsContext"
+import { useDroppedItems } from "../../DroppedItemsContext"
 import TitleInput from "../../slidesView/CardComponents/TitleInput"
 import Heading from "../../slidesView/CardComponents/Heading"
 import ParagraphInput from "../../slidesView/CardComponents/ParagraphInput"
-import { v4 as uuidv4 } from "uuid";
+import { v4 as uuidv4 } from "uuid"
+import TitleAi from './TitleAi'
 
 function AccentImageAi({ generateAi = {}, ...props }) {
   const [preview, setPreview] = useState(generateAi.imageContainer?.image)
@@ -24,18 +26,17 @@ function AccentImageAi({ generateAi = {}, ...props }) {
   const [titleStyles, setTitleStyles] = useState(generateAi.titleContainer?.styles || {})
   const [description, setDescription] = useState(generateAi.descriptionContainer?.description || "Start typing...")
   const [descriptionStyles, setDescriptionStyles] = useState(generateAi.descriptionContainer?.styles || {})
-  const [isDeleted, setIsDeleted] = useState(false) // Added state for deletion
-  const { draggedElement } = useContext(DragContext) // Access the dragged element context
-  const { droppedItems, addDroppedItem, removeDroppedItem, updateDroppedItem } = useDroppedItems();
-  const slideId = generateAi.id;
+  const [isDeleted, setIsDeleted] = useState(false)
+  const { draggedElement } = useContext(DragContext)
+  const { droppedItems, addDroppedItem, removeDroppedItem, updateDroppedItem } = useDroppedItems()
+  const slideId = generateAi.id
   const imageRef = useRef(null)
   const COMPONENT_MAP = {
-    title: TitleInput,
+    title: TitleAi,
     heading: Heading,
     paragraph: ParagraphInput,
-  };
-  console.log(preview)
-  
+  }
+
   useEffect(() => {
     if (generateAi.image && isValidImageUrl(generateAi.image)) {
       setPreview(generateAi.image)
@@ -47,19 +48,18 @@ function AccentImageAi({ generateAi = {}, ...props }) {
   }
 
   const handleImagePreview = (e) => {
-  const file = e.target.files[0];
-  if (file) {
-    const reader = new FileReader();
-    reader.onload = () => {
-      setPreview(reader.result);
-      updateParent({
-        imageContainer: { image: reader.result }
-      });
-    };
-    reader.readAsDataURL(file);
+    const file = e.target.files[0]
+    if (file) {
+      const reader = new FileReader()
+      reader.onload = () => {
+        setPreview(reader.result)
+        updateParent({
+          imageContainer: { image: reader.result },
+        })
+      }
+      reader.readAsDataURL(file)
+    }
   }
-};
-
 
   const handleMouseDown = (e) => {
     setIsResizing(true)
@@ -89,40 +89,44 @@ function AccentImageAi({ generateAi = {}, ...props }) {
   }
 
   const updateParent = (updates) => {
-  const updatedData = {
-    ...generateAi,
-    titleContainer: {
-      ...generateAi.titleContainer,
-      title: title,
-      styles: titleStyles,
-    },
-    descriptionContainer: {
-      ...generateAi.descriptionContainer,
-      description: description,
-      styles: descriptionStyles,
-    },
-    imageContainer: {
-      ...generateAi.imageContainer,
-      image: preview,
-      styles: { width: imageSize.width, height: imageSize.height },
-    },
-    ...updates,
-  };
+    const updatedData = {
+      ...generateAi,
+      titleContainer: {
+        ...generateAi.titleContainer,
+        title: title,
+        styles: titleStyles,
+      },
+      descriptionContainer: {
+        ...generateAi.descriptionContainer,
+        description: description,
+        styles: descriptionStyles,
+      },
+      imageContainer: {
+        ...generateAi.imageContainer,
+        image: preview,
+        styles: { width: imageSize.width, height: imageSize.height },
+      },
+      dropContainer: {
+        dropItems: droppedItems[slideId] || [],
+      },
+      ...updates,
+    }
 
-  // if (generateAi.onEdit) {
-  //   generateAi.onEdit(generateAi.id, updatedData);
-  // }
-};
+    if (generateAi.onEdit) {
+      generateAi.onEdit(updatedData)
+    }
+  }
 
-useEffect(() => {
-  updateParent({
-    titleContainer: { styles: titleStyles },
-    descriptionContainer: { styles: descriptionStyles }
-  });
-}, [titleStyles, descriptionStyles]);
+  useEffect(() => {
+    updateParent({
+      titleContainer: { styles: titleStyles },
+      descriptionContainer: { styles: descriptionStyles },
+      imageContainer: { styles: { width: imageSize.width, height: imageSize.height } },
+      dropContainer: { dropItems: droppedItems[slideId] || [] },
+    })
+  }, [titleStyles, descriptionStyles, imageSize, droppedItems, droppedItems[slideId]])
 
-
-const updateGenerateAiJson = (generateAi, slideId, inputId, newData) => {
+  const updateGenerateAiJson = (generateAi, slideId, inputId, newData) => {
     if (!slideId || !inputId) {
       console.error("slideId and inputId are required to update JSON.")
       return
@@ -132,7 +136,6 @@ const updateGenerateAiJson = (generateAi, slideId, inputId, newData) => {
     const currentSlideId = String(slideId)
     const currentInputId = String(inputId)
 
-    // Don't sanitize newData, preserve HTML content
     if (String(updatedJson.id) === currentSlideId) {
       if (String(updatedJson.titleContainer?.titleId) === currentInputId) {
         updatedJson.titleContainer = {
@@ -153,59 +156,118 @@ const updateGenerateAiJson = (generateAi, slideId, inputId, newData) => {
     }
   }
 
+  const handleTitleUpdate = (newTitle, styles) => {
+    setTitle(newTitle)
+    setTitleStyles(styles)
+    const titleId = generateAi.titleContainer?.titleId
+    updateGenerateAiJson(generateAi, generateAi.id, titleId, {
+      title: newTitle,
+      styles: styles,
+    })
+  }
 
-// Modify title and description updates to include slideId & inputId
-const handleTitleUpdate = (newTitle, styles) => {
-  // console.log("indisde title : ",generateAi);
-  
-  setTitle(newTitle);
-  setTitleStyles(styles);
-  const titleId = generateAi.titleContainer?.titleId;
-  // console.log('Updating title with ID:', titleId); // Debug log
-  updateGenerateAiJson(generateAi, generateAi.id, titleId, {
-    title: newTitle,
-    styles: styles
-  });
-};
+  const handleDescriptionUpdate = (newDescription, styles) => {
+    setDescription(newDescription)
+    setDescriptionStyles(styles)
+    const descriptionId = generateAi.descriptionContainer?.descriptionId
+    updateGenerateAiJson(generateAi, generateAi.id, descriptionId, {
+      description: newDescription,
+      styles: styles,
+    })
+  }
 
-const handleDescriptionUpdate = (newDescription, styles) => {
-  setDescription(newDescription);
-  setDescriptionStyles(styles);
-  const descriptionId = generateAi.descriptionContainer?.descriptionId;
-  // console.log('Updating description with ID:', descriptionId); // Debug log
-  updateGenerateAiJson(generateAi, generateAi.id, descriptionId, {
-    description: newDescription,
-    styles: styles
-  });
-};
-
-
-
-const handleDrop = (event) => {
+  const handleDrop = (event) => {
   event.preventDefault();
   const data = JSON.parse(event.dataTransfer.getData("application/json"));
 
   if (data.type) {
     const newItem = {
-      id: uuidv4(), // Unique ID for the dropped item
-      type: data.type, // 'title', 'heading', or 'paragraph'
-      content: "", // Initial content (empty or default)
-      styles: {}, // Initial styles
+      id: uuidv4(),
+      type: data.type,
+      content: "",
+      styles: {},
     };
 
-    // Add the dropped item to the context and local storage
-    addDroppedItem(slideId, newItem);
+    const currentItems = generateAi.dropContainer?.dropItems || [];
+    const updatedGenerateAi = {
+      ...generateAi,
+      dropContainer: {
+        dropItems: [...currentItems, newItem]
+      }
+    };
+
+    if (generateAi.onEdit) {
+      generateAi.onEdit(updatedGenerateAi);
+    }
   }
 };
 
-const handleDragOver = (event) => {
-  event.preventDefault()
-}
+  const handleDragOver = (event) => {
+    event.preventDefault()
+  }
 
-const handleDeleteDroppedItem = (itemId) => {
-  removeDroppedItem(slideId, itemId);
+  const handleUpdateDroppedItem = (itemId, updates) => {
+    const updatedItems = (generateAi.dropContainer?.dropItems || []).map(item => 
+      item.id === itemId ? { ...item, ...updates } : item
+    )
+
+    const updatedGenerateAi = {
+      ...generateAi,
+      dropContainer: {
+        dropItems: updatedItems
+      }
+    }
+
+    if (generateAi.onEdit) {
+      generateAi.onEdit(updatedGenerateAi)
+    }
+  }
+
+  const handleDeleteDroppedItem = (itemId) => {
+    const updatedGenerateAi = {
+      ...generateAi,
+      dropContainer: {
+        dropItems: (generateAi.dropContainer?.dropItems || []).filter(item => item.id !== itemId)
+      }
+    }
+
+    if (generateAi.onEdit) {
+      generateAi.onEdit(updatedGenerateAi)
+    }
+  }
+
+  const renderDroppedItems = () => {
+  return (generateAi.dropContainer?.dropItems || []).map((item) => {
+    const Component = COMPONENT_MAP[item.type];
+    if (!Component) return null;
+    console.log('render dopItem',[item.content.replace(/<[^>]*>/g, '')]);
+    
+    return (
+      <div key={item.id} className="mb-4 relative group">
+        <Component
+          slideId={slideId}
+          inputId={item.id}
+          initialData={item.content.replace(/<[^>]*>/g, '')}
+          initialStyles={item.styles}
+          onChange={(value, styles) => {
+            handleUpdateDroppedItem(item.id, { 
+              content: value,
+              styles: styles 
+            });
+          }}
+        />
+        <Button
+          variant="ghost"
+          size="sm"
+          className="absolute -top-3 -right-3 opacity-0 group-hover:opacity-100 transition-opacity"
+          onClick={() => handleDeleteDroppedItem(item.id)}
+        >
+          ×
+        </Button>
+      </div>
+    );
+  });
 };
-
 
   const handleDelete = () => {
     setIsDeleted(true)
@@ -222,8 +284,8 @@ const handleDeleteDroppedItem = (itemId) => {
     <Card
       id={`slide-${generateAi.index}`}
       className="min-h-screen w-full md:min-h-[25vw] my-8 bg-[#342c4e] relative overflow-visible max-w-4xl mx-auto outline-none border-none"
-      onDragOver={handleDragOver} // Enable drag-over functionality
-      onDrop={handleDrop} // Enable drop functionality
+      onDragOver={handleDragOver}
+      onDrop={handleDrop}
     >
       <CardContent className="p-6">
         <div className="absolute top-4 left-11">
@@ -238,25 +300,25 @@ const handleDeleteDroppedItem = (itemId) => {
 
         <div className="flex flex-col md:flex-row gap-8 mt-16">
           <div className="flex-1">
-            <div className="relative overflow-visible z-50 w-full   ">
-            <TitleAi
-              initialData={title}
+            <div className="relative overflow-visible z-50 w-full">
+              <TitleAi
+                initialData={title}
                 initialStyles={titleStyles}
                 onUpdate={handleTitleUpdate}
                 slideId={generateAi.id}
                 inputId={generateAi.titleContainer?.titleId}
-              className="title text-3xl font-bold text-white mb-4 relative overflow-visible"
-            />
+                className="title text-3xl font-bold text-white mb-4 relative overflow-visible"
+              />
             </div>
-            <div className="relative overflow-visible z-50 w-full   ">
-            <ParagraphAi
-              initialData={description}
-              initialStyles={descriptionStyles}
-              onUpdate={handleDescriptionUpdate}
-              slideId={generateAi.id}
-              inputId={generateAi.descriptionContainer?.descriptionId}
-              className="description text-lg text-gray-300"
-            />
+            <div className="relative overflow-visible z-50 w-full">
+              <ParagraphAi
+                initialData={description}
+                initialStyles={descriptionStyles}
+                onUpdate={handleDescriptionUpdate}
+                slideId={generateAi.id}
+                inputId={generateAi.descriptionContainer?.descriptionId}
+                className="description text-lg text-gray-300"
+              />
             </div>
           </div>
 
@@ -308,40 +370,11 @@ const handleDeleteDroppedItem = (itemId) => {
           </div>
         </div>
 
-        {(droppedItems[slideId] || []).map((item) => {
-          let Component;
-          switch (item.type) {
-            case "title":
-              Component = TitleInput;
-              break;
-            case "heading":
-              Component = Heading;
-              break;
-            case "paragraph":
-              Component = ParagraphInput;
-              break;
-            default:
-              Component = null;
-          }
-
-          return (
-            <div key={item.id}>
-              {Component && (
-                <Component
-                  slideId={slideId}
-                  inputId={item.id}
-                  onChange={(value, styles) => {
-                    // Update the item's content and style in the context
-                    updateDroppedItem(slideId, item.id, { content: value, styles });
-                  }}
-                />
-              )}
-            </div>
-          );
-        })}
+        {renderDroppedItems()}
       </CardContent>
     </Card>
   )
 }
 
 export default AccentImageAi
+

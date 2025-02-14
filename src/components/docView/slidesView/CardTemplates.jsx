@@ -1,5 +1,5 @@
 import React, { useContext, useState, useCallback, useEffect } from "react";
-import { Card } from "../../ui/card";
+import { Card, CardContent } from "../../ui/card";
 import { Grid2X2, Sparkles } from 'lucide-react';
 import { DragContext } from "@/components/SidebarLeft/DragContext";
 import { CardMenu } from "./Menu/CardMenu";
@@ -16,6 +16,9 @@ import { v4 as uuidv4 } from 'uuid';
 import ImageTextAi from "../GenerateAi/AiComponents/ImageTextAi";
 import AccentImageAi from "../GenerateAi/AiComponents/AccentImageAi";
 import ThreeImgTextAi from "../GenerateAi/AiComponents/ThreeColumnAi";
+import { useDroppedItems } from "../DroppedItemsContext";
+import Heading from "../GenerateAi/AiComponents/Heading";
+import ParagraphAi from "../GenerateAi/AiComponents/ParagraphAi";
 
 export default function CardTemplates({ 
   children, 
@@ -27,26 +30,70 @@ export default function CardTemplates({
   setSlides, 
   ...props 
 }) {
-  // Initialize state with proper default values and IDs
+  // Add dropped items context
+  const { droppedItems, addDroppedItem, removeDroppedItem, updateDroppedItem } = useDroppedItems();
   const [showTwoColumn, setShowTwoColumn] = useState(false);
   const [showImageText, setShowImageText] = useState(false);
   const [showThreeColumn, setShowThreeColumn] = useState(false);
   const [showAccentImage, setShowAccentImage] = useState(false);
   const [replacedTemplate, setReplacedTemplate] = useState(null);
-  const [droppedItems, setDroppedItems] = useState([]);
   const [title, setTitle] = useState(generateAi.titleContainer?.title || "Untitled Card");
   const [titleStyles, setTitleStyles] = useState(generateAi.titleContainer?.styles || {});
-
+  const [isDeleted, setIsDeleted] = useState(false) // Added state for deletion
   const { draggedElement } = useContext(DragContext);
-  
+  const slideId = id || generateAi.id || uuidv4();
+
+
+  const handleDrop = (event) => {
+    event.preventDefault();
+    const data = JSON.parse(event.dataTransfer.getData("application/json"));
+
+    if (data.type) {
+      const newItem = {
+        id: uuidv4(),
+        type: data.type,
+        content: "",
+        styles: {}
+      };
+
+      addDroppedItem(slideId, newItem);
+      updateParentWithDroppedItems();
+    }
+  };
+
+  const handleDragOver = (event) => {
+    event.preventDefault();
+  };
+
+  const handleDeleteDroppedItem = (itemId) => {
+    removeDroppedItem(slideId, itemId);
+    updateParentWithDroppedItems();
+  };
+
+  const updateParentWithDroppedItems = () => {
+    const updatedJson = {
+      ...generateAi,
+      droppedItems: droppedItems[slideId] || []
+    };
+
+    if (generateAi.onEdit) {
+      generateAi.onEdit(updatedJson);
+    }
+  };
+
   useEffect(() => {
-  if (generateAi.titleContainer) {
+    if (generateAi.titleContainer) {
+      setTitle(generateAi.titleContainer.title || "Untitled Card");
+      setTitleStyles(generateAi.titleContainer.styles || {});
+    }
     
-    
-    setTitle(generateAi.titleContainer.title || "Untitled Card");
-    setTitleStyles(generateAi.titleContainer.styles || {});
-  }
-}, [generateAi.titleContainer]);
+    // Initialize dropped items from generateAi
+    if (generateAi.droppedItems) {
+      generateAi.droppedItems.forEach(item => {
+        addDroppedItem(slideId, item);
+      });
+    }
+  }, [generateAi.titleContainer, generateAi.droppedItems]);
 
 
   // Initialize titleContainer with proper IDs if not present
@@ -171,22 +218,33 @@ const handleTitleUpdate = (newTitle, styles) => {
     updateSlidesPreview(CardTemplateImgHeadingThree, 'threeImgCard');
   }, [updateSlidesPreview]);
 
-  // Return appropriate template component based on state
-  if (showTwoColumn) return <TwoColumnAi {...props} id={id} slidesPreview={slidesPreview} setSlidesPreview={setSlidesPreview} setSlides={setSlides} generateAi={generateAi} />;
-  if (showImageText) return <ImageTextAi {...props} id={id} slidesPreview={slidesPreview} setSlidesPreview={setSlidesPreview} setSlides={setSlides} generateAi={generateAi} />;
-  if (showAccentImage) return <AccentImageAi {...props} id={id} slidesPreview={slidesPreview} setSlidesPreview={setSlidesPreview} setSlides={setSlides} generateAi={generateAi} />;
-  if (showThreeColumn) return <ThreeImgTextAi {...props} id={id} slidesPreview={slidesPreview} setSlidesPreview={setSlidesPreview} setSlides={setSlides} generateAi={generateAi} />;
-  if (replacedTemplate) return <div>{replacedTemplate}</div>;
+  const handleDelete = () => {
+    setIsDeleted(true)
+    if (generateAi.onDelete) {
+      generateAi.onDelete(generateAi.id)
+    }
+  }
+
+if (showTwoColumn) return <TwoColumnAi {...props} id={id} slidesPreview={slidesPreview} setSlidesPreview={setSlidesPreview} setSlides={setSlides} generateAi={generateAi} />;
+if (showImageText) return <ImageTextAi {...props} id={id} slidesPreview={slidesPreview} setSlidesPreview={setSlidesPreview} setSlides={setSlides} generateAi={generateAi} />;
+if (showAccentImage) return <AccentImageAi {...props} id={id} slidesPreview={slidesPreview} setSlidesPreview={setSlidesPreview} setSlides={setSlides} generateAi={generateAi} />;
+if (showThreeColumn) return <ThreeImgTextAi {...props} id={id} slidesPreview={slidesPreview} setSlidesPreview={setSlidesPreview} setSlides={setSlides} generateAi={generateAi} />;
+if (replacedTemplate) return <div>{replacedTemplate}</div>;
+
+// Then check if deleted
+if (isDeleted) {
+  return null;
+}
 
   return (
     <div>
-      <div className="min-h-screen w-full md:min-h-[25vw] md:mt-[3vh] md:mb-[3vh] rounded-lg px-1 bg-[#342c4e] p-6 relative max-w-4xl mx-auto">
+      <Card onDragOver={handleDragOver} onDrop={handleDrop} className="min-h-screen w-full md:min-h-[25vw] md:mt-[3vh] md:mb-[3vh] rounded-lg px-1 bg-[#342c4e] p-6 relative max-w-4xl mx-auto">
         <div className="absolute top-4 left-11">
           <CardMenu
-            
+            onDelete={handleDelete}
           />
         </div>
-        <div className="mt-10">
+        <CardContent>
           <div className="relative overflow-visible z-50 w-full   ">
             <TitleAi
               initialData={generateAi.titleContainer?.title || title}
@@ -197,19 +255,45 @@ const handleTitleUpdate = (newTitle, styles) => {
               className="title text-3xl font-bold text-white mb-4 relative overflow-visible"
             />
             </div>
-        </div>
-        {droppedItems.length > 0 ? (
-          <div className="mt-6 space-y-4">
-            {droppedItems.map((item) => (
+        </CardContent>
+        {droppedItems[slideId]?.length > 0 ? (
+        <div className="mt-6 space-y-4">
+          {(droppedItems[slideId] || []).map((item) => {
+            let Component;
+            switch (item.type) {
+              case "title":
+                Component = TitleAi;
+                break;
+              case "heading":
+                Component = Heading;
+                break;
+              case "paragraph":
+                Component = ParagraphAi;
+                break;
+              default:
+                return null;
+            }
+
+            return (
               <div key={item.id} className="relative">
-                {React.cloneElement(item.content, {
-                  onDelete: () => handleDeleteDroppedItem(item.id),
-                  type: item.type
-                })}
+                <Component
+                  slideId={slideId}
+                  inputId={item.id}
+                  onChange={(value, styles) => {
+                    updateDroppedItem(slideId, item.id, { 
+                      ...item, 
+                      content: value, 
+                      styles 
+                    });
+                    updateParentWithDroppedItems();
+                  }}
+                  onDelete={() => handleDeleteDroppedItem(item.id)}
+                />
               </div>
-            ))}
-          </div>
-        ) : (
+            );
+          })}
+        </div>
+      ) : (
           <div className="space-y-3">
             <h2 className="text-[#9d8ba7] text-lg px-10">
               Or start with a template
@@ -304,7 +388,7 @@ const handleTitleUpdate = (newTitle, styles) => {
             </div>
           </div>
         )}
-      </div>
+      </Card>
     </div>
   );
 }
