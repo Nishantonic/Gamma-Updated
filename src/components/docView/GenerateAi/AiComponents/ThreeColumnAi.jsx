@@ -1,10 +1,15 @@
-import React, { useState, useEffect, useContext } from "react";
-import { CardMenu } from "../../slidesView/Menu/CardMenu";
-import Heading from "./Heading";
-import ParagraphAi from "./ParagraphAi.jsx";
-import { DragContext } from "@/components/SidebarLeft/DragContext";
-import TitleAi from "./TitleAi";
-import { Card } from "@/components/ui/card";
+import { useState, useEffect, useRef, useContext } from "react"
+import { CardMenu } from "../../slidesView/Menu/CardMenu"
+import ParagraphAi from "./ParagraphAi.jsx"
+import { DragContext } from "@/components/SidebarLeft/DragContext"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Move } from "lucide-react"
+import { v4 as uuidv4 } from "uuid"
+import TitleAi from './TitleAi'
+import Heading from "./Heading"
 
 const DEFAULT_CARD = {
   image: null,
@@ -35,6 +40,14 @@ const ThreeImgTextAi = ({ generateAi = {}, ...props }) => {
     droppedItems: []
   });
 
+  const slideId = generateAi.id
+
+  const COMPONENT_MAP = {
+    title: TitleAi,
+    paragraph: ParagraphAi,
+    heading: Heading,
+  }
+
   const [cards, setCards] = useState(() => {
     if (generateAi.cards?.length) {
       return generateAi.cards.map(card => ({
@@ -50,7 +63,7 @@ const ThreeImgTextAi = ({ generateAi = {}, ...props }) => {
     return generateDefaultCards();
   });
 
-  const { draggedElement } = useContext(DragContext);
+  //const { draggedElement } = useContext(DragContext);
 
   const updateParent = (updates = {}) => {
     const updatedData = {
@@ -78,10 +91,6 @@ const ThreeImgTextAi = ({ generateAi = {}, ...props }) => {
 
     generateAi.onEdit?.(updatedData);
   };
-
-  useEffect(() => {
-    updateParent();
-  }, [state.title, state.titleStyles, cards]);
 
   const updateGenerateAiJson = (slideId, inputId, newData) => {
     if (!slideId || !inputId) {
@@ -146,33 +155,82 @@ const ThreeImgTextAi = ({ generateAi = {}, ...props }) => {
   };
 
   const handleDrop = (event) => {
-    event.preventDefault();
-    if (!draggedElement?.template) return;
+    event.preventDefault()
+    const data = JSON.parse(event.dataTransfer.getData("application/json"))
 
-    if (draggedElement.type === "CardTemplate") {
-      setState(prev => ({ ...prev, replacedTemplate: draggedElement.template }));
-    } else {
-      setState(prev => ({
-        ...prev,
-        droppedItems: [
-          ...prev.droppedItems,
-          { id: Date.now(), content: draggedElement.template }
-        ]
-      }));
+    if (data.type) {
+      const newItem = {
+        id: uuidv4(),
+        type: data.type,
+        content: "",
+        styles: {},
+      }
+
+      const updatedData = {
+        ...generateAi,
+        dropContainer: {
+          dropItems: [...(generateAi.dropContainer?.dropItems || []), newItem]
+        }
+      }
+      generateAi.onEdit?.(updatedData)
     }
-  };
+  }
 
-  const handleDeleteDroppedItem = (id) => {
-    setState(prev => ({
-      ...prev,
-      droppedItems: prev.droppedItems.filter(item => item.id !== id)
-    }));
-  };
+  const handleUpdateDroppedItem = (itemId, updates) => {
+    const updatedItems = generateAi.dropContainer?.dropItems?.map(item => 
+      item.id === itemId ? { ...item, ...updates } : item
+    ) || []
+
+    generateAi.onEdit?.({
+      ...generateAi,
+      dropContainer: { dropItems: updatedItems }
+    })
+  }
+
+  const handleDeleteDroppedItem = (itemId) => {
+    const updatedItems = generateAi.dropContainer?.dropItems?.filter(item => item.id !== itemId) || []
+    generateAi.onEdit?.({
+      ...generateAi,
+      dropContainer: { dropItems: updatedItems }
+    })
+  }
 
   const handleDelete = () => {
     setState(prev => ({ ...prev, isDeleted: true }));
     generateAi.onDelete?.(generateAi.id);
   };
+
+  const renderDroppedItems = () => {
+    return (generateAi.dropContainer?.dropItems || []).map((item) => {
+      const Component = COMPONENT_MAP[item.type]
+      if (!Component) return null
+
+      return (
+        <div key={item.id} className="mb-4 relative group">
+          <Component
+            slideId={slideId}
+            inputId={item.id}
+            initialData={item.content}
+            initialStyles={item.styles}
+            onUpdate={(value, styles) => {
+              handleUpdateDroppedItem(item.id, { 
+                content: value,
+                styles: styles 
+              })
+            }}
+          />
+          <Button
+            variant="ghost"
+            size="sm"
+            className="absolute -top-3 -right-3 opacity-0 group-hover:opacity-100 transition-opacity"
+            onClick={() => handleDeleteDroppedItem(item.id)}
+          >
+            ×
+          </Button>
+        </div>
+      )
+    })
+  }
 
   if (state.isDeleted) return null;
   if (state.replacedTemplate) return <div>{state.replacedTemplate}</div>;
@@ -274,17 +332,9 @@ const ThreeImgTextAi = ({ generateAi = {}, ...props }) => {
         </div>
       </div>
 
-      {state.droppedItems.length > 0 && (
-        <div className="mt-6 mx-3 space-y-4">
-          {state.droppedItems.map((item) => (
-            <div key={item.id} className="relative bg-[#2a2438] p-4 rounded-lg shadow-md">
-              {React.cloneElement(item.content, {
-                onDelete: () => handleDeleteDroppedItem(item.id),
-              })}
-            </div>
-          ))}
+       <div className="mt-8">
+          {renderDroppedItems()}
         </div>
-      )}
     </Card>
   );
 };

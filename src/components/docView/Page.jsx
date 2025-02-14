@@ -251,98 +251,117 @@ export default function Page() {
     return <Component {...commonProps} key={slideData.id} />
   }
   
- useEffect(() => {
-  if (location.state?.slidesArray) {
-    const normalizedSlides = location.state.slidesArray.map(slide => ({
-      id: slide.id || uuidv4(),
-      type: slide.type || 'custom',
-      titleContainer: {
-        titleId: slide.titleContainer?.titleId || uuidv4(),
+  useEffect(() => {
+    if (location.state?.slidesArray) {
+      const normalizedSlides = location.state.slidesArray.map(slide => ({
+        id: slide.id || uuidv4(),
+        type: slide.type || 'custom',
+        titleContainer: {
+          titleId: slide.titleContainer?.titleId || uuidv4(),
+          title: slide.titleContainer?.title || 'Untitled',
+          styles: slide.titleContainer?.styles || {}
+        },
+        descriptionContainer: {
+          descriptionId: slide.descriptionContainer?.descriptionId || uuidv4(),
+          description: slide.descriptionContainer?.description || '',
+          styles: slide.descriptionContainer?.styles || {}
+        },
+        imageContainer: {
+          imageId: slide.imageContainer?.imageId || uuidv4(),
+          image: slide.imageContainer?.image || null,
+          styles: {
+            ...(slide.imageContainer?.styles || {}),
+            width: slide.imageContainer?.styles?.width || 300,
+            height: slide.imageContainer?.styles?.height || 210
+          }
+        },
+        dropContainer: {
+          dropItems: (slide.dropContainer?.dropItems || []).map(item => ({
+            id: item.id || uuidv4(),
+            type: item.type || 'text',
+            content: item.content || '',
+            styles: item.styles || {}
+          }))
+        },
+        columns: slide.columns?.map(col => ({
+      contentId: col.contentId || uuidv4(),
+      content: col.content || '',
+      styles: col.styles || {}
+    })) || [],
+    // For ThreeImgTextAi
+    cards: slide.cards?.map(card => ({
+      image: card.image,
+      headingContainer: {
+        headingId: card.headingContainer?.headingId || uuidv4(),
+        heading: card.headingContainer?.heading,
+        styles: card.headingContainer?.styles || {}
+      },
+      descriptionContainer: {
+        descriptionId: card.descriptionContainer?.descriptionId || uuidv4(),
+        description: card.descriptionContainer?.description,
+        styles: card.descriptionContainer?.styles || {}
+      }
+    })) || []
+      }));
+  
+      setSlides(normalizedSlides);
+  
+      const newSlidesPreview = normalizedSlides.map((slide, index) => ({
+        number: index + 1,
+        id: slide.id,
         title: slide.titleContainer?.title || 'Untitled',
-        styles: slide.titleContainer?.styles || {}
-      },
-      descriptionContainer: {
-        descriptionId: slide.descriptionContainer?.descriptionId || uuidv4(),
-        description: slide.descriptionContainer?.description || '',
-        styles: slide.descriptionContainer?.styles || {}
-      },
-      imageContainer: {
-        imageId: slide.imageContainer?.imageId || uuidv4(),
-        image: slide.imageContainer?.image || null,
-        styles: {
-          ...(slide.imageContainer?.styles || {}),
-          width: slide.imageContainer?.styles?.width || 300,
-          height: slide.imageContainer?.styles?.height || 210
+        type: slide.type,
+        content: renderSlideComponent(slide),
+        onClick: () => setCurrentSlide(index + 1),
+        titleContainer: slide.titleContainer,
+        descriptionContainer: slide.descriptionContainer,
+        imageContainer: slide.imageContainer,
+        dropContainer: slide.dropContainer,
+      }));
+  
+      setSlidesPreview(newSlidesPreview);
+    } else {
+      const defaultSlide = {
+        id: uuidv4(),
+        type: 'custom',
+        titleContainer: {
+          titleId: uuidv4(),
+          title: 'New Presentation',
+          styles: {}
+        },
+        descriptionContainer: {
+          descriptionId: uuidv4(),
+          description: '',
+          styles: {}
+        },
+        imageContainer: {
+          imageId: uuidv4(),
+          image: null,
+          styles: {
+            width: 300,
+            height: 210
+          }
+        },
+        dropContainer: {
+          dropItems: []
         }
-      },
-      dropContainer: {
-        dropItems: (slide.dropContainer?.dropItems || []).map(item => ({
-          id: item.id || uuidv4(),
-          type: item.type || 'text',
-          content: item.content || '',
-          styles: item.styles || {}
-        }))
-      }
-    }));
-
-    setSlides(normalizedSlides);
-
-    const newSlidesPreview = normalizedSlides.map((slide, index) => ({
-      number: index + 1,
-      id: slide.id,
-      title: slide.titleContainer?.title || 'Untitled',
-      type: slide.type,
-      content: renderSlideComponent(slide),
-      onClick: () => setCurrentSlide(index + 1),
-      titleContainer: slide.titleContainer,
-      descriptionContainer: slide.descriptionContainer,
-      imageContainer: slide.imageContainer,
-      dropContainer: slide.dropContainer
-    }));
-
-    setSlidesPreview(newSlidesPreview);
-  } else {
-    const defaultSlide = {
-      id: uuidv4(),
-      type: 'custom',
-      titleContainer: {
-        titleId: uuidv4(),
+      };
+  
+      setSlides([defaultSlide]);
+      setSlidesPreview([{
+        number: 1,
+        id: defaultSlide.id,
         title: 'New Presentation',
-        styles: {}
-      },
-      descriptionContainer: {
-        descriptionId: uuidv4(),
-        description: '',
-        styles: {}
-      },
-      imageContainer: {
-        imageId: uuidv4(),
-        image: null,
-        styles: {
-          width: 300,
-          height: 210
-        }
-      },
-      dropContainer: {
-        dropItems: []
-      }
-    };
-
-    setSlides([defaultSlide]);
-    setSlidesPreview([{
-      number: 1,
-      id: defaultSlide.id,
-      title: 'New Presentation',
-      type: 'custom',
-      content: renderSlideComponent(defaultSlide),
-      onClick: () => setCurrentSlide(1),
-      titleContainer: defaultSlide.titleContainer,
-      descriptionContainer: defaultSlide.descriptionContainer,
-      imageContainer: defaultSlide.imageContainer,
-      dropContainer: defaultSlide.dropContainer
-    }]);
-  }
-}, [location.state?.slidesArray]);
+        type: 'custom',
+        content: renderSlideComponent(defaultSlide),
+        onClick: () => setCurrentSlide(1),
+        titleContainer: defaultSlide.titleContainer,
+        descriptionContainer: defaultSlide.descriptionContainer,
+        imageContainer: defaultSlide.imageContainer,
+        dropContainer: defaultSlide.dropContainer
+      }]);
+    }
+  }, [location.state?.slidesArray]);
   // console.log('Slides state updated:', slides);
 
 // Add a verification useEffect

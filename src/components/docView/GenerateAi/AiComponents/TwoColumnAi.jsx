@@ -1,10 +1,16 @@
-import React, { useState, useEffect, useContext } from "react";
-import { v4 as uuidv4 } from "uuid";
-import { CardMenu } from "../../slidesView/Menu/CardMenu";
-import { DragContext } from "@/components/SidebarLeft/DragContext";
-import TitleAi from "./TitleAi.jsx";
-import ParagraphAi from "./ParagraphAi.jsx";
-import { Card } from "@/components/ui/card";
+
+import { useState, useEffect, useRef, useContext } from "react"
+import { CardMenu } from "../../slidesView/Menu/CardMenu"
+import ParagraphAi from "./ParagraphAi.jsx"
+import { DragContext } from "@/components/SidebarLeft/DragContext"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Move } from "lucide-react"
+import { v4 as uuidv4 } from "uuid"
+import TitleAi from './TitleAi'
+import Heading from "./Heading"
 
 function CardTemplateTwoColumn({ generateAi = {}, ...props }) {
   const [title, setTitle] = useState(generateAi.titleContainer?.title || "Untitled Card");
@@ -22,7 +28,15 @@ function CardTemplateTwoColumn({ generateAi = {}, ...props }) {
     ]
   );
   
-  const { draggedElement } = useContext(DragContext);
+  const slideId = generateAi.id
+
+  const COMPONENT_MAP = {
+    title: TitleAi,
+    paragraph: ParagraphAi,
+    heading: Heading,
+  }
+
+  //const { draggedElement } = useContext(DragContext);
   const [droppedItems, setDroppedItems] = useState([]);
 
   const updateParent = (updates) => {
@@ -45,12 +59,6 @@ function CardTemplateTwoColumn({ generateAi = {}, ...props }) {
     }
   };
 
-  useEffect(() => {
-    updateParent({
-      titleContainer: { styles: titleStyles },
-      columns: columns
-    });
-  }, [titleStyles, columns]);
 
   const updateGenerateAiJson = (slideId, inputId, newData) => {
     if (!slideId || !inputId) {
@@ -112,20 +120,46 @@ function CardTemplateTwoColumn({ generateAi = {}, ...props }) {
     });
   };
 
-  const handleDeleteDroppedItem = (id) => {
-    setDroppedItems((prev) => prev.filter((item) => item.id !== id));
-  };
-
   const handleDrop = (event) => {
-    event.preventDefault();
-    if (draggedElement?.template) {
+    event.preventDefault()
+    const data = JSON.parse(event.dataTransfer.getData("application/json"))
+
+    if (data.type) {
       const newItem = {
-        id: Date.now(),
-        content: draggedElement.template,
-      };
-      setDroppedItems((prev) => [...prev, newItem]);
+        id: uuidv4(),
+        type: data.type,
+        content: "",
+        styles: {},
+      }
+
+      const updatedData = {
+        ...generateAi,
+        dropContainer: {
+          dropItems: [...(generateAi.dropContainer?.dropItems || []), newItem]
+        }
+      }
+      generateAi.onEdit?.(updatedData)
     }
-  };
+  }
+
+  const handleUpdateDroppedItem = (itemId, updates) => {
+    const updatedItems = generateAi.dropContainer?.dropItems?.map(item => 
+      item.id === itemId ? { ...item, ...updates } : item
+    ) || []
+
+    generateAi.onEdit?.({
+      ...generateAi,
+      dropContainer: { dropItems: updatedItems }
+    })
+  }
+
+  const handleDeleteDroppedItem = (itemId) => {
+    const updatedItems = generateAi.dropContainer?.dropItems?.filter(item => item.id !== itemId) || []
+    generateAi.onEdit?.({
+      ...generateAi,
+      dropContainer: { dropItems: updatedItems }
+    })
+  }
 
   const handleDragOver = (event) => {
     event.preventDefault();
@@ -137,6 +171,38 @@ function CardTemplateTwoColumn({ generateAi = {}, ...props }) {
       generateAi.onDelete(generateAi.id);
     }
   };
+
+  const renderDroppedItems = () => {
+    return (generateAi.dropContainer?.dropItems || []).map((item) => {
+      const Component = COMPONENT_MAP[item.type]
+      if (!Component) return null
+
+      return (
+        <div key={item.id} className="mb-4 relative group">
+          <Component
+            slideId={slideId}
+            inputId={item.id}
+            initialData={item.content}
+            initialStyles={item.styles}
+            onUpdate={(value, styles) => {
+              handleUpdateDroppedItem(item.id, { 
+                content: value,
+                styles: styles 
+              })
+            }}
+          />
+          <Button
+            variant="ghost"
+            size="sm"
+            className="absolute -top-3 -right-3 opacity-0 group-hover:opacity-100 transition-opacity"
+            onClick={() => handleDeleteDroppedItem(item.id)}
+          >
+            ×
+          </Button>
+        </div>
+      )
+    })
+  }
 
   if (isDeleted) {
     return null;
@@ -183,17 +249,9 @@ function CardTemplateTwoColumn({ generateAi = {}, ...props }) {
         </div>
       </div>
 
-      {droppedItems.length > 0 && (
-        <div className="mt-6 space-y-4">
-          {droppedItems.map((item) => (
-            <div key={item.id} className="relative bg-[#2a2438] p-4 rounded-lg shadow-md">
-              {React.cloneElement(item.content, {
-                onDelete: () => handleDeleteDroppedItem(item.id),
-              })}
-            </div>
-          ))}
+      <div className="mt-8">
+          {renderDroppedItems()}
         </div>
-      )}
     </Card>
   );
 }
