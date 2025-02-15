@@ -6,7 +6,7 @@ import "react-quill/dist/quill.bubble.css";
 function TitleAi({ slideId, inputId, onUpdate, initialData,initialStyles}) {
   const quillRef = useRef(null);
 
-  const formattedInitialData = initialData ? `<h1>${initialData}</h1>` : "";
+  const formattedInitialData = initialData ? `<h1>${initialData}</h1>` : `<h1>Untitled</h1>`;
   const [editorHtml, setEditorHtml] = useState(formattedInitialData);
   const [editorStyles, setEditorStyles] = useState({});
 
@@ -31,7 +31,7 @@ function TitleAi({ slideId, inputId, onUpdate, initialData,initialStyles}) {
 
   const modules = {
     toolbar: [
-      [{ header: [1, 2, 3, false] }],
+      [{ header: [1, 2, 3] }],
       ["bold", "italic", "underline", "strike"],
       [{ list: "ordered" }, { list: "bullet" }],
       [{ script: "sub" }, { script: "super" }],
@@ -69,7 +69,7 @@ function TitleAi({ slideId, inputId, onUpdate, initialData,initialStyles}) {
             "video",
           ]}
           theme="bubble"
-          placeholder="Compose an epic..."
+          placeholder="Untitled"
           className="custom-quill-bubble w-full text-lg relative "
           style={{
             "--ql-toolbar-margin-left": "auto",

@@ -3,10 +3,10 @@ import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
 import "react-quill/dist/quill.bubble.css";
 
-function TitleAi({ slideId, inputId, onUpdate, initialData,initialStyles}) {
+function ParagraphAi({ slideId, inputId, onUpdate, initialData,initialStyles}) {
   const quillRef = useRef(null);
 
-  const formattedInitialData = initialData ? `<h3>${initialData}</h3>` : "";
+  const formattedInitialData = initialData ? `<h3>${initialData}</h3>` : `<h3>Paragraph</h3>`;
   const [editorHtml, setEditorHtml] = useState(formattedInitialData);
   const [editorStyles, setEditorStyles] = useState({});
 
@@ -31,7 +31,7 @@ function TitleAi({ slideId, inputId, onUpdate, initialData,initialStyles}) {
 
   const modules = {
     toolbar: [
-      [{ header: [1, 2, 3, false] }],
+      [{ header: [1, 2, 3] }],
       ["bold", "italic", "underline", "strike"],
       [{ list: "ordered" }, { list: "bullet" }],
       [{ script: "sub" }, { script: "super" }],
@@ -69,7 +69,7 @@ function TitleAi({ slideId, inputId, onUpdate, initialData,initialStyles}) {
             "video",
           ]}
           theme="bubble"
-          placeholder="Compose an epic..."
+          placeholder="Paragraph"
           className="custom-quill-bubble w-full text-lg relative "
           style={{
             "--ql-toolbar-margin-left": "auto",
@@ -77,7 +77,7 @@ function TitleAi({ slideId, inputId, onUpdate, initialData,initialStyles}) {
         />
       </div>
     </div>
-  );
+  );  
 }
 
-export default TitleAi;
+export default ParagraphAi;

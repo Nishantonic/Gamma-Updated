@@ -11,8 +11,7 @@ import { Label } from "@/components/ui/label"
 import { Move } from "lucide-react"
 import { v4 as uuidv4 } from "uuid"
 import TitleAi from './TitleAi'
-import Images from "@/components/SidebarLeft/components/Images"
-import ResponsiveImage from "@/components/SidebarLeft/components/ToolBarElements/ResponsiveImage"
+import Heading from "./Heading"
 
 function AccentImageAi({ generateAi = {}, ...props }) {
   const [preview, setPreview] = useState(generateAi.imageContainer?.image)
@@ -29,15 +28,17 @@ function AccentImageAi({ generateAi = {}, ...props }) {
   const [description, setDescription] = useState(generateAi.descriptionContainer?.description || "Start typing...")
   const [descriptionStyles, setDescriptionStyles] = useState(generateAi.descriptionContainer?.styles || {})
   const [isDeleted, setIsDeleted] = useState(false)
-  // const { draggedElement } = useContext(DragContext)
+  //const { draggedElement } = useContext(DragContext)
   const slideId = generateAi.id
-  const imageRef = useRef(null)
-  
+
   const COMPONENT_MAP = {
     title: TitleAi,
     paragraph: ParagraphAi,
-    image:ResponsiveImage
+    heading: Heading,
   }
+
+  const imageRef = useRef(null)
+  
 
   useEffect(() => {
     if (generateAi.imageContainer?.image && isValidImageUrl(generateAi.imageContainer.image)) {
@@ -303,15 +304,15 @@ function AccentImageAi({ generateAi = {}, ...props }) {
             />
 
             <div className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-              <Label htmlFor={`image-upload-${generateAi.index}`} className="cursor-pointer">
-                <span className="text-white text-sm font-medium">
-                  {preview ? "Replace Image" : "Upload Image"}
-                </span>
-              </Label>
+  <Label htmlFor={`image-upload-${generateAi.id}`} className="cursor-pointer">
+    <span className="text-white text-sm font-medium">
+      {preview ? "Replace Image" : "Upload Image"}
+    </span>
+  </Label>
             </div>
 
             <Input
-              id={`image-upload-${generateAi.index}`}
+              id={`image-upload-${generateAi.id}`}
               type="file"
               accept="image/*"
               className="hidden"

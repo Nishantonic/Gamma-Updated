@@ -4,6 +4,7 @@ import React, { useState, useEffect, useContext, useRef } from "react";
 import { CardMenu } from "../../slidesView/Menu/CardMenu";
 import TitleAi from "./TitleAi.jsx";
 import ParagraphAi from "./ParagraphAi.jsx";
+import Heading from "./Heading";
 import { DragContext } from "@/components/SidebarLeft/DragContext";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -11,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Move } from "lucide-react";
 import { v4 as uuidv4 } from "uuid";
+import { head } from "lodash";
 
 function ImageTextAi({ generateAi = {}, ...props }) {
   const [preview, setPreview] = useState(generateAi.imageContainer?.image);
@@ -42,6 +44,7 @@ function ImageTextAi({ generateAi = {}, ...props }) {
   const COMPONENT_MAP = {
     title: TitleAi,
     paragraph: ParagraphAi,
+    heading: Heading,
   }
   useEffect(() => {
     if (

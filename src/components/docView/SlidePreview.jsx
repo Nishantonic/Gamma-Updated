@@ -69,7 +69,7 @@ export function SlidePreview({ number,onDoubleClick, title, isActive, onClick, i
         <span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-primary/10 text-primary">
           {number}
         </span>
-        <span className="flex-1 text-sm font-medium truncate text-gray-800">{title}</span>
+        <span className="flex-1 text-sm font-medium truncate text-gray-800">{title.replace(/<[^>]*>/g, '')}</span>
       </div>
     </div>
   );
