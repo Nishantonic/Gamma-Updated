@@ -12,10 +12,9 @@ import { Move } from "lucide-react"
 import { v4 as uuidv4 } from "uuid"
 import TitleAi from './TitleAi'
 import Heading from "./Heading"
-import ResponsiveImage from "@/components/SidebarLeft/components/ToolBarElements/ResponsiveImage"
-import ResponsiveVideo from "@/components/SidebarLeft/components/ToolBarElements/ResponsiveVideo"
-import ResponsiveAudio from "@/components/SidebarLeft/components/ToolBarElements/ResponsiveAudio"
-
+import ResponsiveImage from "@/components/SidebarLeft/components/ToolBarElements/ResponsiveImage";
+import ResponsiveVideo from "@/components/SidebarLeft/components/ToolBarElements/ResponsiveVideo";
+import ResponsiveAudio from "@/components/SidebarLeft/components/ToolBarElements/ResponsiveAudio";
 
 function DefaultAi({ generateAi = {}, index }) {
   const [title, setTitle] = useState(generateAi.titleContainer?.title || "Untitled Card");
@@ -29,11 +28,11 @@ function DefaultAi({ generateAi = {}, index }) {
   const slideId = generateAi.id
   const COMPONENT_MAP = {
     title: TitleAi,
-    heading: Heading,
     paragraph: ParagraphAi,
+    heading: Heading,
     image: ResponsiveImage,
-    video: ResponsiveVideo,
-  audio: ResponsiveAudio,
+    video: ResponsiveVideo, // Add this
+  audio: ResponsiveAudio, // Add this
   }
   // Handle title and description updates
   const updateParent = (updates) => {

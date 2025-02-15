@@ -14,7 +14,6 @@ import ResponsiveImage from "@/components/SidebarLeft/components/ToolBarElements
 import ResponsiveVideo from "@/components/SidebarLeft/components/ToolBarElements/ResponsiveVideo"
 import ResponsiveAudio from "@/components/SidebarLeft/components/ToolBarElements/ResponsiveAudio"
 
-
 const DEFAULT_CARD = {
   image: null,
   heading: "Heading",
@@ -52,7 +51,7 @@ const ThreeImgTextAi = ({ generateAi = {}, ...props }) => {
     heading: Heading,
     image: ResponsiveImage,
     video: ResponsiveVideo, // Add this
-  audio: ResponsiveAudio,
+  audio: ResponsiveAudio, // Add this
   }
 
   const [cards, setCards] = useState(() => {

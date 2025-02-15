@@ -15,7 +15,6 @@ import ResponsiveImage from "@/components/SidebarLeft/components/ToolBarElements
 import ResponsiveVideo from "@/components/SidebarLeft/components/ToolBarElements/ResponsiveVideo"
 import ResponsiveAudio from "@/components/SidebarLeft/components/ToolBarElements/ResponsiveAudio"
 
-
 function CardTemplateTwoColumn({ generateAi = {}, ...props }) {
   const [title, setTitle] = useState(generateAi.titleContainer?.title || "Untitled Card");
   const [titleStyles, setTitleStyles] = useState(generateAi.titleContainer?.styles || {});
@@ -40,11 +39,10 @@ function CardTemplateTwoColumn({ generateAi = {}, ...props }) {
     heading: Heading,
     image: ResponsiveImage,
     video: ResponsiveVideo, // Add this
-  audio: ResponsiveAudio,
+  audio: ResponsiveAudio, // Add this
   }
-
   //const { draggedElement } = useContext(DragContext);
-  const [droppedItems, setDroppedItems] = useState([]);
+  // const [droppedItems, setDroppedItems] = useState([]);
 
   const updateParent = (updates) => {
     const updatedData = {

@@ -13,10 +13,9 @@ import { Label } from "@/components/ui/label";
 import { Move } from "lucide-react";
 import { v4 as uuidv4 } from "uuid";
 import { head } from "lodash";
-import ResponsiveImage from "@/components/SidebarLeft/components/ToolBarElements/ResponsiveImage"
-import ResponsiveVideo from "@/components/SidebarLeft/components/ToolBarElements/ResponsiveVideo"
-import ResponsiveAudio from "@/components/SidebarLeft/components/ToolBarElements/ResponsiveAudio"
-
+import ResponsiveImage from "@/components/SidebarLeft/components/ToolBarElements/ResponsiveImage";
+import ResponsiveVideo from "@/components/SidebarLeft/components/ToolBarElements/ResponsiveVideo";
+import ResponsiveAudio from "@/components/SidebarLeft/components/ToolBarElements/ResponsiveAudio";
 
 function ImageTextAi({ generateAi = {}, ...props }) {
   const [preview, setPreview] = useState(generateAi.imageContainer?.image);
@@ -51,7 +50,7 @@ function ImageTextAi({ generateAi = {}, ...props }) {
     heading: Heading,
     image: ResponsiveImage,
     video: ResponsiveVideo, // Add this
-  audio: ResponsiveAudio,
+  audio: ResponsiveAudio, // Add this
   }
   useEffect(() => {
     if (
