@@ -10,6 +10,10 @@ import { Move } from "lucide-react"
 import { v4 as uuidv4 } from "uuid"
 import TitleAi from './TitleAi'
 import Heading from "./Heading"
+import ResponsiveImage from "@/components/SidebarLeft/components/ToolBarElements/ResponsiveImage"
+import ResponsiveVideo from "@/components/SidebarLeft/components/ToolBarElements/ResponsiveVideo"
+import ResponsiveAudio from "@/components/SidebarLeft/components/ToolBarElements/ResponsiveAudio"
+
 
 const DEFAULT_CARD = {
   image: null,
@@ -46,6 +50,9 @@ const ThreeImgTextAi = ({ generateAi = {}, ...props }) => {
     title: TitleAi,
     paragraph: ParagraphAi,
     heading: Heading,
+    image: ResponsiveImage,
+    video: ResponsiveVideo, // Add this
+  audio: ResponsiveAudio,
   }
 
   const [cards, setCards] = useState(() => {
@@ -168,7 +175,7 @@ const ThreeImgTextAi = ({ generateAi = {}, ...props }) => {
         id: uuidv4(),
         type: data.type,
         content: "",
-        styles: {},
+        styles: { width: 300, height: 210 },
       }
 
       const updatedData = {

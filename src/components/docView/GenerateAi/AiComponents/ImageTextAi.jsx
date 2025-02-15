@@ -13,6 +13,10 @@ import { Label } from "@/components/ui/label";
 import { Move } from "lucide-react";
 import { v4 as uuidv4 } from "uuid";
 import { head } from "lodash";
+import ResponsiveImage from "@/components/SidebarLeft/components/ToolBarElements/ResponsiveImage"
+import ResponsiveVideo from "@/components/SidebarLeft/components/ToolBarElements/ResponsiveVideo"
+import ResponsiveAudio from "@/components/SidebarLeft/components/ToolBarElements/ResponsiveAudio"
+
 
 function ImageTextAi({ generateAi = {}, ...props }) {
   const [preview, setPreview] = useState(generateAi.imageContainer?.image);
@@ -45,6 +49,9 @@ function ImageTextAi({ generateAi = {}, ...props }) {
     title: TitleAi,
     paragraph: ParagraphAi,
     heading: Heading,
+    image: ResponsiveImage,
+    video: ResponsiveVideo, // Add this
+  audio: ResponsiveAudio,
   }
   useEffect(() => {
     if (
@@ -221,7 +228,7 @@ function ImageTextAi({ generateAi = {}, ...props }) {
         id: uuidv4(),
         type: data.type,
         content: "",
-        styles: {},
+        styles: { width: 300, height: 210 },
       }
 
       const updatedData = {
