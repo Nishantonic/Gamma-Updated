@@ -21,12 +21,21 @@ const Images = () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
-  const handleDragStart = (event, cardData) => {
-    setDraggedElement(cardData);
-    event.dataTransfer.effectAllowed = "move";
-    event.dataTransfer.setData("text/plain", "dragged-element");
+
+  const handleDragStart = (event, componentType) => {
+  const draggedElement = {
+    type: componentType,
+    data: {
+      value: "", // Initialize with empty content
+      style: { width: 300, height: 210 } // Default image size
+    }
   };
 
+  setDraggedElement(draggedElement);
+  event.dataTransfer.setData("application/json", JSON.stringify({
+    type: componentType
+  }));
+};
   return (
     <div className="relative group" ref={cardRef}>
       <div
@@ -52,7 +61,7 @@ const Images = () => {
           <div className="space-y-4" 
              draggable
              onDragStart={(e) =>
-               handleDragStart(e, { template: <ResponsiveImage /> })
+               handleDragStart(e,"image")
              }
           >
             {/* Upload Image Button */}

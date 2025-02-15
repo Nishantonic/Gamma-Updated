@@ -1,12 +1,12 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 
-const ResponsiveImage = ({ initialImage = null, onDelete }) => {
-  const [preview, setPreview] = useState(initialImage);
-  const [imageSize, setImageSize] = useState({ width: 300, height: 210 });
+const ResponsiveImage = ({ initialData = null, initialStyles = { width: 300, height: 210 }, onUpdate, onDelete }) => {
+  const [preview, setPreview] = useState(initialData);
+  const [imageSize, setImageSize] = useState(initialStyles);
   const [isResizing, setIsResizing] = useState(false);
   const [initialMousePos, setInitialMousePos] = useState({ x: 0, y: 0 });
   const [initialSize, setInitialSize] = useState({ width: 0, height: 0 });
-  const [isUploading, setIsUploading] = useState(!initialImage);
+  const [isUploading, setIsUploading] = useState(!initialData);
   const [showMenu, setShowMenu] = useState(false);
 
   const handleImagePreview = (e) => {
@@ -14,15 +14,7 @@ const ResponsiveImage = ({ initialImage = null, onDelete }) => {
     if (file && file.type.startsWith("image/")) {
       const imageURL = URL.createObjectURL(file);
       setPreview(imageURL);
-      setIsUploading(false);
-    }
-  };
-
-  const toggleMenu = () => setShowMenu((prev) => !prev);
-
-  const handleDelete = () => {
-    if (onDelete) {
-      onDelete(); // Call parent-provided delete function
+      onUpdate?.(imageURL, imageSize);
     }
   };
 
@@ -36,10 +28,12 @@ const ResponsiveImage = ({ initialImage = null, onDelete }) => {
     if (isResizing) {
       const dx = e.clientX - initialMousePos.x;
       const dy = e.clientY - initialMousePos.y;
-      setImageSize({
+      const newSize = {
         width: Math.max(initialSize.width + dx, 100),
         height: Math.max(initialSize.height + dy, 100),
-      });
+      };
+      setImageSize(newSize);
+      onUpdate?.(preview, newSize);
     }
   };
 
@@ -47,8 +41,12 @@ const ResponsiveImage = ({ initialImage = null, onDelete }) => {
     setIsResizing(false);
   };
 
-  return (
+  useEffect(() => {
+    setPreview(initialData);
+    setImageSize(initialStyles);
+  }, [initialData, initialStyles]);
 
+  return (
     <span
       className="relative flex justify-center items-center w-full rounded-lg bg-[#2a2438] overflow-hidden group"
       style={{
@@ -59,25 +57,6 @@ const ResponsiveImage = ({ initialImage = null, onDelete }) => {
       onMouseUp={handleMouseUp}
       onMouseLeave={handleMouseUp}
     >
-      <div className="absolute top-2 left-2">
-        <button
-          className="text-white bg-gray-600 rounded-full p-1 hover:bg-gray-700"
-          onClick={toggleMenu}
-        >
-          ⋮
-        </button>
-        {showMenu && (
-          <div className="absolute top-full mt-1 left-0 bg-white text-black rounded shadow-lg z-10">
-            <button
-              className="block px-4 py-2 text-left w-full hover:bg-gray-200"
-              onClick={handleDelete}
-            >
-              Delete
-            </button>
-          </div>
-        )}
-      </div>
-
       {preview ? (
         <img
           src={preview}

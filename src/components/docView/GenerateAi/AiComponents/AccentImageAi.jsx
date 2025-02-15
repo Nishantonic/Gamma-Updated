@@ -12,6 +12,9 @@ import { Move } from "lucide-react"
 import { v4 as uuidv4 } from "uuid"
 import TitleAi from './TitleAi'
 import Heading from "./Heading"
+import ResponsiveImage from "@/components/SidebarLeft/components/ToolBarElements/ResponsiveImage"
+import ResponsiveVideo from "@/components/SidebarLeft/components/ToolBarElements/ResponsiveVideo"
+import ResponsiveAudio from "@/components/SidebarLeft/components/ToolBarElements/ResponsiveAudio"
 
 function AccentImageAi({ generateAi = {}, ...props }) {
   const [preview, setPreview] = useState(generateAi.imageContainer?.image)
@@ -28,17 +31,18 @@ function AccentImageAi({ generateAi = {}, ...props }) {
   const [description, setDescription] = useState(generateAi.descriptionContainer?.description || "Start typing...")
   const [descriptionStyles, setDescriptionStyles] = useState(generateAi.descriptionContainer?.styles || {})
   const [isDeleted, setIsDeleted] = useState(false)
-  //const { draggedElement } = useContext(DragContext)
   const slideId = generateAi.id
 
   const COMPONENT_MAP = {
     title: TitleAi,
     paragraph: ParagraphAi,
     heading: Heading,
+    image: ResponsiveImage,
+    video: ResponsiveVideo, // Add this
+  audio: ResponsiveAudio, // Add this
   }
 
   const imageRef = useRef(null)
-  
 
   useEffect(() => {
     if (generateAi.imageContainer?.image && isValidImageUrl(generateAi.imageContainer.image)) {
@@ -156,7 +160,7 @@ function AccentImageAi({ generateAi = {}, ...props }) {
         id: uuidv4(),
         type: data.type,
         content: "",
-        styles: {},
+        styles: { width: 300, height: 210 }, // Default size for new items
       }
 
       const updatedData = {
@@ -304,11 +308,11 @@ function AccentImageAi({ generateAi = {}, ...props }) {
             />
 
             <div className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-  <Label htmlFor={`image-upload-${generateAi.id}`} className="cursor-pointer">
-    <span className="text-white text-sm font-medium">
-      {preview ? "Replace Image" : "Upload Image"}
-    </span>
-  </Label>
+              <Label htmlFor={`image-upload-${generateAi.id}`} className="cursor-pointer">
+                <span className="text-white text-sm font-medium">
+                  {preview ? "Replace Image" : "Upload Image"}
+                </span>
+              </Label>
             </div>
 
             <Input
@@ -321,8 +325,6 @@ function AccentImageAi({ generateAi = {}, ...props }) {
 
             {preview && (
               <>
-                
-
                 <Button
                   size="icon"
                   variant="ghost"
