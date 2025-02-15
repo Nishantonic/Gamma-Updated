@@ -6,28 +6,57 @@ import TitleAi from "./TitleAi.jsx";
 import ParagraphAi from "./ParagraphAi.jsx";
 import { DragContext } from "@/components/SidebarLeft/DragContext";
 import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Move } from "lucide-react";
+import { v4 as uuidv4 } from "uuid";
 
 function ImageTextAi({ generateAi = {}, ...props }) {
-  const [preview, setPreview] = useState(generateAi.imageContainer?.image)
-    const [imageSize, setImageSize] = useState({ width: 300, height: 210 })
-    const [isResizing, setIsResizing] = useState(false)
-    const [initialMousePos, setInitialMousePos] = useState({ x: 0, y: 0 })
-    const [initialSize, setInitialSize] = useState({ width: 0, height: 0 })
-    const [title, setTitle] = useState(generateAi.titleContainer?.title || "Untitled Card")
-    const [titleStyles, setTitleStyles] = useState(generateAi.titleContainer?.styles || {})
-    const [description, setDescription] = useState(generateAi.descriptionContainer?.description || "Start typing...")
-    const [descriptionStyles, setDescriptionStyles] = useState(generateAi.descriptionContainer?.styles || {})
-    const [droppedItems, setDroppedItems] = useState([]) // To store dropped items
-    const [isDeleted, setIsDeleted] = useState(false) // Added state for deletion
-    const { draggedElement } = useContext(DragContext) // Access the dragged element context
-    const imageRef = useRef(null)
+  const [preview, setPreview] = useState(generateAi.imageContainer?.image);
+  const [imageSize, setImageSize] = useState(() => ({
+    width: generateAi.imageContainer?.styles?.width || 300,
+    height: generateAi.imageContainer?.styles?.height || 210,
+  }));
+  const [isResizing, setIsResizing] = useState(false);
+  const [initialMousePos, setInitialMousePos] = useState({ x: 0, y: 0 });
+  const [initialSize, setInitialSize] = useState({ width: 0, height: 0 });
+  const [title, setTitle] = useState(
+    generateAi.titleContainer?.title || "Untitled Card"
+  );
+  const [titleStyles, setTitleStyles] = useState(
+    generateAi.titleContainer?.styles || {}
+  );
+  const [description, setDescription] = useState(
+    generateAi.descriptionContainer?.description || "Start typing..."
+  );
+  const [descriptionStyles, setDescriptionStyles] = useState(
+    generateAi.descriptionContainer?.styles || {}
+  );
+  const [isDeleted, setIsDeleted] = useState(false);
+  const { draggedElement } = useContext(DragContext);
+  const imageRef = useRef(null);
+  const slideId = generateAi.id
+
    
-    
-    useEffect(() => {
-      if (generateAi.image && isValidImageUrl(generateAi.image)) {
-        setPreview(generateAi.image)
-      }
-    }, [generateAi.image])
+  const COMPONENT_MAP = {
+    title: TitleAi,
+    paragraph: ParagraphAi,
+  }
+  useEffect(() => {
+    if (
+      generateAi.imageContainer?.image &&
+      isValidImageUrl(generateAi.imageContainer.image)
+    ) {
+      setPreview(generateAi.imageContainer.image);
+    }
+    if (generateAi.imageContainer?.styles) {
+      setImageSize({
+        width: generateAi.imageContainer.styles.width || 300,
+        height: generateAi.imageContainer.styles.height || 210,
+      });
+    }
+  }, [generateAi.imageContainer]);
   
     const isValidImageUrl = (url) => {
       return url.match(/\.(jpeg|jpg|gif|png)$/) != null
@@ -40,7 +69,15 @@ function ImageTextAi({ generateAi = {}, ...props }) {
       reader.onload = () => {
         setPreview(reader.result);
         updateParent({
-          imageContainer: { image: reader.result }
+          imageContainer: {
+            ...generateAi.imageContainer,
+            image: reader.result,
+            styles: {
+              ...generateAi.imageContainer?.styles,
+              width: imageSize.width,
+              height: imageSize.height,
+            },
+          },
         });
       };
       reader.readAsDataURL(file);
@@ -55,21 +92,31 @@ function ImageTextAi({ generateAi = {}, ...props }) {
     }
   
     const handleMouseMove = (e) => {
-      if (isResizing) {
-        const dx = e.clientX - initialMousePos.x
-        const dy = e.clientY - initialMousePos.y
-  
-        const newWidth = Math.max(initialSize.width + dx, 100)
-        const newHeight = Math.max(initialSize.height + dy, 100)
-  
-        setImageSize({
+  if (isResizing) {
+    const dx = e.clientX - initialMousePos.x;
+    const dy = e.clientY - initialMousePos.y;
+
+    const newWidth = Math.max(initialSize.width + dx, 100);
+    const newHeight = Math.max(initialSize.height + dy, 100);
+
+    setImageSize({
+      width: newWidth,
+      height: newHeight,
+    });
+
+    // Correctly update parent with imageContainer styles
+    updateParent({
+      imageContainer: {
+        ...generateAi.imageContainer,
+        styles: {
+          ...generateAi.imageContainer?.styles,
           width: newWidth,
           height: newHeight,
-        })
-  
-        updateParent({ imageSize: { width: newWidth, height: newHeight } })
-      }
-    }
+        },
+      },
+    });
+  }
+};
   
     const handleMouseUp = () => {
       setIsResizing(false)
@@ -91,22 +138,17 @@ function ImageTextAi({ generateAi = {}, ...props }) {
       imageContainer: {
         ...generateAi.imageContainer,
         image: preview,
-        styles: { width: imageSize.width, height: imageSize.height },
+        styles: {
+          ...generateAi.imageContainer?.styles,
+          width: imageSize.width,
+          height: imageSize.height,
+        },
       },
       ...updates,
     };
-  
-    // if (generateAi.onEdit) {
-    //   generateAi.onEdit(generateAi.id, updatedData);
-    // }
+
+    generateAi.onEdit?.(updatedData);
   };
-  
-  useEffect(() => {
-    updateParent({
-      titleContainer: { styles: titleStyles },
-      descriptionContainer: { styles: descriptionStyles }
-    });
-  }, [titleStyles, descriptionStyles]);
   
   
   const updateGenerateAiJson = (generateAi, slideId, inputId, newData) => {
@@ -168,23 +210,31 @@ function ImageTextAi({ generateAi = {}, ...props }) {
   
   
     const handleDrop = (event) => {
-      event.preventDefault()
-      if (draggedElement?.template) {
-        const newItem = {
-          id: Date.now(), // Unique ID for each dropped item
-          content: draggedElement.template,
-        }
-        setDroppedItems((prev) => [...prev, newItem])
+    event.preventDefault()
+    const data = JSON.parse(event.dataTransfer.getData("application/json"))
+
+    if (data.type) {
+      const newItem = {
+        id: uuidv4(),
+        type: data.type,
+        content: "",
+        styles: {},
       }
+
+      const updatedData = {
+        ...generateAi,
+        dropContainer: {
+          dropItems: [...(generateAi.dropContainer?.dropItems || []), newItem]
+        }
+      }
+      generateAi.onEdit?.(updatedData)
     }
+  }
   
     const handleDragOver = (event) => {
       event.preventDefault()
     }
   
-    const handleDeleteDroppedItem = (id) => {
-      setDroppedItems((prev) => prev.filter((item) => item.id !== id))
-    }
   
     const handleDelete = () => {
       setIsDeleted(true)
@@ -196,7 +246,56 @@ function ImageTextAi({ generateAi = {}, ...props }) {
     if (isDeleted) {
       return null
     }
+    const handleDeleteDroppedItem = (itemId) => {
+    const updatedItems = generateAi.dropContainer?.dropItems?.filter(item => item.id !== itemId) || []
+    generateAi.onEdit?.({
+      ...generateAi,
+      dropContainer: { dropItems: updatedItems }
+    })
+  }
 
+    const handleUpdateDroppedItem = (itemId, updates) => {
+    const updatedItems = generateAi.dropContainer?.dropItems?.map(item => 
+      item.id === itemId ? { ...item, ...updates } : item
+    ) || []
+
+    generateAi.onEdit?.({
+      ...generateAi,
+      dropContainer: { dropItems: updatedItems }
+    })
+  }
+
+    const renderDroppedItems = () => {
+    return (generateAi.dropContainer?.dropItems || []).map((item) => {
+      const Component = COMPONENT_MAP[item.type]
+      if (!Component) return null
+
+      return (
+        <div key={item.id} className="mb-4 relative group">
+          <Component
+            slideId={slideId}
+            inputId={item.id}
+            initialData={item.content}
+            initialStyles={item.styles}
+            onUpdate={(value, styles) => {
+              handleUpdateDroppedItem(item.id, { 
+                content: value,
+                styles: styles 
+              })
+            }}
+          />
+          <Button
+            variant="ghost"
+            size="sm"
+            className="absolute -top-3 -right-3 opacity-0 group-hover:opacity-100 transition-opacity"
+            onClick={() => handleDeleteDroppedItem(item.id)}
+          >
+            ×
+          </Button>
+        </div>
+      )
+    })
+  }
   return (
     <Card
       className="min-h-screen w-full md:min-h-[25vw] my-8 bg-[#342c4e] relative overflow-visible max-w-4xl mx-auto px-3 py-3 outline-none border-none"
@@ -299,17 +398,9 @@ function ImageTextAi({ generateAi = {}, ...props }) {
       </div>
 
       {/* Dropped Items Section */}
-      {droppedItems.length > 0 && (
-        <div className="mt-6 space-y-4">
-          {droppedItems.map((item) => (
-            <div key={item.id} className="relative">
-              {React.cloneElement(item.content, {
-                onDelete: () => handleDeleteDroppedItem(item.id),
-              })}
-            </div>
-          ))}
+      <div className="mt-8">
+          {renderDroppedItems()}
         </div>
-      )}
     </Card>
   );
 }

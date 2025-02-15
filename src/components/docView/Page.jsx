@@ -282,7 +282,26 @@ export default function Page() {
           content: item.content || '',
           styles: item.styles || {}
         }))
-      }
+      },
+      columns: slide.columns?.map(col => ({
+    contentId: col.contentId || uuidv4(),
+    content: col.content || '',
+    styles: col.styles || {}
+  })) || [],
+  // For ThreeImgTextAi
+  cards: slide.cards?.map(card => ({
+    image: card.image,
+    headingContainer: {
+      headingId: card.headingContainer?.headingId || uuidv4(),
+      heading: card.headingContainer?.heading,
+      styles: card.headingContainer?.styles || {}
+    },
+    descriptionContainer: {
+      descriptionId: card.descriptionContainer?.descriptionId || uuidv4(),
+      description: card.descriptionContainer?.description,
+      styles: card.descriptionContainer?.styles || {}
+    }
+  })) || []
     }));
 
     setSlides(normalizedSlides);
@@ -297,7 +316,7 @@ export default function Page() {
       titleContainer: slide.titleContainer,
       descriptionContainer: slide.descriptionContainer,
       imageContainer: slide.imageContainer,
-      dropContainer: slide.dropContainer
+      dropContainer: slide.dropContainer,
     }));
 
     setSlidesPreview(newSlidesPreview);
