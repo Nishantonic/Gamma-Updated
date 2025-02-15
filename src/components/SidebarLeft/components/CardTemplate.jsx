@@ -34,11 +34,14 @@ const CardTemplate = () => {
     };
   }, []);
 
-  const handleDragStart = (event, cardData) => {
-    setDraggedElement(cardData);
-    event.dataTransfer.effectAllowed = "move";
-    event.dataTransfer.setData("text/plain", "dragged-element");
-  };
+  const handleDragStart = (event, templateType) => {
+  const data = JSON.stringify({
+    type: "template",
+    templateType: templateType
+  });
+  event.dataTransfer.setData("application/json", data);
+  setDraggedElement({ type: "template", templateType });
+};
 
   return (
     <div className="relative group" ref={cardRef}>
@@ -61,9 +64,7 @@ const CardTemplate = () => {
             <Card
               className="p-4 bg-[#2a2438] border-[#3a3347] hover:border-[#4a4357] cursor-pointer transition-colors relative group"
               draggable
-              onDragStart={(e) =>
-                handleDragStart(e, { type: "CardTemplate", template: <ImageCardText /> })
-              }
+              onDragStart={(e) => handleDragStart(e, "imageText")}
             >
               <img
                 src={card1}
@@ -78,9 +79,7 @@ const CardTemplate = () => {
             <Card
               className="p-4 bg-[#2a2438] border-[#3a3347] hover:border-[#4a4357] cursor-pointer transition-colors relative group "
               draggable
-              onDragStart={(e) =>
-                handleDragStart(e, { type: "CardTemplate", template: <AccentImage /> })
-              }
+              onDragStart={(e) => handleDragStart(e, "accentImage")}
             >
               <div className="h-24 flex items-center justify-center overflow-hidden">
                 <img
@@ -98,9 +97,7 @@ const CardTemplate = () => {
               className="p-4 bg-[#2a2438] border-[#3a3347] hover:border-[#4a4357] cursor-pointer transition-colors relative group"
               // onClick={() => setShowTwoColumn(true)}
               draggable
-              onDragStart={(e) =>
-                handleDragStart(e, { type: "CardTemplate", template: <CardTemplateTwoColumn /> })
-              }
+              onDragStart={(e) => handleDragStart(e, "twoColumn")}
             >
               <img
                 src={card2}
@@ -116,12 +113,7 @@ const CardTemplate = () => {
               className="p-4 bg-[#2a2438] border-[#3a3347] hover:border-[#4a4357] cursor-pointer transition-colors relative group"
               // onClick={() => setShowThreeColumn(true)}
               draggable
-              onDragStart={(e) =>
-                handleDragStart(e, {
-                  type: "CardTemplate",
-                  template: <CardTemplateImgHeadingThree />,
-                })
-              }
+              onDragStart={(e) => handleDragStart(e, "threeImgCard")}
             >
               <img
                 src={card4}

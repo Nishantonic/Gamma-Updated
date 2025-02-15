@@ -43,27 +43,45 @@ export default function CardTemplates({
   const { draggedElement } = useContext(DragContext);
   const slideId = id || generateAi.id || uuidv4();
 
-
+  const handleTemplateDrop = (templateType) => {
+  switch (templateType) {
+    case "imageText":
+      handleImageText();
+      break;
+    case "twoColumn":
+      handleTwoColumn();
+      break;
+    case "accentImage":
+      handleAccentImage();
+      break;
+    case "threeImgCard":
+      handleThreeColumn();
+      break;
+    default:
+      break;
+  }
+};
   const handleDrop = (event) => {
-    event.preventDefault();
-    const data = JSON.parse(event.dataTransfer.getData("application/json"));
+  event.preventDefault();
+  const dataStr = event.dataTransfer.getData("application/json");
+  if (!dataStr) return;
 
-    if (data.type) {
-      const newItem = {
-        id: uuidv4(),
-        type: data.type,
-        content: "",
-        styles: {}
-      };
+  const data = JSON.parse(dataStr);
 
-      addDroppedItem(slideId, newItem);
-      updateParentWithDroppedItems();
-    }
-  };
+  if (data.type === "template") {
+    handleTemplateDrop(data.templateType);
+  } else if (data.type) {
+    // Existing element drop logic
+    const newItem = { /* ... */ };
+    addDroppedItem(slideId, newItem);
+    updateParentWithDroppedItems();
+  }
+};
 
   const handleDragOver = (event) => {
-    event.preventDefault();
-  };
+  event.preventDefault();
+  event.dataTransfer.dropEffect = "copy";
+};
 
   const handleDeleteDroppedItem = (itemId) => {
     removeDroppedItem(slideId, itemId);
