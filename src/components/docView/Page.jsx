@@ -109,7 +109,7 @@ export default function Page() {
         const cleanSlide = {
           id: slide.id,
           type: slide.type || "custom",
-          title: slide.titleContainer?.title?.replace(/<[^>]*>/g, '') || "Untitled",
+          title: slide.titleContainer?.title || "Untitled",
           titleContainer: {
             titleId: slide.titleContainer?.titleId || uuidv4(),
             title: slide.titleContainer?.title || "",
@@ -420,229 +420,287 @@ useEffect(() => {
   }
 
   const getBase64FromImgElement = async (imgElement) => {
-    //Implementation to convert image element to base64
     return new Promise((resolve, reject) => {
       const canvas = document.createElement("canvas")
       const ctx = canvas.getContext("2d")
-      imgElement.onload = () => {
-        canvas.width = imgElement.width
-        canvas.height = imgElement.height
-        ctx.drawImage(imgElement, 0, 0)
+      const img = new Image()
+
+      img.onload = () => {
+        canvas.width = img.width
+        canvas.height = img.height
+        ctx.drawImage(img, 0, 0)
         const base64 = canvas.toDataURL("image/png")
         resolve(base64)
       }
-      imgElement.onerror = reject
-      imgElement.src = imgElement.src // Trigger loading
+
+      img.onerror = reject
+      img.crossOrigin = "anonymous"
+      img.src = imgElement
     })
   }
 
-  const downloadPPT = async () => {
-  console.log("Starting PowerPoint generation...")
-  try {
-    const pptx = new pptxgen()
+  const parseStyles = (content, styles = {}) => {
+    const combinedStyles = { ...styles }
 
-    // Helper function to parse styles from HTML content
-    const parseStyles = (htmlContent, defaultStyles = {}) => {
-      const styles = { ...defaultStyles }
-      
-      if (htmlContent?.includes('color:')) {
-        const colorMatch = htmlContent.match(/color:\s*rgb\(([^)]+)\)/)
-        if (colorMatch) {
-          const [r, g, b] = colorMatch[1].split(',').map(n => parseInt(n.trim()))
-          styles.color = `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`
-        }
+    if (content?.includes("color:")) {
+      const colorMatch = content.match(/color:\s*rgb$$([^)]+)$$/)
+      if (colorMatch) {
+        const [r, g, b] = colorMatch[1].split(",").map((n) => Number.parseInt(n.trim()))
+        combinedStyles.color = `#${r.toString(16).padStart(2, "0")}${g.toString(16).padStart(2, "0")}${b.toString(16).padStart(2, "0")}`
       }
-      
-      if (htmlContent?.includes('<strong>')) styles.bold = true
-      if (htmlContent?.includes('<em>')) styles.italic = true
-      if (htmlContent?.includes('<sup>')) styles.superscript = true
-      if (htmlContent?.includes('<sub>')) styles.subscript = true
-      if (htmlContent?.includes('class="ql-align-center"')) styles.align = 'center'
-      if (htmlContent?.includes('class="ql-align-right"')) styles.align = 'right'
-      
-      return styles
     }
 
-    // Helper function to add text with styles
-    const addStyledText = (pptSlide, text, htmlContent, options) => {
-      if (text && typeof text === "string") {
-        const styles = parseStyles(htmlContent)
-        pptSlide.addText(text.trim(), {
-          color: "#FFFFFF",
-          fontFace: "Arial",
-          fontSize: 12,
-          ...styles,
-          ...options,
+    if (content?.includes("<strong>") || styles.bold) combinedStyles.bold = true
+    if (content?.includes("<em>") || styles.italic) combinedStyles.italic = true
+    if (content?.includes("<u>") || styles.underline) combinedStyles.underline = true
+    if (content?.includes('class="ql-align-center"')) combinedStyles.align = "center"
+    if (content?.includes('class="ql-align-right"')) combinedStyles.align = "right"
+
+    if (styles.header) {
+      switch (styles.header) {
+        case 1:
+          combinedStyles.fontSize = 32
+          break
+        case 2:
+          combinedStyles.fontSize = 18
+          break
+        case 3:
+          combinedStyles.fontSize = 14
+          break
+        default:
+          combinedStyles.fontSize = 12
+      }
+    }
+
+    return combinedStyles
+  }
+
+  const addStyledText = (pptSlide, text, content, styles = {}, options = {}) => {
+    if (text && typeof text === "string") {
+      const parsedStyles = parseStyles(content, styles)
+      pptSlide.addText(text.replace(/<[^>]+>/g, "").trim(), {
+        color: "#FFFFFF",
+        fontFace: "Arial",
+        fontSize: 14,
+        align: parsedStyles.align || "left",
+        ...parsedStyles,
+        ...options,
+      })
+    }
+  }
+
+  const processMainContent = async (pptSlide, slideData, type) => {
+    const title = slideData.titleContainer?.title?.replace(/<[^>]+>/g, "") || ""
+    const description = slideData.descriptionContainer?.description?.replace(/<[^>]+>/g, "") || ""
+
+    switch (type) {
+      case "accentImage":
+        addStyledText(pptSlide, title, slideData.titleContainer?.title, slideData.titleContainer?.styles, {
+          x: 0.5,
+          y: 0.5,
+          w: "60%",
+          h: 1,
         })
-      }
-    }
 
-    for (let index = 0; index < slides.length; index++) {
-      const slideData = slides[index]
-      const type = slideData.type || "default"
-      
-      // Strip HTML but keep original HTML for style parsing
-      const title = slideData.titleContainer?.title?.replace(/<[^>]+>/g, '') || ''
-      const titleHtml = slideData.titleContainer?.title || ''
-      const description = slideData.descriptionContainer?.description?.replace(/<[^>]+>/g, '') || ''
-      const descriptionHtml = slideData.descriptionContainer?.description || ''
-      const image = slideData.imageContainer?.image || null
-
-      const pptSlide = pptx.addSlide()
-      pptSlide.background = { color: "#342c4e" }
-
-      switch (type) {
-        case "accentImage": {
-          addStyledText(pptSlide, title, titleHtml, {
-            x: 0.5,
-            y: 0.5,
-            w: "60%",
-            h: 1,
-            fontSize: 24
-          })
-
-          addStyledText(pptSlide, description, descriptionHtml, {
+        addStyledText(
+          pptSlide,
+          description,
+          slideData.descriptionContainer?.description,
+          slideData.descriptionContainer?.styles,
+          {
             x: 0.5,
             y: 1.5,
             w: "60%",
             h: 3,
-            fontSize: 14
-          })
+          },
+        )
 
-          const imageUrl = slideData.imageContainer?.image
-          if (imageUrl) {
-            try {
-              const base64Image = await getBase64FromImgElement(imageUrl)
-              if (base64Image) {
+        if (slideData.imageContainer?.image) {
+          try {
+            const base64Image = await getBase64FromImgElement(slideData.imageContainer.image)
+            pptSlide.addImage({
+              data: base64Image,
+              x: 5.5,
+              y: 1.5,
+              w: 4,
+              h: 3,
+            })
+          } catch (error) {
+            console.error("Failed to add image:", error)
+          }
+        }
+        break
+
+      case "threeImgCard":
+        addStyledText(pptSlide, title, slideData.titleContainer?.title, slideData.titleContainer?.styles, {
+          x: 0.5,
+          y: 0.3,
+          w: "90%",
+          h: 0.8,
+          align: "center",
+        })
+
+        if (slideData.cards) {
+          for (let i = 0; i < slideData.cards.length; i++) {
+            const card = slideData.cards[i]
+            const xOffset = 0.5 + i * 3.3
+
+            if (card.image) {
+              try {
+                const base64Image = await getBase64FromImgElement(card.image)
                 pptSlide.addImage({
                   data: base64Image,
-                  x: 5.5,
-                  y: 1.5,
-                  w: 4,
-                  h: 3,
+                  x: xOffset,
+                  y: 1.3,
+                  w: 2.8,
+                  h: 2,
                 })
+              } catch (error) {
+                console.error(`Failed to add card image ${i}:`, error)
               }
-            } catch (error) {
-              console.error("Failed to add image:", error)
             }
-          }
-          break
-        }
 
-        case "twoColumn": {
-          addStyledText(pptSlide, title, titleHtml, {
-            x: 0.5,
-            y: 0.5,
-            w: "90%",
-            h: 1,
-            fontSize: 24
-          })
-
-          slideData.columns?.forEach((column, idx) => {
-            const content = column.content?.replace(/<[^>]+>/g, '') || ''
-            addStyledText(pptSlide, content, column.content, {
-              x: idx === 0 ? 0.5 : 5.5,
-              y: 1.5,
-              w: "45%",
-              h: 3,
-              fontSize: 14
-            })
-          })
-          break
-        }
-
-        case "threeImgCard": {
-          // Add title with proper spacing
-          addStyledText(pptSlide, title, titleHtml, {
-            x: 0.5,
-            y: 0.3,
-            w: "90%",
-            h: 0.8,
-            align: 'center'
-          })
-
-          // Process cards synchronously to ensure all cards are added
-          const processCards = async () => {
-            const cardPromises = slideData.cards?.map(async (card, idx) => {
-              const xOffset = 0.5 + (idx * 3.3)
-              
-              // Add image first
-              if (card.image) {
-                try {
-                  const base64Image = await getBase64FromImgElement(card.image)
-                  if (base64Image) {
-                    pptSlide.addImage({
-                      data: base64Image,
-                      x: xOffset,
-                      y: 1.3,
-                      w: 2.8,
-                      h: 2,
-                    })
-                  }
-                } catch (error) {
-                  console.error(`Failed to add image for card ${idx}:`, error)
-                }
-              }
-
-              // Add heading
-              const heading = card.headingContainer?.heading?.replace(/<[^>]+>/g, '') || ''
-              addStyledText(pptSlide, heading, card.headingContainer?.heading, {
+            addStyledText(
+              pptSlide,
+              card.headingContainer?.heading,
+              card.headingContainer?.heading,
+              card.headingContainer?.styles,
+              {
                 x: xOffset,
                 y: 3.4,
                 w: 2.8,
                 h: 0.6,
-                align: 'center',
+                align: "center",
                 fontSize: 14,
-                bold: true
-              })
+                bold: true,
+              },
+            )
 
-              // Add description
-              const cardDesc = card.descriptionContainer?.description?.replace(/<[^>]+>/g, '') || ''
-              addStyledText(pptSlide, cardDesc, card.descriptionContainer?.description, {
+            addStyledText(
+              pptSlide,
+              card.descriptionContainer?.description,
+              card.descriptionContainer?.description,
+              card.descriptionContainer?.styles,
+              {
                 x: xOffset,
                 y: 4.1,
                 w: 2.8,
                 h: 1,
-                align: 'center',
-                fontSize: 12
-              })
-            }) || []
-
-            await Promise.all(cardPromises)
+                align: "center",
+                fontSize: 12,
+              },
+            )
           }
-
-          await processCards()
-          break
         }
+        break
 
-        default: {
-          addStyledText(pptSlide, title, titleHtml, {
-            x: 0.5,
-            y: 0.5,
-            w: "90%",
-            h: 1,
-            fontSize: 24
+      case "twoColumn":
+        addStyledText(pptSlide, title, slideData.titleContainer?.title, slideData.titleContainer?.styles, {
+          x: 0.5,
+          y: 0.5,
+          w: "90%",
+          h: 1,
+        })
+
+        slideData.columns?.forEach((column, idx) => {
+          const content = column.content?.replace(/<[^>]+>/g, "") || ""
+          addStyledText(pptSlide, content, column.content, column.styles, {
+            x: idx === 0 ? 0.5 : 5.5,
+            y: 1.5,
+            w: "45%",
+            h: 3,
           })
+        })
+        break
 
-          addStyledText(pptSlide, description, descriptionHtml, {
+      default:
+        addStyledText(pptSlide, title, slideData.titleContainer?.title, slideData.titleContainer?.styles, {
+          x: 0.5,
+          y: 0.5,
+          w: "90%",
+          h: 1,
+        })
+
+        addStyledText(
+          pptSlide,
+          description,
+          slideData.descriptionContainer?.description,
+          slideData.descriptionContainer?.styles,
+          {
             x: 0.5,
             y: 1.5,
             w: "90%",
             h: 4,
-            fontSize: 14
+          },
+        )
+    }
+  }
+
+  const processDroppedItems = async (pptSlide, dropItems) => {
+    let yOffset = 5
+
+    for (const item of dropItems) {
+      switch (item.type) {
+        case "image":
+          try {
+            if (typeof item.content === "string") {
+              const base64Image = await getBase64FromImgElement(item.content)
+              const width = item.styles?.width ? item.styles.width / 100 : 3
+              const height = item.styles?.height ? item.styles.height / 100 : 2
+              pptSlide.addImage({
+                data: base64Image,
+                x: 0.5,
+                y: yOffset,
+                w: width,
+                h: height,
+              })
+              yOffset += height + 0.5
+            }
+          } catch (error) {
+            console.error("Failed to add dropped image:", error)
+          }
+          break
+        case "title":
+        case "heading":
+        case "paragraph":
+          const content = item.content?.replace(/<[^>]+>/g, "") || ""
+          addStyledText(pptSlide, content, item.content, item.styles, {
+            x: 0.5,
+            y: yOffset,
+            w: "90%",
+            h: 0.8,
           })
-        }
+          yOffset += 1
+          break
       }
     }
-
-    console.log("Saving PowerPoint file...")
-    await pptx.writeFile({ fileName: "generated_presentation.pptx" })
-    console.log("PowerPoint generation completed successfully.")
-  } catch (error) {
-    console.error("PPT Generation Error:", error)
-    throw new Error("Failed to generate PowerPoint. Please check console for details.")
   }
-}
+
+  const downloadPPT = async () => {
+    console.log("Starting PowerPoint generation...")
+    try {
+      const pptx = new pptxgen()
+
+      for (const slideData of slides) {
+        const pptSlide = pptx.addSlide()
+        pptSlide.background = { color: "#342c4e" }
+
+        await processMainContent(pptSlide, slideData, slideData.type || "default")
+
+        if (slideData.dropContainer?.dropItems) {
+          await processDroppedItems(pptSlide, slideData.dropContainer.dropItems)
+        }
+      }
+
+      console.log("Saving PowerPoint file...")
+      await pptx.writeFile({ fileName: "presentation.pptx" })
+      console.log("PowerPoint generation completed successfully.")
+      toast.success("PowerPoint downloaded successfully!")
+    } catch (error) {
+      console.error("PPT Generation Error:", error)
+      toast.error("Failed to generate PowerPoint. Please check console for details.")
+    }
+  }
 
   const generateSlidePreview = async (slideElement) => {
     if (slideElement) {

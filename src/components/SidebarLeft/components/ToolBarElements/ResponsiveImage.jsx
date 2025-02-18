@@ -1,3 +1,4 @@
+import { fileToBase64 } from "@/components/utils/fileToBase64";
 import React, { useEffect, useState } from "react";
 
 const ResponsiveImage = ({ initialData = null, initialStyles = { width: 300, height: 210 }, onUpdate, onDelete }) => {
@@ -9,12 +10,16 @@ const ResponsiveImage = ({ initialData = null, initialStyles = { width: 300, hei
   const [isUploading, setIsUploading] = useState(!initialData);
   const [showMenu, setShowMenu] = useState(false);
 
-  const handleImagePreview = (e) => {
+  const handleImagePreview = async (e) => {
     const file = e.target.files[0];
     if (file && file.type.startsWith("image/")) {
-      const imageURL = URL.createObjectURL(file);
-      setPreview(imageURL);
-      onUpdate?.(imageURL, imageSize);
+      try {
+        const base64Data = await fileToBase64(file);
+        setPreview(base64Data);
+        onUpdate?.(base64Data, imageSize);
+      } catch (error) {
+        console.error("Error converting image to base64:", error);
+      }
     }
   };
 

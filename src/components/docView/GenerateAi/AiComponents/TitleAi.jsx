@@ -3,31 +3,38 @@ import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
 import "react-quill/dist/quill.bubble.css";
 
-function TitleAi({ slideId, inputId, onUpdate, initialData,initialStyles}) {
+function TitleAi({ slideId, inputId, onUpdate, initialData, initialStyles }) {
   const quillRef = useRef(null);
 
-  const formattedInitialData = initialData ? `<h1>${initialData}</h1>` : `<h1>Untitled</h1>`;
+  // Don't wrap in h1 tags
+  const formattedInitialData = initialData || "Untitled";
   const [editorHtml, setEditorHtml] = useState(formattedInitialData);
-  const [editorStyles, setEditorStyles] = useState({});
+  const [editorStyles, setEditorStyles] = useState({ header: 1 }); // Set default style
 
-  
+  useEffect(() => {
+    // Apply initial H1 format when component mounts
+    if (quillRef.current) {
+      const quill = quillRef.current.getEditor();
+      quill.formatText(0, quill.getLength(), 'header', 1);
+    }
+  }, []);
+
   const handleChange = (value) => {
-  // Add null check for quillRef
-  if (!quillRef.current) return;
-  
-  const quill = quillRef.current.getEditor();
-  const styles = quill.getFormat();
-  
-  setEditorHtml(value);
-  setEditorStyles(styles);
-  
-  onUpdate(
-    value, // Send plain text
-    styles,
-    slideId,
-    inputId
-  );
-};
+    if (!quillRef.current) return;
+    
+    const quill = quillRef.current.getEditor();
+    const styles = quill.getFormat();
+    
+    setEditorHtml(value);
+    setEditorStyles(styles);
+    
+    onUpdate(
+      value,
+      styles,
+      slideId,
+      inputId
+    );
+  };
 
   const modules = {
     toolbar: [
