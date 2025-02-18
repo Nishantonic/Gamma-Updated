@@ -686,6 +686,28 @@ useEffect(() => {
           console.error("Failed to add dropped video:", error);
         }
         break;
+
+        case "audio":
+        try {
+          if (typeof item.content === "string") {
+            const width = item.styles?.width ? item.styles.width / 100 : 4;
+            const height = item.styles?.height ? item.styles.height / 100 : 3;
+            pptSlide.addMedia({
+              type: 'audio',
+              data: item.content,
+              x: 0.5,
+              y: yOffset,
+              w: width,
+              h: height,
+              extension: '.mp3'
+            });
+            yOffset += height + 0.5;
+          }
+        } catch (error) {
+          console.error("Failed to add dropped audio:", error);
+        }
+        break;
+        
         case "title":
         case "heading":
         case "paragraph":
