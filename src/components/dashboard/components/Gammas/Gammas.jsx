@@ -1,172 +1,118 @@
-import { useState, useEffect } from "react"
-import { Folders, Coins, Bell } from "lucide-react"
-import { Link, useNavigate } from "react-router-dom"
-import GammaFunction from "./GammaFunction"
-import Card from "./Card"
+import { useState, useEffect } from "react";
+import { Folders, Coins, Bell, Clipboard, Check } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import GammaFunction from "./GammaFunction";
+import Card from "./Card";
+import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 const Gammas = ({ credits, setCredits }) => {
-  const [isOpen, setIsOpen] = useState(false)
-  const [ArraySlides, setArraySlides] = useState([])
-  const navigate = useNavigate()
+  const [isOpen, setIsOpen] = useState(false);
+  const [ArraySlides, setArraySlides] = useState([]);
+  const navigate = useNavigate();
+  const [isShareOpen, setIsShareOpen] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const [shareUrl, setShareUrl] = useState("");
 
-  // Load slides from localStorage on component mount
   useEffect(() => {
-    const savedSlides = localStorage.getItem("slides")
+    const savedSlides = localStorage.getItem("slides");
     if (savedSlides) {
-      setArraySlides(JSON.parse(savedSlides))
+      setArraySlides(JSON.parse(savedSlides));
     }
-    
-  }, [])
-{console.log(ArraySlides);}
-  // Handle clicking a card to navigate with slide data
-  // In Gammas.jsx
+  }, []);
+
   const handleCardClick = (slides, key) => {
     if (!slides || slides.length === 0) return;
     navigate("/page", {
       state: {
         slidesArray: slides.map((slide) => ({
           ...slide,
-          // Transform array dropContainer to object structure if needed
           dropContainer: {
-                    dropItems: slide.dropContainer?.dropItems || []
-                },  
-          id: slide.id,
-          type: slide.type,
-          titleContainer: slide.titleContainer,
-          descriptionContainer: slide.descriptionContainer,
-          imageContainer: slide.imageContainer
+            dropItems: slide.dropContainer?.dropItems || [],
+          },
         })),
         key: key,
       },
     });
   };
 
-  // Handle deleting a slide
   const handleDeleteSlide = (id) => {
-    const slideToDelete = ArraySlides.find((slide) => slide.key === id)
-    const updatedSlides = ArraySlides.filter((slide) => slide.key !== id)
-    setArraySlides(updatedSlides)
-    localStorage.setItem("slides", JSON.stringify(updatedSlides))
+    const slideToDelete = ArraySlides.find((slide) => slide.key === id);
+    const updatedSlides = ArraySlides.filter((slide) => slide.key !== id);
+    setArraySlides(updatedSlides);
+    localStorage.setItem("slides", JSON.stringify(updatedSlides));
 
-    // Add the deleted slide to trash
-    const trash = JSON.parse(localStorage.getItem("trash") || "[]")
-    trash.push(slideToDelete)
-    localStorage.setItem("trash", JSON.stringify(trash))
-  }
+    const trash = JSON.parse(localStorage.getItem("trash") || "[]");
+    trash.push(slideToDelete);
+    localStorage.setItem("trash", JSON.stringify(trash));
+  };
 
-  // Handle AI Generation navigation
-  const handleAIGenerate = (e) => {
-    e.preventDefault()
-    if (credits >= 40) {
-      navigate("/generate-ai")
-    }
-  }
+  const handleShare = (pptKey) => {
+    const url = `http://localhost:5173/share/${pptKey}`;
+    setShareUrl(url);
+    setIsShareOpen(true);
+  };
+
+  const copyToClipboard = () => {
+    navigator.clipboard.writeText(shareUrl);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   return (
     <div className="w-full">
-      {/* Header Section */}
       <div className="flex items-center justify-between">
-        {/* Icon + Title */}
         <div className="flex items-center gap-1">
-          <div className="p-1">
-            <Folders className="w-6 h-6 text-gray-700" />
-          </div>
+          <Folders className="w-6 h-6 text-gray-700" />
           <h3 className="text-lg font-semibold text-gray-800">Gammas</h3>
         </div>
-
-        {/* Credits, Notifications, and User Profile */}
         <div className="flex items-center gap-4 text-gray-600">
-          {/* Credits Display */}
-          <div className="flex items-center gap-1 cursor-pointer hover:text-blue-600 transition">
-            <Coins className="w-6 h-6 text-gray-700" />
-            <span>{credits} Credits</span>
-          </div>
-
-          {/* Notifications */}
-          <div className="relative">
-            <div
-              className="p-2 cursor-pointer rounded-full hover:bg-gray-200 transition"
-              onClick={() => setIsOpen(!isOpen)}
-            >
-              <Bell className="w-6 h-6 text-gray-700" />
-            </div>
-
-            {isOpen && (
-              <div className="absolute right-0 mt-2 w-64 bg-white border border-gray-300 rounded-lg shadow-lg p-4">
-                <p className="text-gray-500 text-sm text-center">No notifications</p>
-              </div>
-            )}
-          </div>
-
-          {/* User Profile Image */}
-          <div className="w-12 h-12 bg-gray-300 rounded-full overflow-hidden">
-            <img
-              src="https://avatarfiles.alphacoders.com/375/375542.png"
-              alt="User"
-              className="w-full h-full object-cover"
-            />
-          </div>
+          <Coins className="w-6 h-6 text-gray-700" />
+          <span>{credits} Credits</span>
+          <Bell className="w-6 h-6 text-gray-700 cursor-pointer" onClick={() => setIsOpen(!isOpen)} />
         </div>
       </div>
-
-      {/* Buttons Section */}
       <div className="p-4 bg-gray-100 rounded-md">
-        <Link
-          to="/page"
-          className="border border-gray-300 bg-white text-gray-700 px-4 py-2 rounded-md shadow-sm hover:bg-gray-200 transition-all duration-200 mr-3"
-        >
+        <Link to="/page" className="border border-gray-300 bg-white px-4 py-2 rounded-md shadow-sm hover:bg-gray-200">
           + New Gamma Blank
         </Link>
-
-        {credits >= 40 ? (
-          <button
-            onClick={handleAIGenerate}
-            className="border border-gray-300 bg-white text-gray-700 px-4 py-2 rounded-md shadow-sm hover:bg-gray-200 transition-all duration-200"
-          >
-            + Generate With AI
-          </button>
-        ) : (
-          <div className="group relative inline-block">
-            <button
-              disabled
-              className="border border-gray-300 bg-gray-100 text-gray-400 px-4 py-2 rounded-md shadow-sm cursor-not-allowed"
-            >
-              + Generate With AI
-            </button>
-            {/* Tooltip */}
-            <div className="absolute z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-200 top-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 text-sm text-red-600 bg-red-50 border border-red-100 rounded-lg shadow-sm w-max">
-              Insufficient credits. You need at least 40 credits.
-              <div className="absolute top-full left-1/2 -translate-x-1/2 w-3 h-2 bg-red-50 border-b border-r border-red-100 rotate-45"></div>
-            </div>
-          </div>
-        )}
       </div>
-
-      {/* GammaFunction Component */}
       <GammaFunction />
-
-      {/* Display Cards */}
       <div className="flex flex-wrap gap-4 mt-4">
         {ArraySlides.length === 0 ? (
           <p className="text-gray-500">No slides available</p>
         ) : (
-          ArraySlides.map((slideGroup) =>
-            
-            
+          ArraySlides.map((slideGroup) => (
             slideGroup.slides && slideGroup.slides.length > 0 ? (
-              
-              <Card
-                key={slideGroup.key}
-                slide={slideGroup?.slides[0] || {}}
-                onClick={() => handleCardClick(slideGroup.slides,ArraySlides.key)}
-                onDelete={() => handleDeleteSlide(slideGroup.key)}
-              />
-            ) : null,
-          )
+              <>
+                <Card
+                  key={slideGroup.key}
+                  slide={slideGroup.slides[0] || {}}
+                  onClick={() => handleCardClick(slideGroup.slides, slideGroup.key)}
+                  onDelete={() => handleDeleteSlide(slideGroup.key)}
+                  Share={() => handleShare(slideGroup.key)}
+                />
+                <Dialog open={isShareOpen} onOpenChange={setIsShareOpen}>
+                  <DialogContent className="sm:max-w-md bg-white shadow-lg rounded-lg p-6 border border-gray-200 backdrop-blur-md">
+                    <DialogHeader>
+                      <DialogTitle className="text-lg font-semibold text-gray-800">Share Gamma</DialogTitle>
+                    </DialogHeader>
+                    <div className="flex items-center justify-between gap-4 mt-4 bg-gray-50 p-3 rounded-md">
+                      <a href={shareUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline truncate">
+                        {shareUrl}
+                      </a>
+                      <button onClick={copyToClipboard} className="p-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-100">
+                        {copied ? <Check className="text-green-600" /> : <Clipboard className="text-gray-600" />}
+                      </button>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              </>
+            ) : null
+          ))
         )}
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default Gammas
+export default Gammas;

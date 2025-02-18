@@ -6,6 +6,7 @@ import Dashboard from "./components/dashboard/Dashboard";
 import { PresentationMode } from "./components/docView/PresentationMode";
 import GenerateAiPage from "./components/docView/GenerateAiPage";
 import { DroppedItemsProvider } from "./components/docView/DroppedItemsContext";
+import SharePage from "./components/docView/SharePage";
 function App() {
 
   return (
@@ -19,6 +20,7 @@ function App() {
           <Route path="/" element={<SignUp/>}/>
           <Route path="/home" element={<Dashboard/>}/>
           <Route path="/login" element={<Login/>}/>
+          <Route path="/share/:shareId" element={<SharePage />} />
           <Route path="/presentation" element={<PresentationMode/>}/>
        </Routes>
    </Router>
