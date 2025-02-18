@@ -642,24 +642,50 @@ useEffect(() => {
     for (const item of dropItems) {
       switch (item.type) {
         case "image":
-          try {
-            if (typeof item.content === "string") {
-              const base64Image = await getBase64FromImgElement(item.content)
-              const width = item.styles?.width ? item.styles.width / 100 : 3
-              const height = item.styles?.height ? item.styles.height / 100 : 2
-              pptSlide.addImage({
-                data: base64Image,
-                x: 0.5,
-                y: yOffset,
-                w: width,
-                h: height,
-              })
-              yOffset += height + 0.5
-            }
-          } catch (error) {
-            console.error("Failed to add dropped image:", error)
+                try {
+                    if (typeof item.content === "string") {
+                        const base64Image = await getBase64FromImgElement(item.content);
+                        const width = item.styles?.width ? item.styles.width / 100 : 3;
+                        const height = item.styles?.height ? item.styles.height / 100 : 2;
+                        pptSlide.addImage({
+                            data: base64Image,
+                            x: 0.5,
+                            y: yOffset,
+                            w: width,
+                            h: height,
+                        });
+                        yOffset += height + 0.5;
+                    }
+                } catch (error) {
+                    console.error("Error processing image:", error);
+                }
+                break;
+
+        case "video":
+        try {
+          if (typeof item.content === "string") {
+            // For video, we'll add a media object
+            const width = item.styles?.width ? item.styles.width / 100 : 4;
+            const height = item.styles?.height ? item.styles.height / 100 : 3;
+            
+            // Remove the data URL prefix to get just the base64 content
+            
+            
+            pptSlide.addMedia({
+              type: 'video',
+              data: item.content,
+              x: 0.5,
+              y: yOffset,
+              w: width,
+              h: height,
+              extension: '.mp4'
+            });
+            yOffset += height + 0.5;
           }
-          break
+        } catch (error) {
+          console.error("Failed to add dropped video:", error);
+        }
+        break;
         case "title":
         case "heading":
         case "paragraph":
