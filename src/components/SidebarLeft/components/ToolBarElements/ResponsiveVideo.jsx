@@ -11,7 +11,7 @@ const ResponsiveVideo = ({ initialVideo = null, onDelete }) => {
 
   // Handle video preview
   const handleVideoPreview = (e) => {
-    const file = e.target.files[0];
+    const file = e.target.files[0]; 
     if (file && file.type.startsWith("video/")) {
       const videoURL = URL.createObjectURL(file);
       setPreview(videoURL);

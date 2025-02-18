@@ -9,7 +9,7 @@ const ResponsiveAudio = ({ initialAudio = null, onDelete }) => {
   const [isUploading, setIsUploading] = useState(!initialAudio);
   const [showMenu, setShowMenu] = useState(false);
 
-  const handleAudioPreview = (e) => {
+  const handleAudioPreview = (e) => { 
     const file = e.target.files[0];
     if (file && file.type.startsWith("audio/")) {
       const audioURL = URL.createObjectURL(file);

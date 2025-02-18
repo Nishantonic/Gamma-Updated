@@ -80,7 +80,7 @@ function AccentImageAi({ generateAi = {}, ...props }) {
       }
       reader.readAsDataURL(file)
     }
-  }
+  } 
 
   const handleMouseDown = (e, direction) => {
     e.stopPropagation()
