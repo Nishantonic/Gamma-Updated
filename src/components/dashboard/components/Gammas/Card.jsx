@@ -1,11 +1,11 @@
-import { Trash2 } from "lucide-react"
+import { Share, Share2, Trash2 } from "lucide-react"
 
-const Card = ({ slide, onClick, onDelete }) => {
+const Card = ({ slide, onClick, Share, onDelete }) => {
   console.log(slide);
   
   return (
-    <div className="relative bg-white rounded-lg shadow-md p-4 w-64 cursor-pointer hover:shadow-lg transition-shadow duration-300">
-      <div onClick={onClick}>
+    <div className="relative bg-white rounded-lg shadow-md p-4 w-64 cursor-pointer hover:shadow-lg transition-shadow duration-300" onClick={onClick}>
+      <div>
         {slide.imageContainer?.image && (
           <img
             src={slide.imageContainer?.image || "/placeholder.svg"}
@@ -28,6 +28,15 @@ const Card = ({ slide, onClick, onDelete }) => {
         className="absolute top-2 right-2 p-1 bg-red-100 rounded-full hover:bg-red-200 transition-colors duration-200"
       >
         <Trash2 className="w-4 h-4 text-red-600" />
+      </button>
+      <button 
+        onClick={(e) => {
+          e.stopPropagation()
+          Share()
+        }}
+        className="absolute top-2 right-10 p-1  bg-green-100 rounded-full hover:bg-green-200 transition-colors duration-200"
+      >
+        <Share2 className="w-4 h-4 text-green-600"/>
       </button>
     </div>
   )
