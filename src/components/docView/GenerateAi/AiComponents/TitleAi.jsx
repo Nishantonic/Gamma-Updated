@@ -3,46 +3,38 @@ import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
 import "react-quill/dist/quill.bubble.css";
 
-function TitleAi({ slideId, inputId, onUpdate, initialData,initialStyles}) {
+function TitleAi({ slideId, inputId, onUpdate, initialData, initialStyles }) {
   const quillRef = useRef(null);
 
-  const strippedInitialData = initialData?.replace(/<\/?[^>]+(>|$)/g, "") || "";
-  const formattedInitialData = strippedInitialData 
-    ? `<h1>${strippedInitialData}</h1>`
-    : `<h1>Title</h1>`;
-
+  // Don't wrap in h1 tags
+  const formattedInitialData = initialData || "Untitled";
   const [editorHtml, setEditorHtml] = useState(formattedInitialData);
-  const [editorStyles, setEditorStyles] = useState(initialStyles || {});
+  const [editorStyles, setEditorStyles] = useState({ header: 1 }); // Set default style
 
-  // Trigger initial update to parent
   useEffect(() => {
-    handleChange(formattedInitialData);
-  }, []); // Empty dependency array ensures this runs once on mount
-  
+    // Apply initial H1 format when component mounts
+    if (quillRef.current) {
+      const quill = quillRef.current.getEditor();
+      quill.formatText(0, quill.getLength(), 'header', 1);
+    }
+  }, []);
+
   const handleChange = (value) => {
-  if (!quillRef.current) return;
-
-  const quill = quillRef.current.getEditor();
-  
-  // Ensure we always maintain at least an H1 tag
-  let cleanedValue = value;
-  if (!/<h1>/.test(value)) {
-    cleanedValue = `<h1>${value.replace(/<\/?[^>]+(>|$)/g, "")}</h1>`;
-    quill.root.innerHTML = cleanedValue;
-  }
-
-  const styles = quill.getFormat();
-  
-  setEditorHtml(cleanedValue);
-  setEditorStyles(styles);
-  
-  onUpdate(
-    cleanedValue,
-    styles,
-    slideId,
-    inputId
-  );
-};
+    if (!quillRef.current) return;
+    
+    const quill = quillRef.current.getEditor();
+    const styles = quill.getFormat();
+    
+    setEditorHtml(value);
+    setEditorStyles(styles);
+    
+    onUpdate(
+      value,
+      styles,
+      slideId,
+      inputId
+    );
+  };
 
   const modules = {
     toolbar: [
@@ -84,7 +76,7 @@ function TitleAi({ slideId, inputId, onUpdate, initialData,initialStyles}) {
             "video",
           ]}
           theme="bubble"
-          placeholder="Paragraph"
+          placeholder="Untitled"
           className="custom-quill-bubble w-full text-lg relative "
           style={{
             "--ql-toolbar-margin-left": "auto",
@@ -95,4 +87,4 @@ function TitleAi({ slideId, inputId, onUpdate, initialData,initialStyles}) {
   );  
 }
 
-export default TitleAi ;
+export default TitleAi;
