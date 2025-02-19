@@ -1,5 +1,5 @@
 import { fileToBase64 } from "@/components/utils/fileToBase64";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 
 const ResponsiveAudio = ({ initialData = null, initialStyles = { width: 400, height: 100 }, onUpdate, onDelete }) => {
   const [preview, setPreview] = useState(initialData);
@@ -7,6 +7,7 @@ const ResponsiveAudio = ({ initialData = null, initialStyles = { width: 400, hei
   const [isResizing, setIsResizing] = useState(false);
   const [initialMousePos, setInitialMousePos] = useState({ x: 0, y: 0 });
   const [initialSize, setInitialSize] = useState({ width: 0, height: 0 });
+  const audioRef = useRef(null);
 
   const handleAudioPreview = async (e) => {
     const file = e.target.files[0];
@@ -31,19 +32,33 @@ const ResponsiveAudio = ({ initialData = null, initialStyles = { width: 400, hei
   const handleMouseMove = (e) => {
     if (isResizing) {
       const dx = e.clientX - initialMousePos.x;
-      const dy = e.clientY - initialMousePos.y;
-      const newSize = {
-        width: Math.max(initialSize.width + dx, 200),
-        height: Math.max(initialSize.height + dy, 50),
-      };
-      setAudioSize(newSize);
-      onUpdate?.(preview, newSize);
+      const newWidth = Math.max(initialSize.width + dx, 200);
+      setAudioSize(prev => ({ ...prev, width: newWidth }));
+      onUpdate?.(preview, { ...audioSize, width: newWidth });
     }
   };
 
   const handleMouseUp = () => {
     setIsResizing(false);
   };
+
+  useEffect(() => {
+    const updateSize = () => {
+      if (audioRef.current) {
+        const height = audioRef.current.clientHeight;
+        setAudioSize(prev => ({ ...prev, height }));
+        onUpdate?.(preview, { ...prev, height });
+      }
+    };
+
+    if (preview && audioRef.current) {
+      const audioEl = audioRef.current;
+      audioEl.addEventListener('loadedmetadata', updateSize);
+      if (audioEl.readyState >= 1) updateSize();
+      
+      return () => audioEl.removeEventListener('loadedmetadata', updateSize);
+    }
+  }, [preview]);
 
   useEffect(() => {
     setPreview(initialData);
@@ -64,9 +79,10 @@ const ResponsiveAudio = ({ initialData = null, initialStyles = { width: 400, hei
       {preview ? (
         <>
           <audio
+            ref={audioRef}
             src={preview}
             controls
-            className="w-full px-4"
+            className="w-full"
           >
             Your browser does not support the audio tag.
           </audio>
