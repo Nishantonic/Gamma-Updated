@@ -893,7 +893,7 @@ useEffect(() => {
                 ...preview.descriptionContainer?.styles,
                 ...updatedData.descriptionContainer?.styles
               }
-            },
+            }, 
             imageContainer: {
               ...preview.imageContainer,
               ...updatedData.imageContainer,
@@ -943,9 +943,8 @@ useEffect(() => {
             <ResizableSidebar
               setCurrentSlide={setCurrentSlide}
               slidesPreview={slidesPreview}
-              setSlidesPreview={setSlidesPreview}
               deleteSlide={deleteSlide}
-              slideImages={slideImages}   
+              renderSlideComponent={renderSlideComponent}  
             />
           )}
         </DndContext>
