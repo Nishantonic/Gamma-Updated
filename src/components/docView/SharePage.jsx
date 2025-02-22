@@ -8,9 +8,9 @@ import DefaultAi from './GenerateAi/AiComponents/DefaultAi';
 import ThreeColumnAi from './GenerateAi/AiComponents/ThreeColumnAi';
 import TwoColumnAi from './GenerateAi/AiComponents/TwoColumnAi';
 import { PresentationMode } from './PresentationMode';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@radix-ui/react-dropdown-menu';
-import { Button } from '../ui/button';
-import { ChevronDown } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Button } from '@/components/ui/button';
+import { ChevronDown, AlertTriangle } from 'lucide-react';
 
 const SharePage = () => {
   const { shareId } = useParams();
@@ -22,15 +22,42 @@ const SharePage = () => {
   const [presentationStartIndex, setPresentationStartIndex] = useState(0);
 
   useEffect(() => {
-    const savedSlides = JSON.parse(localStorage.getItem('slides')) || [];
-    const presentation = savedSlides.find((ppt) => String(ppt.key) === String(shareId));
-    
-    if (presentation) {
-      setSlides(presentation.slides);
-    } else {
-      setError('Presentation not found');
-    }
-    setLoading(false);
+    const loadSharedContent = () => {
+      try {
+        // First try to decode the shareId as base64
+        if (shareId) {
+          try {
+            const decodedData = atob(shareId);
+            const parsedData = JSON.parse(decodedData);
+            
+            if (parsedData && parsedData.slides) {
+              setSlides(parsedData.slides);
+              setLoading(false);
+              return;
+            }
+          } catch (decodeError) {
+            console.error('Failed to decode share URL:', decodeError);
+          }
+        }
+
+        // Fallback to checking localStorage if direct decode fails
+        const savedSlides = JSON.parse(localStorage.getItem('slides')) || [];
+        const presentation = savedSlides.find((ppt) => String(ppt.key) === String(shareId));
+        
+        if (presentation) {
+          setSlides(presentation.slides);
+        } else {
+          setError('Presentation not found. The share link may be invalid or expired.');
+        }
+      } catch (err) {
+        setError('Failed to load presentation. Please try again later.');
+        console.error('Error loading presentation:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadSharedContent();
   }, [shareId]);
 
   useEffect(() => {
@@ -95,13 +122,10 @@ const SharePage = () => {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="text-gray-800 text-xl font-bree-serif"
-        >
-          Loading...
-        </motion.div>
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-800 mx-auto mb-4"></div>
+          <p className="text-gray-600 text-lg font-bree-serif">Loading presentation...</p>
+        </div>
       </div>
     );
   }
@@ -109,13 +133,11 @@ const SharePage = () => {
   if (error) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="text-red-500 text-xl font-bree-serif"
-        >
-          {error}
-        </motion.div>
+        <div className="text-center p-8 bg-white rounded-xl shadow-lg max-w-md">
+          <AlertTriangle className="w-12 h-12 text-red-500 mx-auto mb-4" />
+          <h2 className="text-xl font-bold text-gray-800 mb-2">Unable to Load Presentation</h2>
+          <p className="text-gray-600">{error}</p>
+        </div>
       </div>
     );
   }
@@ -134,44 +156,40 @@ const SharePage = () => {
         
         <div className="mb-8 flex justify-between items-center relative z-50">
           <h1 className="text-3xl font-bree-serif text-gray-900">Presentation</h1>
-          <div className="relative">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button 
-                  variant="primary" 
-                  size="lg" 
-                  className="flex items-center gap-2 text-lg font-bree-serif bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg shadow-md transition-all duration-200"
-                >
-                  Present
-                  <ChevronDown className="h-5 w-5" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent 
-                align="end" 
-                className="w-56 mt-2 p-1 bg-white rounded-lg shadow-xl border border-gray-200"
-                style={{ zIndex: 1000 }}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button 
+                variant="primary" 
+                className="flex items-center gap-2 text-lg font-bree-serif bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg shadow-md transition-all duration-200"
               >
-                <DropdownMenuItem 
-                  className="px-4 py-3 text-lg font-bree-serif cursor-pointer hover:bg-blue-50 rounded-md transition-colors duration-150"
-                  onClick={() => {
-                    setPresentationStartIndex(0);
-                    setIsPresentationMode(true);
-                  }}
-                >
-                  From beginning
-                </DropdownMenuItem>
-                <DropdownMenuItem 
-                  className="px-4 py-3 text-lg font-bree-serif cursor-pointer hover:bg-blue-50 rounded-md transition-colors duration-150"
-                  onClick={() => {
-                    setPresentationStartIndex(Math.max(0, slides.length - 1));
-                    setIsPresentationMode(true);
-                  }}
-                >
-                  From current slide
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
+                Present
+                <ChevronDown className="h-5 w-5" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent 
+              align="end" 
+              className="w-56 mt-2 p-1 bg-white rounded-lg shadow-xl border border-gray-200"
+            >
+              <DropdownMenuItem 
+                className="px-4 py-3 text-lg font-bree-serif cursor-pointer hover:bg-blue-50 rounded-md transition-colors duration-150"
+                onClick={() => {
+                  setPresentationStartIndex(0);
+                  setIsPresentationMode(true);
+                }}
+              >
+                From beginning
+              </DropdownMenuItem>
+              <DropdownMenuItem 
+                className="px-4 py-3 text-lg font-bree-serif cursor-pointer hover:bg-blue-50 rounded-md transition-colors duration-150"
+                onClick={() => {
+                  setPresentationStartIndex(Math.max(0, slides.length - 1));
+                  setIsPresentationMode(true);
+                }}
+              >
+                From current slide
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
 
         <div className="space-y-8">

@@ -72,7 +72,12 @@ export default function CardTemplates({
     handleTemplateDrop(data.templateType);
   } else if (data.type) {
     // Existing element drop logic
-    const newItem = { /* ... */ };
+    const newItem = {
+        id: uuidv4(),
+        type: data.type,
+        content: "",
+        styles: { width: 300, height: 210 }, // Default size for new items
+      }
     addDroppedItem(slideId, newItem);
     updateParentWithDroppedItems();
   }
