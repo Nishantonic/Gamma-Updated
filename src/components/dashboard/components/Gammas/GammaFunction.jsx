@@ -11,19 +11,19 @@ const GammaFunction = () => {
         <div className="flex items-center gap-2 cursor-pointer hover:text-blue-600 transition">
             <Folders className="w-5 h-5" /> <span>All</span>
         </div>
-        <div className="flex items-center gap-2 cursor-pointer hover:text-blue-600 transition">
+        {/* <div className="flex items-center gap-2 cursor-pointer hover:text-blue-600 transition">
             <CircleUserRound className="w-5 h-5" /> <span>Created by you</span>
-        </div>
+        </div> */}
         <div className="flex items-center gap-2 cursor-pointer hover:text-blue-600 transition">
             <Star className="w-5 h-5" /> <span>Favorites</span>
         </div>
     </div>
 
     {/* Right Section */}
-    <div className="flex gap-4 text-gray-600">
+    {/* <div className="flex gap-4 text-gray-600">
         <div className="cursor-pointer px-3 py-1 rounded-md hover:bg-gray-200 transition">Grid</div>
         <div className="cursor-pointer px-3 py-1 rounded-md hover:bg-gray-200 transition">List</div>
-    </div>
+    </div> */}
 </div>
 
   )
