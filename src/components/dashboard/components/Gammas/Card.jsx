@@ -9,7 +9,8 @@ const Card = ({
   onDelete, 
   onToggleFavorite, 
   isFavorite,
-  layout 
+  layout,
+  Dropdown = true,
 }) => {
   const [showDropdown, setShowDropdown] = useState(false);
 
@@ -112,7 +113,7 @@ const Card = ({
             </p>
           </div>
           
-          <div className="flex items-center justify-between mt-4">
+          {Dropdown && <div className="flex items-center justify-between mt-4">
             <span className="text-sm text-gray-500">
               {slideGroup?.slides?.length} slides
             </span>
@@ -124,13 +125,13 @@ const Card = ({
                 <MoreVertical className="w-5 h-5 text-gray-600" />
               </button>
               
-              {showDropdown && (
+              {showDropdown  && (
                 <div className="absolute right-0 bottom-full mb-2">
                   <DropdownMenu />
                 </div>
               )}
             </div>
-          </div>
+          </div>}
         </div>
       </div>
     );

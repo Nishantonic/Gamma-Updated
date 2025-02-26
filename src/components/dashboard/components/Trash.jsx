@@ -115,7 +115,8 @@ function Trash() {
                 slide={slideGroup.slides[0]}
                 slideGroup={slideGroup}
                 layout={layout}
-                onClick={() => handleCardClick(slideGroup.slides)}
+                // onClick={() => handleCardClick(slideGroup.slides)}
+                Dropdown = {false}
               />
               <div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                 <button
