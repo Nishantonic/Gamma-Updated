@@ -13,25 +13,26 @@ import card2 from "./assets/card2.png";
 import card3 from "./assets/card3.png";
 import card4 from "./assets/card4.png";
 import { v4 as uuidv4 } from 'uuid';
+import { Button } from "@/components/ui/button";
 import ImageTextAi from "../GenerateAi/AiComponents/ImageTextAi";
 import AccentImageAi from "../GenerateAi/AiComponents/AccentImageAi";
 import ThreeImgTextAi from "../GenerateAi/AiComponents/ThreeColumnAi";
 import { useDroppedItems } from "../DroppedItemsContext";
 import Heading from "../GenerateAi/AiComponents/Heading";
 import ParagraphAi from "../GenerateAi/AiComponents/ParagraphAi";
+import ResponsiveImage from "@/components/SidebarLeft/components/ToolBarElements/ResponsiveImage";
+import ResponsiveVideo from "@/components/SidebarLeft/components/ToolBarElements/ResponsiveVideo";
+import ResponsiveAudio from "@/components/SidebarLeft/components/ToolBarElements/ResponsiveAudio";
 
-export default function CardTemplates({ 
-  children, 
-  slidesPreview, 
-  setSlidesPreview, 
-  id, 
-  setCurrentSlide, 
-  generateAi = {}, 
-  setSlides, 
-  ...props 
-}) {
-  // Add dropped items context
-  const { droppedItems, addDroppedItem, removeDroppedItem, updateDroppedItem } = useDroppedItems();
+export default function CardTemplates({
+  generateAi = {},
+  id, // Add this
+  slidesPreview, // Add this
+  setSlidesPreview, // Add this
+  setSlides, // Add this
+  ...props
+}) {  // Add dropped items context
+  const [droppedItems, setDroppedItems] = useState([]);
   const [showTwoColumn, setShowTwoColumn] = useState(false);
   const [showImageText, setShowImageText] = useState(false);
   const [showThreeColumn, setShowThreeColumn] = useState(false);
@@ -41,7 +42,31 @@ export default function CardTemplates({
   const [titleStyles, setTitleStyles] = useState(generateAi.titleContainer?.styles || {});
   const [isDeleted, setIsDeleted] = useState(false) // Added state for deletion
   const { draggedElement } = useContext(DragContext);
-  const slideId = id || generateAi.id || uuidv4();
+  const slideId = generateAi.id || uuidv4();
+
+  const COMPONENT_MAP = {
+    title: TitleAi,
+    paragraph: ParagraphAi,
+    heading: Heading,
+    image: ResponsiveImage,
+    video: ResponsiveVideo,
+    audio: ResponsiveAudio,
+  };
+
+  // Handle title and description updates
+  const updateParent = (updates) => {
+    const updatedData = {
+      ...generateAi,
+      titleContainer: {
+        ...generateAi.titleContainer,
+        title: title,
+        styles: titleStyles,
+      },
+      ...updates,
+    };
+
+    generateAi.onEdit?.(updatedData);
+  };
 
   const handleTemplateDrop = (templateType) => {
   switch (templateType) {
@@ -61,25 +86,28 @@ export default function CardTemplates({
       break;
   }
 };
-  const handleDrop = (event) => {
+  
+const handleDrop = (event) => {
   event.preventDefault();
-  const dataStr = event.dataTransfer.getData("application/json");
-  if (!dataStr) return;
-
-  const data = JSON.parse(dataStr);
+  const data = JSON.parse(event.dataTransfer.getData("application/json"));
 
   if (data.type === "template") {
     handleTemplateDrop(data.templateType);
   } else if (data.type) {
-    // Existing element drop logic
     const newItem = {
-        id: uuidv4(),
-        type: data.type,
-        content: "",
-        styles: { width: 300, height: 210 }, // Default size for new items
-      }
-    addDroppedItem(slideId, newItem);
-    updateParentWithDroppedItems();
+      id: uuidv4(),
+      type: data.type,
+      content: "",
+      styles: { width: 300, height: 210 },
+    };
+
+    const updatedData = {
+      ...generateAi,
+      dropContainer: {
+        dropItems: [...(generateAi.dropContainer?.dropItems || []), newItem],
+      },
+    };
+    generateAi.onEdit?.(updatedData);
   }
 };
 
@@ -88,10 +116,24 @@ export default function CardTemplates({
   event.dataTransfer.dropEffect = "copy";
 };
 
-  const handleDeleteDroppedItem = (itemId) => {
-    removeDroppedItem(slideId, itemId);
-    updateParentWithDroppedItems();
-  };
+const handleUpdateDroppedItem = (itemId, updates) => {
+  const updatedItems = generateAi.dropContainer?.dropItems?.map((item) =>
+    item.id === itemId ? { ...item, ...updates } : item
+  ) || [];
+
+  generateAi.onEdit?.({
+    ...generateAi,
+    dropContainer: { dropItems: updatedItems },
+  });
+};
+
+const handleDeleteDroppedItem = (itemId) => {
+  const updatedItems = generateAi.dropContainer?.dropItems?.filter((item) => item.id !== itemId) || [];
+  generateAi.onEdit?.({
+    ...generateAi,
+    dropContainer: { dropItems: updatedItems },
+  });
+};
 
   const updateParentWithDroppedItems = () => {
     const updatedJson = {
@@ -104,71 +146,14 @@ export default function CardTemplates({
     }
   };
 
-  useEffect(() => {
-    if (generateAi.titleContainer) {
-      setTitle(generateAi.titleContainer.title || "Untitled Card");
-      setTitleStyles(generateAi.titleContainer.styles || {});
-    }
-    
-    // Initialize dropped items from generateAi
-    if (generateAi.droppedItems) {
-      generateAi.droppedItems.forEach(item => {
-        addDroppedItem(slideId, item);
-      });
-    }
-  }, [generateAi.titleContainer, generateAi.droppedItems]);
-
-
-  // Initialize titleContainer with proper IDs if not present
-  useEffect(() => {
-  const shouldInitialize = !generateAi.titleContainer?.titleId || !generateAi.id;
-  
-  if (shouldInitialize) {
-    const updatedGenerateAi = {
-      ...generateAi,
-      id: id || generateAi.id || uuidv4(),
-      titleContainer: {
-        ...generateAi.titleContainer,
-        titleId: generateAi.titleContainer?.titleId || uuidv4(),
-        title: generateAi.titleContainer?.title || title,
-        styles: generateAi.titleContainer?.styles || titleStyles
-      }
-    };
-    
-    if (generateAi.onEdit) {
-      generateAi.onEdit(updatedGenerateAi);
-    }
-  }
-}, [id, generateAi]);
-
-  const updateGenerateAiJson = (slideId, inputId, newData) => {
-  const updatedJson = {
-    ...generateAi,
-    id: slideId,
-    titleContainer: {
-      ...generateAi.titleContainer,
-      titleId: inputId,
-      ...newData
-    }
-  };
-
-  if (generateAi.onEdit) {
-    generateAi.onEdit(updatedJson);
-  }
-};
-
 const handleTitleUpdate = (newTitle, styles) => {
-  const titleId = generateAi.titleContainer?.titleId || uuidv4();
-  const slideId = id || generateAi.id || uuidv4();
-  
-  // Update local state immediately
   setTitle(newTitle);
   setTitleStyles(styles);
-  
-  // Propagate changes to parent
-  updateGenerateAiJson(slideId, titleId, {
-    title: newTitle,
-    styles: styles
+  updateParent({
+    titleContainer: {
+      title: newTitle,
+      styles: styles,
+    },
   });
 };
 
@@ -259,9 +244,41 @@ if (isDeleted) {
   return null;
 }
 
+const renderDroppedItems = () => {
+  return (generateAi.dropContainer?.dropItems || []).map((item) => {
+    const Component = COMPONENT_MAP[item.type];
+    if (!Component) return null;
+
+    return (
+      <div key={item.id} className="mb-4 relative group">
+        <Component
+          slideId={slideId}
+          inputId={item.id}
+          initialData={item.content}
+          initialStyles={item.styles}
+          onUpdate={(value, styles) => {
+            handleUpdateDroppedItem(item.id, {
+              content: value,
+              styles: styles,
+            });
+          }}
+        />
+        <Button
+          variant="ghost"
+          size="sm"
+          className="absolute -top-3 -right-3 opacity-0 group-hover:opacity-100 transition-opacity"
+          onClick={() => handleDeleteDroppedItem(item.id)}
+          >
+            ×
+          </Button>
+        </div>
+      );
+    });
+  };
+
   return (
     <div>
-      <Card onDragOver={handleDragOver} onDrop={handleDrop} className="min-h-screen w-full md:min-h-[25vw] md:mt-[3vh] md:mb-[3vh] rounded-lg px-1 bg-[#342c4e] p-6 relative max-w-4xl mx-auto">
+      <Card id={`slide-${generateAi.index}`} onDragOver={handleDragOver} onDrop={handleDrop} className="min-h-screen w-full md:min-h-[25vw] md:mt-[3vh] md:mb-[3vh] rounded-lg px-1 bg-[#342c4e] p-6 relative max-w-4xl mx-auto">
         <div className="absolute top-4 left-11">
           <CardMenu
             onDelete={handleDelete}
@@ -269,52 +286,19 @@ if (isDeleted) {
         </div>
         <CardContent>
           <div className="relative overflow-visible z-50 w-full   ">
-            <TitleAi
-              initialData={generateAi.titleContainer?.title || title}
-              initialStyles={generateAi.titleContainer?.styles || titleStyles}
+          <TitleAi
+              initialData={title}
+              initialStyles={titleStyles}
               onUpdate={handleTitleUpdate}
-              slideId={id || generateAi.id}
+              slideId={generateAi.id}
               inputId={generateAi.titleContainer?.titleId}
               className="title text-3xl font-bold text-white mb-4 relative overflow-visible"
             />
             </div>
         </CardContent>
-        {droppedItems[slideId]?.length > 0 ? (
-        <div className="mt-6 space-y-4">
-          {(droppedItems[slideId] || []).map((item) => {
-            let Component;
-            switch (item.type) {
-              case "title":
-                Component = TitleAi;
-                break;
-              case "heading":
-                Component = Heading;
-                break;
-              case "paragraph":
-                Component = ParagraphAi;
-                break;
-              default:
-                return null;
-            }
-
-            return (
-              <div key={item.id} className="relative">
-                <Component
-                  slideId={slideId}
-                  inputId={item.id}
-                  onChange={(value, styles) => {
-                    updateDroppedItem(slideId, item.id, { 
-                      ...item, 
-                      content: value, 
-                      styles 
-                    });
-                    updateParentWithDroppedItems();
-                  }}
-                  onDelete={() => handleDeleteDroppedItem(item.id)}
-                />
-              </div>
-            );
-          })}
+        {generateAi.dropContainer?.dropItems?.length > 0 ? (
+        <div className=" mt-3 space-y-4">
+          {renderDroppedItems()}
         </div>
       ) : (
           <div className="space-y-3">

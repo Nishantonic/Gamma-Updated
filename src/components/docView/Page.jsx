@@ -218,19 +218,6 @@ export default function Page() {
   const renderSlideComponent = (slideData) => {
     if (!slideData) return null
 
-    if (slideData.type === "custom") {
-      return (
-        <CardTemplates
-          key={slideData.id}
-          slidesPreview={slidesPreview}
-          id={slideData.id}
-          setSlides={setSlides}
-          setCurrentSlide={setCurrentSlide}
-          setSlidesPreview={setSlidesPreview}
-        />
-      )
-    }
-
     const commonProps = {
       generateAi: {
         ...slideData,
@@ -247,6 +234,20 @@ export default function Page() {
       default: DefaultAi,
     }
 
+    if (slideData.type === "custom") {
+      return (
+        <CardTemplates
+          {...commonProps}
+          key={slideData.id}
+          slidesPreview={slidesPreview}
+          id={slideData.id}
+          setSlides={setSlides}
+          setCurrentSlide={setCurrentSlide}
+          setSlidesPreview={setSlidesPreview}
+        />
+      )
+    }
+    
     const Component = components[slideData.type] || components.default
     return <Component {...commonProps} key={slideData.id} />
   }
@@ -893,7 +894,7 @@ useEffect(() => {
                 ...preview.descriptionContainer?.styles,
                 ...updatedData.descriptionContainer?.styles
               }
-            },
+            }, 
             imageContainer: {
               ...preview.imageContainer,
               ...updatedData.imageContainer,
@@ -943,9 +944,8 @@ useEffect(() => {
             <ResizableSidebar
               setCurrentSlide={setCurrentSlide}
               slidesPreview={slidesPreview}
-              setSlidesPreview={setSlidesPreview}
               deleteSlide={deleteSlide}
-              slideImages={slideImages}   
+              renderSlideComponent={renderSlideComponent}  
             />
           )}
         </DndContext>

@@ -6,11 +6,18 @@ import "react-quill/dist/quill.bubble.css";
 function Heading({ slideId, inputId, onUpdate, initialData,initialStyles}) {
   const quillRef = useRef(null);
 
-  const formattedInitialData = initialData ? `<h2>${initialData}</h2>` : `<h2>Heading</h2>`;
+  const formattedInitialData = initialData || "Heading";
   const [editorHtml, setEditorHtml] = useState(formattedInitialData);
-  const [editorStyles, setEditorStyles] = useState({});
+  const [editorStyles, setEditorStyles] = useState({header : 2});
 
-  
+  useEffect(() => {
+        // Apply initial H1 format when component mounts
+        if (quillRef.current) {
+          const quill = quillRef.current.getEditor();
+          quill.formatText(0, quill.getLength(), 'header', 2);
+        }
+      }, []);
+
   const handleChange = (value) => {
   // Add null check for quillRef
   if (!quillRef.current) return;

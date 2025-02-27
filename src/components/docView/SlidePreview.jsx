@@ -1,76 +1,170 @@
-import { cn } from "@/lib/utils";
+import { memo, useMemo } from "react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { useEffect, useState, useRef } from "react";
+import { cn } from "@/lib/utils";
 
-export function SlidePreview({ number,onDoubleClick, title, isActive, onClick, id, previewImage }) {
-  const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id });
+const createReadOnlySlide = (slide) => {
+  const baseSlide = {
+    id: slide.id,
+    type: slide.type,
+    title: slide.title,
+    titleContainer: slide.titleContainer ? {
+      ...slide.titleContainer,
+      onEdit: undefined
+    } : undefined,
+    descriptionContainer: slide.descriptionContainer ? {
+      ...slide.descriptionContainer,
+      onEdit: undefined
+    } : undefined,
+    imageContainer: slide.imageContainer ? {
+      ...slide.imageContainer,
+      onEdit: undefined
+    } : undefined,
+    dropContainer: {
+      dropItems: slide.dropContainer?.dropItems || []
+    }
+  };
 
-  const [scale, setScale] = useState(1);
-  const imgRef = useRef(null);
+  // Handle specific slide types
+  switch (slide.type) {
+    case 'twoColumn':
+      return {
+        ...baseSlide,
+        columns: slide.columns?.map(column => ({
+          ...column,
+          onEdit: undefined
+        })) || []
+      };
 
-  useEffect(() => {
-    if (!imgRef.current) return;
+    case 'threeImgCard':
+      return {
+        ...baseSlide,
+        cards: slide.cards?.map(card => ({
+          ...card,
+          onEdit: undefined
+        })) || []
+      };
 
-    const updateScale = () => {
-      const parentHeight = imgRef.current.parentElement.clientHeight;
-      const imgHeight = imgRef.current.clientHeight;
-      if (imgHeight > parentHeight) {
-        setScale(parentHeight / imgHeight);
-      } else {
-        setScale(1); // Reset if no scaling needed
-      }
-    };
+    case 'imageCardText':
+    case 'accentImage':
+    default:
+      return baseSlide;
+  }
+};
 
-    updateScale();
-    window.addEventListener("resize", updateScale);
-
-    return () => window.removeEventListener("resize", updateScale);
-  }, [previewImage]);
+export const SlidePreview = memo(({ slide, index, onClick, onDelete, renderSlideComponent }) => {
+  const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: slide.id });
 
   const style = {
-    transition,
     transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
+  // Create memoized read-only version of the slide
+  const readOnlySlide = useMemo(() => {
+    const cleanSlide = createReadOnlySlide(slide);
+    
+    // Create a clean version of generateAi prop structure
+    return {
+      ...cleanSlide,
+      // Remove all callback functions that could cause updates
+      onEdit: undefined,
+      onDelete: undefined,
+      onChange: undefined,
+      // Maintain the generateAi structure needed by components
+      generateAi: {
+        ...cleanSlide,
+        onEdit: undefined,
+        onDelete: undefined,
+        onChange: undefined
+      }
+    };
+  }, [
+    slide.id,
+    slide.type,
+    slide.title,
+    slide.titleContainer?.title,
+    slide.descriptionContainer?.description,
+    slide.imageContainer?.image,
+    // Stringify complex objects to properly track changes
+    JSON.stringify(slide.columns),
+    JSON.stringify(slide.cards),
+    JSON.stringify(slide.dropContainer?.dropItems)
+  ]);
+
+  // Error boundary to catch any rendering issues
+  const PreviewContent = () => {
+    try {
+      return renderSlideComponent(readOnlySlide);
+    } catch (error) {
+      console.error('Preview rendering error:', error);
+      return (
+        <div className="w-full h-full flex items-center justify-center text-muted-foreground">
+          Preview unavailable
+        </div>
+      );
+    }
   };
 
   return (
     <div
-      onClick={onClick}
-      onDoubleClick={onDoubleClick}
-      className={cn(
-        "p-3 cursor-pointer hover:bg-accent/50 rounded-lg transition-all border border-gray-200 shadow-md bg-white",
-        isActive && "bg-accent"
-      )}
-      {...attributes}
-      {...listeners}
       ref={setNodeRef}
       style={style}
+      {...attributes}
+      {...listeners}
+      className={cn(
+        "p-2 cursor-pointer hover:bg-accent/50 rounded-lg transition-colors border border-border",
+        "group relative"
+      )}
+      onClick={onClick}
     >
-      {/* Image Container with Auto-Scaling */}
-      <div className="relative w-full aspect-[16/9] overflow-hidden rounded-lg border bg-gray-100 flex justify-center items-center">
-        {previewImage ? (
-          <img
-            ref={imgRef}
-            src={previewImage}
-            alt={`Slide ${number}`}
-            className="object-contain transition-transform"
-            style={{ transform: `scale(${scale})` }}
-            loading="lazy"
-          />
-        ) : (
-          <div className="flex items-center justify-center w-full h-full text-gray-500">
-            No Preview
+      <div className="preview-container relative w-full aspect-[16/9] rounded bg-muted overflow-hidden">
+        <div className="preview-scaler absolute top-0 left-0 w-[400%] h-[400%] origin-top-left" style={{ transform: 'scale(0.25)' }}>
+          <div className="w-full h-full bg-white pointer-events-none">
+            <PreviewContent />
           </div>
-        )}
+        </div>
+      </div>
+      
+      <div className="mt-2 flex items-center gap-2">
+        <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-primary/10 text-primary">
+          {index + 1}
+        </span>
+        <span className="text-xs font-medium truncate flex-1">
+          {slide.titleContainer?.title?.replace(/<[^>]*>/g, '') || 'Untitled'}
+        </span>
       </div>
 
-      {/* Slide Number & Title */}
-      <div className="flex items-center gap-2 mt-3">
-        <span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-primary/10 text-primary">
-          {number}
-        </span>
-        <span className="flex-1 text-sm font-medium truncate text-gray-800">{title.replace(/<[^>]*>/g, '')}</span>
-      </div>
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          onDelete();
+        }}
+        className="absolute top-1 right-1 p-1 rounded-full bg-background/80 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-destructive hover:text-destructive-foreground"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M3 6h18" /><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" /><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+        </svg>
+      </button>
     </div>
   );
+});
+
+SlidePreview.displayName = "SlidePreview";
+
+// Add to your global CSS
+const styles = `
+.preview-container {
+  isolation: isolate;
+  contain: strict;
 }
+
+.preview-scaler {
+  transform-origin: top left;
+  pointer-events: none;
+  touch-action: none;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+`;

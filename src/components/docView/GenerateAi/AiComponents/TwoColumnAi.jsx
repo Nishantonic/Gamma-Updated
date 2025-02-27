@@ -71,7 +71,11 @@ function CardTemplateTwoColumn({ generateAi = {}, ...props }) {
       return;
     }
 
-    const updatedJson = { ...generateAi };
+    const updatedJson = {
+      ...generateAi,
+      titleContainer: generateAi.titleContainer || {},
+      columns: generateAi.columns || []
+    };
     const currentSlideId = String(slideId);
     const currentInputId = String(inputId);
 
@@ -86,10 +90,17 @@ function CardTemplateTwoColumn({ generateAi = {}, ...props }) {
           col => String(col.contentId) === currentInputId
         );
         if (columnIndex !== -1) {
-          updatedJson.columns[columnIndex] = {
-            ...updatedJson.columns[columnIndex],
-            ...newData,
-          };
+          if (columnIndex !== -1) {
+            // Update the columns array
+            const updatedColumns = [...columns];
+            updatedColumns[columnIndex] = {
+              ...updatedColumns[columnIndex],
+              ...newData,
+            };
+            
+            updatedJson.columns = updatedColumns;
+            setColumns(updatedColumns); // Update local state
+          }
         }
       }
     }
@@ -110,12 +121,14 @@ function CardTemplateTwoColumn({ generateAi = {}, ...props }) {
   };
 
   const handleColumnUpdate = (index, newContent, newStyles) => {
+    const columnId = columns[index]?.columnId;
+    if (!columnId) return;
+
     setColumns(prevColumns => {
       const newColumns = prevColumns.map((col, i) =>
         i === index ? { ...col, content: newContent, styles: newStyles } : col
       );
-      
-      const columnId = columns[index].columnId;
+    
       updateGenerateAiJson(generateAi.id, columnId, {
         content: newContent,
         styles: newStyles
@@ -124,12 +137,14 @@ function CardTemplateTwoColumn({ generateAi = {}, ...props }) {
       return newColumns;
     });
   };
+
   useEffect(() => {
     updateParent({
       titleContainer: { styles: titleStyles },
       columns: columns
     });
   }, [titleStyles, columns]);
+  
   const handleDrop = (event) => {
     event.preventDefault()
     const data = JSON.parse(event.dataTransfer.getData("application/json"))
