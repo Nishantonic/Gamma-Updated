@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Camera } from "lucide-react";
+import axios from "axios";
 import {
   Dialog,
   DialogContent,
@@ -18,43 +19,182 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { toast } from "react-toastify";
 
 const defaultProfile = {
-  name: "John Doe",
-  email: "john@example.com",
-  avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=John"
+  name: "Guest User",
+  email: "guest@example.com",
+  avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Guest",
+  id: null
 };
 
 const ProfileMenu = () => {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [profileData, setProfileData] = useState(defaultProfile);
-  const [tempProfileData, setTempProfileData] = useState(profileData);
+  const [tempProfileData, setTempProfileData] = useState(defaultProfile);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
-    const savedProfile = localStorage.getItem("profileData");
-    if (savedProfile) {
-      const parsedProfile = JSON.parse(savedProfile);
-      setProfileData(parsedProfile);
-      setTempProfileData(parsedProfile);
-    }
+    const fetchUserData = async () => {
+      setIsLoading(true);
+      
+      try {
+        // First check if we have user data in localStorage from login
+        const storedUser = localStorage.getItem("user");
+        
+        if (storedUser) {
+          const userData = JSON.parse(storedUser);
+          
+          // Create profile data from stored user
+          const userProfile = {
+            id: userData.id,
+            name: userData.username || userData.name || defaultProfile.name,
+            email: userData.email || defaultProfile.email,
+            avatar: userData.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${userData.username || userData.email}`
+          };
+          
+          setProfileData(userProfile);
+          setTempProfileData(userProfile);
+        } else {
+          // If no data in localStorage, try fetching from API
+          const token = localStorage.getItem("token");
+          
+          if (token) {
+            const response = await axios.get("https://presentaiapi.codesemic.com/api/users/me", {
+              headers: {
+                Authorization: `Bearer ${token}`
+              }
+            });
+            
+            const userData = response.data;
+            
+            // Create profile data from API response
+            const userProfile = {
+              id: userData.id,
+              name: userData.username || userData.name || defaultProfile.name,
+              email: userData.email || defaultProfile.email,
+              avatar: userData.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${userData.username || userData.email}`
+            };
+            
+            setProfileData(userProfile);
+            setTempProfileData(userProfile);
+            
+            // Update localStorage with this data for future use
+            localStorage.setItem("user", JSON.stringify(userData));
+          } else {
+            // Check for any previously saved profile data
+            const savedProfile = localStorage.getItem("profileData");
+            if (savedProfile) {
+              const parsedProfile = JSON.parse(savedProfile);
+              setProfileData(parsedProfile);
+              setTempProfileData(parsedProfile);
+            }
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching user data:", error);
+        toast.error("Failed to load profile data");
+        
+        // Check for any previously saved profile data as fallback
+        const savedProfile = localStorage.getItem("profileData");
+        if (savedProfile) {
+          const parsedProfile = JSON.parse(savedProfile);
+          setProfileData(parsedProfile);
+          setTempProfileData(parsedProfile);
+        }
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchUserData();
   }, []);
 
-  const handleSaveProfile = () => {
-    setProfileData(tempProfileData);
-    localStorage.setItem("profileData", JSON.stringify(tempProfileData));
-    setIsEditOpen(false);
+  const handleSaveProfile = async () => {
+    // Don't proceed if no user ID is available
+    if (!profileData.id) {
+      toast.warning("Cannot update profile: User ID not available");
+      return;
+    }
+    
+    setIsSaving(true);
+    
+    try {
+      const token = localStorage.getItem("token");
+      
+      if (!token) {
+        throw new Error("Authentication token not found");
+      }
+      
+      // Prepare the data to be sent to the API
+      const updateData = {
+        username: tempProfileData.name,  // assuming backend expects username
+        email: tempProfileData.email
+      };
+      
+      // If avatar was changed and is a data URL, we need to handle it differently
+      if (tempProfileData.avatar && tempProfileData.avatar.startsWith('data:')) {
+        // For this example, we'll just note that avatar handling would require
+        // additional file upload functionality to the API
+        console.log("Avatar upload would need separate file handling");
+        // In a real implementation, you would upload the avatar file to the server
+      }
+      
+      // Make the PUT request to update the user
+      const response = await axios.put(
+        `https://presentaiapi.codesemic.com/api/users/${profileData.id}`,
+        updateData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json"
+          }
+        }
+      );
+      
+      // Update the local state with the response data
+      const updatedUserData = response.data;
+      
+      const updatedProfile = {
+        id: updatedUserData.id,
+        name: updatedUserData.username || updatedUserData.name,
+        email: updatedUserData.email,
+        avatar: updatedUserData.avatar || tempProfileData.avatar // Keep the current avatar if API doesn't return one
+      };
+      
+      setProfileData(updatedProfile);
+      
+      // Update the localStorage with the new data
+      localStorage.setItem("user", JSON.stringify(updatedUserData));
+      localStorage.setItem("profileData", JSON.stringify(updatedProfile));
+      
+      toast.success("Profile updated successfully");
+      setIsEditOpen(false);
+    } catch (error) {
+      console.error("Error updating profile:", error);
+      toast.error(error.response?.data?.message || "Failed to update profile");
+      
+      // Fallback to local storage if API fails
+      setProfileData(tempProfileData);
+      localStorage.setItem("profileData", JSON.stringify(tempProfileData));
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleLogout = () => {
-    // Clear profile data from localStorage
+    // Clear all auth data from localStorage
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
     localStorage.removeItem("profileData");
     
-    // Reset state to default (optional, since we're redirecting)
+    // Reset state to default
     setProfileData(defaultProfile);
     setTempProfileData(defaultProfile);
     
-    // Redirect to home page
-    window.location.href = "http://localhost:5173/";
+    // Redirect to login page
+    window.location.href = "/";
   };
 
   const handleAvatarClick = (e) => {
@@ -76,6 +216,14 @@ const ProfileMenu = () => {
     };
     input.click();
   };
+
+  if (isLoading) {
+    return (
+      <Avatar className="w-10 h-10 border-2 border-gray-200 animate-pulse">
+        <AvatarFallback>...</AvatarFallback>
+      </Avatar>
+    );
+  }
 
   return (
     <>
@@ -154,8 +302,10 @@ const ProfileMenu = () => {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsEditOpen(false)}>Cancel</Button>
-            <Button onClick={handleSaveProfile}>Save changes</Button>
+            <Button variant="outline" onClick={() => setIsEditOpen(false)} disabled={isSaving}>Cancel</Button>
+            <Button onClick={handleSaveProfile} disabled={isSaving}>
+              {isSaving ? "Saving..." : "Save changes"}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

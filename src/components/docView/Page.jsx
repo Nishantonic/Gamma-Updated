@@ -218,6 +218,8 @@ export default function Page() {
   const renderSlideComponent = (slideData) => {
     if (!slideData) return null
 
+    
+
     const commonProps = {
       generateAi: {
         ...slideData,
@@ -225,15 +227,7 @@ export default function Page() {
         onDelete: () => deleteSlide(slideData.id),
       }
     }
-
-    const components = {
-      accentImage: AccentImageAi,
-      twoColumn: TwoColumnAi,
-      imageCardText: ImageTextAi,
-      threeImgCard: ThreeColumnAi,
-      default: DefaultAi,
-    }
-
+    
     if (slideData.type === "custom") {
       return (
         <CardTemplates
@@ -247,7 +241,14 @@ export default function Page() {
         />
       )
     }
-    
+    const components = {
+      accentImage: AccentImageAi,
+      twoColumn: TwoColumnAi,
+      imageCardText: ImageTextAi,
+      threeImgCard: ThreeColumnAi,
+      default: DefaultAi,
+    }
+
     const Component = components[slideData.type] || components.default
     return <Component {...commonProps} key={slideData.id} />
   }
@@ -894,7 +895,7 @@ useEffect(() => {
                 ...preview.descriptionContainer?.styles,
                 ...updatedData.descriptionContainer?.styles
               }
-            }, 
+            },
             imageContainer: {
               ...preview.imageContainer,
               ...updatedData.imageContainer,
@@ -935,8 +936,8 @@ useEffect(() => {
         <ImpressPresentation 
           slides={slides} 
           onClose={() => setIsImpressPresent(false)} 
-        />
-        )
+        />
+        )
       } */}
       <div className="flex flex-1 overflow-hidden">
         <DndContext collisionDetection={closestCorners} onDragEnd={handleDragEnd}>
@@ -944,8 +945,9 @@ useEffect(() => {
             <ResizableSidebar
               setCurrentSlide={setCurrentSlide}
               slidesPreview={slidesPreview}
+              setSlidesPreview={setSlidesPreview}
               deleteSlide={deleteSlide}
-              renderSlideComponent={renderSlideComponent}  
+              slideImages={slideImages}   
             />
           )}
         </DndContext>
