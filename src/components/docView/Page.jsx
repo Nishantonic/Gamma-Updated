@@ -218,18 +218,7 @@ export default function Page() {
   const renderSlideComponent = (slideData) => {
     if (!slideData) return null
 
-    if (slideData.type === "custom") {
-      return (
-        <CardTemplates
-          key={slideData.id}
-          slidesPreview={slidesPreview}
-          id={slideData.id}
-          setSlides={setSlides}
-          setCurrentSlide={setCurrentSlide}
-          setSlidesPreview={setSlidesPreview}
-        />
-      )
-    }
+    
 
     const commonProps = {
       generateAi: {
@@ -238,7 +227,20 @@ export default function Page() {
         onDelete: () => deleteSlide(slideData.id),
       }
     }
-
+    
+    if (slideData.type === "custom") {
+      return (
+        <CardTemplates
+          {...commonProps}
+          key={slideData.id}
+          slidesPreview={slidesPreview}
+          id={slideData.id}
+          setSlides={setSlides}
+          setCurrentSlide={setCurrentSlide}
+          setSlidesPreview={setSlidesPreview}
+        />
+      )
+    }
     const components = {
       accentImage: AccentImageAi,
       twoColumn: TwoColumnAi,

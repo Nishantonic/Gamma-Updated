@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import PasswordInput from './PasswordInput'; 
 import { toast, ToastContainer } from 'react-toastify';
+import axios from 'axios'; // Import axios for making HTTP requests
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -14,7 +15,7 @@ const Login = () => {
     return regex.test(email);
   };
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
 
     if (!email || !password) {
@@ -27,14 +28,32 @@ const Login = () => {
       return;
     }
 
+    try {
+      // Make a POST request to the login API endpoint
+      const response = await axios.post('https://presentaiapi.codesemic.com/api/auth/local', {
+        identifier: email,
+        password,
+      });
 
-    console.log('Login form submitted:', { email, password });
-
-
-    toast.success("Login Successful!");
-    setTimeout(() => {
-      navigate('/home');  
-    }, 3000);
+      // Check if the login was successful
+    if (response.data.jwt) { // Check for a JWT token in the response
+      toast.success("Login Successful!");
+      
+      // Save the token or user data to localStorage or context (if needed)
+      localStorage.setItem('token', response.data.jwt); // Save the JWT token
+      localStorage.setItem('user', JSON.stringify(response.data.user)); // Save user data
+      
+        // Redirect to the home page after 3 seconds
+        setTimeout(() => {
+          navigate('/home');
+        }, 3000);
+      } else {
+        setErrorMessage(response.data.message || 'Login failed. Please try again.');
+      }
+    } catch (error) {
+      // Handle errors from the API
+      setErrorMessage(error.response?.data?.message || 'An error occurred during login.');
+    }
   };
 
   return (
@@ -76,4 +95,4 @@ const Login = () => {
   );
 };
 
-export default Login;
+export default Login;
