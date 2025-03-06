@@ -9,7 +9,7 @@ export function SlidePreview({ number,onDoubleClick, title, isActive, onClick, i
   const [scale, setScale] = useState(1);
   const imgRef = useRef(null);
 
-  useEffect(() => {
+/*   useEffect(() => {
     if (!imgRef.current) return;
 
     const updateScale = () => {
@@ -26,7 +26,7 @@ export function SlidePreview({ number,onDoubleClick, title, isActive, onClick, i
     window.addEventListener("resize", updateScale);
 
     return () => window.removeEventListener("resize", updateScale);
-  }, [previewImage]);
+  }, [previewImage]); */
 
   const style = {
     transition,
@@ -47,7 +47,7 @@ export function SlidePreview({ number,onDoubleClick, title, isActive, onClick, i
       style={style}
     >
       {/* Image Container with Auto-Scaling */}
-      <div className="relative w-full aspect-[16/9] overflow-hidden rounded-lg border bg-gray-100 flex justify-center items-center">
+      {/* <div className="relative w-full aspect-[16/9] overflow-hidden rounded-lg border bg-gray-100 flex justify-center items-center">
         {previewImage ? (
           <img
             ref={imgRef}
@@ -62,7 +62,7 @@ export function SlidePreview({ number,onDoubleClick, title, isActive, onClick, i
             No Preview
           </div>
         )}
-      </div>
+      </div> */}
 
       {/* Slide Number & Title */}
       <div className="flex items-center gap-2 mt-3">

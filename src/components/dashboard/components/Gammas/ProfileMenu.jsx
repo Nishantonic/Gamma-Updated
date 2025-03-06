@@ -34,56 +34,41 @@ const ProfileMenu = () => {
   const [tempProfileData, setTempProfileData] = useState(defaultProfile);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [isSignOutModalOpen, setIsSignOutModalOpen] = useState(false);
+  const [isHoveringConfirm, setIsHoveringConfirm] = useState(false);
 
   useEffect(() => {
     const fetchUserData = async () => {
       setIsLoading(true);
-      
       try {
-        // First check if we have user data in localStorage from login
         const storedUser = localStorage.getItem("user");
-        
         if (storedUser) {
           const userData = JSON.parse(storedUser);
-          
-          // Create profile data from stored user
           const userProfile = {
             id: userData.id,
             name: userData.username || userData.name || defaultProfile.name,
             email: userData.email || defaultProfile.email,
             avatar: userData.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${userData.username || userData.email}`
           };
-          
           setProfileData(userProfile);
           setTempProfileData(userProfile);
         } else {
-          // If no data in localStorage, try fetching from API
           const token = localStorage.getItem("token");
-          
           if (token) {
             const response = await axios.get("https://presentaiapi.codesemic.com/api/users/me", {
-              headers: {
-                Authorization: `Bearer ${token}`
-              }
+              headers: { Authorization: `Bearer ${token}` }
             });
-            
             const userData = response.data;
-            
-            // Create profile data from API response
             const userProfile = {
               id: userData.id,
               name: userData.username || userData.name || defaultProfile.name,
               email: userData.email || defaultProfile.email,
               avatar: userData.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${userData.username || userData.email}`
             };
-            
             setProfileData(userProfile);
             setTempProfileData(userProfile);
-            
-            // Update localStorage with this data for future use
             localStorage.setItem("user", JSON.stringify(userData));
           } else {
-            // Check for any previously saved profile data
             const savedProfile = localStorage.getItem("profileData");
             if (savedProfile) {
               const parsedProfile = JSON.parse(savedProfile);
@@ -95,8 +80,6 @@ const ProfileMenu = () => {
       } catch (error) {
         console.error("Error fetching user data:", error);
         toast.error("Failed to load profile data");
-        
-        // Check for any previously saved profile data as fallback
         const savedProfile = localStorage.getItem("profileData");
         if (savedProfile) {
           const parsedProfile = JSON.parse(savedProfile);
@@ -107,75 +90,39 @@ const ProfileMenu = () => {
         setIsLoading(false);
       }
     };
-
     fetchUserData();
   }, []);
 
   const handleSaveProfile = async () => {
-    // Don't proceed if no user ID is available
     if (!profileData.id) {
       toast.warning("Cannot update profile: User ID not available");
       return;
     }
-    
     setIsSaving(true);
-    
     try {
       const token = localStorage.getItem("token");
-      
-      if (!token) {
-        throw new Error("Authentication token not found");
-      }
-      
-      // Prepare the data to be sent to the API
-      const updateData = {
-        username: tempProfileData.name,  // assuming backend expects username
-        email: tempProfileData.email
-      };
-      
-      // If avatar was changed and is a data URL, we need to handle it differently
-      if (tempProfileData.avatar && tempProfileData.avatar.startsWith('data:')) {
-        // For this example, we'll just note that avatar handling would require
-        // additional file upload functionality to the API
-        console.log("Avatar upload would need separate file handling");
-        // In a real implementation, you would upload the avatar file to the server
-      }
-      
-      // Make the PUT request to update the user
+      if (!token) throw new Error("Authentication token not found");
+      const updateData = { username: tempProfileData.name, email: tempProfileData.email };
       const response = await axios.put(
         `https://presentaiapi.codesemic.com/api/users/${profileData.id}`,
         updateData,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json"
-          }
-        }
+        { headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" } }
       );
-      
-      // Update the local state with the response data
       const updatedUserData = response.data;
-      
       const updatedProfile = {
         id: updatedUserData.id,
         name: updatedUserData.username || updatedUserData.name,
         email: updatedUserData.email,
-        avatar: updatedUserData.avatar || tempProfileData.avatar // Keep the current avatar if API doesn't return one
+        avatar: updatedUserData.avatar || tempProfileData.avatar
       };
-      
       setProfileData(updatedProfile);
-      
-      // Update the localStorage with the new data
       localStorage.setItem("user", JSON.stringify(updatedUserData));
       localStorage.setItem("profileData", JSON.stringify(updatedProfile));
-      
       toast.success("Profile updated successfully");
       setIsEditOpen(false);
     } catch (error) {
       console.error("Error updating profile:", error);
       toast.error(error.response?.data?.message || "Failed to update profile");
-      
-      // Fallback to local storage if API fails
       setProfileData(tempProfileData);
       localStorage.setItem("profileData", JSON.stringify(tempProfileData));
     } finally {
@@ -184,17 +131,34 @@ const ProfileMenu = () => {
   };
 
   const handleLogout = () => {
-    // Clear all auth data from localStorage
     localStorage.removeItem("token");
     localStorage.removeItem("user");
     localStorage.removeItem("profileData");
-    
-    // Reset state to default
     setProfileData(defaultProfile);
     setTempProfileData(defaultProfile);
-    
-    // Redirect to login page
     window.location.href = "/";
+  };
+
+  const handleConfirmSignOut = async () => {
+    if (!profileData.id) {
+      toast.error("User ID not found");
+      return;
+    }
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) throw new Error("Authentication token not found");
+      await axios.delete(`https://presentaiapi.codesemic.com/api/users/${profileData.id}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+      localStorage.removeItem("profileData");
+      toast.success("Account deleted successfully");
+      window.location.href = "/";
+    } catch (error) {
+      console.error("Error deleting account:", error);
+      toast.error(error.response?.data?.message || "Failed to delete account");
+    }
   };
 
   const handleAvatarClick = (e) => {
@@ -206,10 +170,7 @@ const ProfileMenu = () => {
       if (file) {
         const reader = new FileReader();
         reader.onload = (e) => {
-          setTempProfileData(prev => ({
-            ...prev,
-            avatar: e.target.result
-          }));
+          setTempProfileData(prev => ({ ...prev, avatar: e.target.result }));
         };
         reader.readAsDataURL(file);
       }
@@ -256,8 +217,11 @@ const ProfileMenu = () => {
             Edit Profile
           </DropdownMenuItem>
           <DropdownMenuItem onClick={handleLogout} className="text-red-600 cursor-pointer">
-            Sign Out
+            Log Out
           </DropdownMenuItem>
+          {/* <DropdownMenuItem onClick={() => setIsSignOutModalOpen(true)} className="text-red-600 cursor-pointer">
+            Sign Out
+          </DropdownMenuItem> */}
         </DropdownMenuContent>
       </DropdownMenu>
 
@@ -309,6 +273,33 @@ const ProfileMenu = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+{/* 
+      <Dialog open={isSignOutModalOpen} onOpenChange={setIsSignOutModalOpen} closeButton={false}>
+  <DialogContent>
+    <DialogHeader>
+      <DialogTitle>Are you sure you want to sign out and delete your account?</DialogTitle>
+    </DialogHeader>
+    <p className="text-sm text-gray-500">
+      This action will delete your account and all your work will be lost. This cannot be undone.
+    </p>
+    <DialogFooter>
+      <Button
+        variant={!isHoveringConfirm ? "default" : "outline"}
+        onClick={() => setIsSignOutModalOpen(false)}
+      >
+        Cancel
+      </Button>
+      <Button
+        variant={isHoveringConfirm ? "default" : "destructive"}
+        onMouseEnter={() => setIsHoveringConfirm(true)}
+        onMouseLeave={() => setIsHoveringConfirm(false)}
+        onClick={handleConfirmSignOut}
+      >
+        Confirm
+      </Button>
+    </DialogFooter>
+  </DialogContent>
+</Dialog> */}
     </>
   );
 };

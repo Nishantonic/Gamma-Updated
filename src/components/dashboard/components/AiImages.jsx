@@ -1,143 +1,207 @@
-"use client"
-import axios from "axios"
-import { useState, useEffect } from "react"
-import { Button } from "@/components/ui/button"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Textarea } from "@/components/ui/textarea"
-import { Download, Expand, Sparkle, Trash2, Loader2 } from "lucide-react"
-import { v4 as uuidv4 } from "uuid"
-import Masonry from "react-masonry-css"
-import { toast } from "sonner"
-import { Toaster } from "@/components/ui/sonner"
+"use client";
+import axios from "axios";
+import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { Download, Expand, Sparkle, Trash2, Loader2 } from "lucide-react";
+import { v4 as uuidv4 } from "uuid";
+import Masonry from "react-masonry-css";
+import { toast } from "sonner";
+import { Toaster } from "@/components/ui/sonner";
 
 export default function AiImages({ credits, setCradits }) {
   const aspectRatioMap = {
     square: "square_hd",
     portrait: "portrait_4_3",
-    landscape: "landscape_16_9"
+    landscape: "landscape_16_9",
   };
-  
-  const [isOpen, setIsOpen] = useState(false)
-  const [images, setImages] = useState(() => {
-    // Load images from localStorage on initial load
-    if (typeof window !== 'undefined') {
-      const savedImages = localStorage.getItem('aiImages');
-      return savedImages ? JSON.parse(savedImages) : [];
-    }
-    return [];
-  })
-  const [prompt, setPrompt] = useState("")
-  const [aspectRatio, setAspectRatio] = useState("square")
-  const [isGenerating, setIsGenerating] = useState(false)
-  const [error, setError] = useState("")
 
-  // Save images to localStorage whenever they change
+  const API_BASE_URL = "https://presentaiapi.codesemic.com"; // Backend server URL
+
+  const [isOpen, setIsOpen] = useState(false);
+  const [images, setImages] = useState([]);
+  const [prompt, setPrompt] = useState("");
+  const [aspectRatio, setAspectRatio] = useState("square");
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [error, setError] = useState("");
+  const [isLoadingImages, setIsLoadingImages] = useState(true);
+
   useEffect(() => {
-    localStorage.setItem('aiImages', JSON.stringify(images));
-  }, [images]);
+    const fetchImages = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        const response = await axios.get(`${API_BASE_URL}/api/upload/files`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        const fetchedImages = response.data.map((img) => {
+          const imageUrl = `${API_BASE_URL}${img.url}`;
+          console.log("Fetched Image URL:", imageUrl);
+          return {
+            id: img.id,
+            url: imageUrl,
+            prompt: img.caption || "Generated Image",
+            aspectRatio: img.width === img.height ? "square" : img.width > img.height ? "landscape" : "portrait",
+            createdAt: img.createdAt,
+          };
+        });
+
+        setImages(fetchedImages);
+      } catch (err) {
+        console.error("Error fetching images:", err);
+        toast.error("Failed to load images from server.");
+      } finally {
+        setIsLoadingImages(false);
+      }
+    };
+
+    fetchImages();
+  }, []);
 
   const handleGenerate = async () => {
     if (credits < 10) {
-      setError("Insufficient credits. You need at least 10 credits.")
-      toast.error("Insufficient credits. You need at least 10 credits. Please purchase more.")
-      return
+      setError("Insufficient credits. You need at least 10 credits.");
+      toast.error("Insufficient credits. You need at least 10 credits. Please purchase more.");
+      return;
     }
-    
+
     if (!prompt.trim()) {
-      setError("Please enter a description")
-      return
+      setError("Please enter a description");
+      return;
     }
-    
-    setIsGenerating(true)
-    setError("")
+
+    setIsGenerating(true);
+    setError("");
 
     try {
-      const response = await axios.post(
+      const generateResponse = await axios.post(
         "https://fal.run/fal-ai/fast-sdxl",
         {
           prompt: prompt,
-          image_size: aspectRatioMap[aspectRatio]
+          image_size: aspectRatioMap[aspectRatio],
         },
-        { 
-          headers: { 
-            "Authorization": "Key 695211bf-74de-4864-9e7a-9eb254f63508:bc32a1373fd24dc225b7d0955f5e1ac6",
-            "Content-Type": "application/json"
-          } 
+        {
+          headers: {
+            Authorization: "Key 695211bf-74de-4864-9e7a-9eb254f63508:bc32a1373fd24dc225b7d0955f5e1ac6",
+            "Content-Type": "application/json",
+          },
         }
-      )
+      );
 
-      if (!response.data?.images?.[0]?.url) {
-        throw new Error("No image URL returned from API")
+      if (!generateResponse.data?.images?.[0]?.url) {
+        throw new Error("No image URL returned from API");
       }
+
+      const imageUrl = generateResponse.data.images[0].url;
+      const imageResponse = await fetch(imageUrl);
+      const imageBlob = await imageResponse.blob();
+
+      const formData = new FormData();
+      formData.append("files", imageBlob, `ai-image-${uuidv4()}.jpg`);
+
+      const token = localStorage.getItem("token");
+      const uploadResponse = await axios.post(
+        `${API_BASE_URL}/api/upload`,
+        formData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
+
+      const uploadedImage = uploadResponse.data[0];
+      const newImageUrl = `${API_BASE_URL}${uploadedImage.url}`;
+      console.log("Uploaded Image URL:", newImageUrl);
 
       const newImage = {
-        id: uuidv4(),
-        url: response.data.images[0].url,
+        id: uploadedImage.id,
+        url: newImageUrl,
         prompt,
         aspectRatio,
-        createdAt: new Date().toISOString()
-      }
+        createdAt: uploadedImage.createdAt,
+      };
 
-      setImages(prev => [...prev, newImage])
+      setImages(prev => [...prev, newImage]);
       const newCredits = credits - 10;
       setCradits(newCredits);
-      localStorage.setItem('credits', newCredits);
-      toast.success("Image generated successfully!")
+      localStorage.setItem("credits", newCredits);
+      toast.success("Image generated and uploaded successfully!");
     } catch (err) {
-      console.error("Error generating image:", err)
-      const errorMessage = err.response?.data?.detail || "Failed to generate image. Please try again."
-      toast.error(errorMessage)
+      console.error("Error generating or uploading image:", err);
+      const errorMessage = err.response?.data?.detail || "Failed to generate or upload image. Please try again.";
+      toast.error(errorMessage);
     } finally {
-      setIsGenerating(false)
-      setIsOpen(false)
-      setPrompt("")
+      setIsGenerating(false);
+      setIsOpen(false);
+      setPrompt("");
     }
-  }
+  };
 
-  const handleDelete = (id) => {
-    setImages(prev => prev.filter(img => img.id !== id))
-    toast.success("Image deleted successfully!")
-  }
+  const handleDelete = async (id) => {
+    try {
+      const token = localStorage.getItem("token");
+      await axios.delete(`${API_BASE_URL}/api/upload/files/${id}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      setImages(prev => prev.filter(img => img.id !== id));
+      toast.success("Image deleted successfully!");
+    } catch (err) {
+      console.error("Error deleting image:", err);
+      toast.error("Failed to delete image.");
+    }
+  };
 
   const handleDownload = async (url) => {
     try {
-      const response = await fetch(url)
-      const blob = await response.blob()
-      const link = document.createElement('a')
-      link.href = URL.createObjectURL(blob)
-      link.download = `ai-image-${Date.now()}.jpg`
-      document.body.appendChild(link)
-      link.click()
-      document.body.removeChild(link)
-      toast.success("Download started successfully!")
+      const response = await fetch(url);
+      const blob = await response.blob();
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = `ai-image-${Date.now()}.jpg`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      toast.success("Download started successfully!");
     } catch (err) {
-      console.error("Download failed:", err)
-      toast.error("Failed to download image")
+      console.error("Download failed:", err);
+      toast.error("Failed to download image");
     }
-  }
+  };
+
+  const handleImageClick = (url) => {
+    window.open(url, "_blank"); // Open the full backend URL in a new tab
+  };
 
   const breakpointColumnsObj = {
     default: 3,
     1280: 3,
     1024: 2,
-    768: 1
+    768: 1,
   };
 
   return (
-    <div className="p-4 md:p-6 lg:p-8 max-w-7xl mx-auto ">
+    <div className="p-4 md:p-6 lg:p-8 max-w-7xl mx-auto">
       <Toaster
         position="top-right"
         richColors
         toastOptions={{
           duration: 5000,
           style: {
-            backgroundColor: '#fff',
-            color: '#000',
-            borderRadius: '8px',
-            padding: '12px',
-            fontSize: '14px',
-            boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.1)',
+            backgroundColor: "#fff",
+            color: "#000",
+            borderRadius: "8px",
+            padding: "12px",
+            fontSize: "14px",
+            boxShadow: "0px 4px 12px rgba(0, 0, 0, 0.1)",
           },
         }}
       />
@@ -148,9 +212,8 @@ export default function AiImages({ credits, setCradits }) {
       </div>
 
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
-        {credits >= 10 ?
-        (
-          <Button 
+        {credits >= 10 ? (
+          <Button
             onClick={() => setIsOpen(true)}
             className="bg-purple-600 hover:bg-purple-700 w-full sm:w-auto"
             disabled={credits < 10}
@@ -158,23 +221,22 @@ export default function AiImages({ credits, setCradits }) {
             <Sparkle className="mr-2 h-4 w-4" />
             Generate New Image (10 credits)
           </Button>
-        ):(
+        ) : (
           <div className="group relative inline-block">
-              <Button 
+            <Button
               onClick={() => setIsOpen(true)}
               className="bg-purple-600 hover:bg-purple-700 w-full sm:w-auto"
               disabled={credits < 10}
-              >
-                <Sparkle className="mr-2 h-4 w-4" />
-                Generate New Image (10 credits)
-              </Button>
-              <div className="absolute  z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-200 top-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 text-sm text-red-600 bg-red-50 border border-red-100 rounded-lg shadow-sm w-max">
-                Insufficient credits. You need at least 10 credits.
-                <div className="absolute top-full left-1/2 -translate-x-1/2 w-3 h-2 bg-red-50 border-b border-r border-red-100 rotate-45"></div>
-              </div>
+            >
+              <Sparkle className="mr-2 h-4 w-4" />
+              Generate New Image (10 credits)
+            </Button>
+            <div className="absolute z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-200 top-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 text-sm text-red-600 bg-red-50 border border-red-100 rounded-lg shadow-sm w-max">
+              Insufficient credits. You need at least 10 credits.
+              <div className="absolute top-full left-1/2 -translate-x-1/2 w-3 h-2 bg-red-50 border-b border-r border-red-100 rotate-45"></div>
+            </div>
           </div>
-        )
-        }
+        )}
       </div>
 
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -182,7 +244,7 @@ export default function AiImages({ credits, setCradits }) {
           <DialogHeader>
             <DialogTitle className="text-lg">Generate AI Image</DialogTitle>
           </DialogHeader>
-          
+
           <div className="space-y-6">
             <div>
               <Textarea
@@ -197,8 +259,8 @@ export default function AiImages({ credits, setCradits }) {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium mb-2">Aspect Ratio</label>
-                <Select 
-                  value={aspectRatio} 
+                <Select
+                  value={aspectRatio}
                   onValueChange={setAspectRatio}
                   defaultValue="square"
                 >
@@ -224,13 +286,17 @@ export default function AiImages({ credits, setCradits }) {
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Generating...
                 </>
-              ) : 'Generate Image'}
+              ) : (
+                "Generate Image"
+              )}
             </Button>
           </div>
         </DialogContent>
       </Dialog>
 
-      {images.length === 0 ? (
+      {isLoadingImages ? (
+        <div className="text-center py-12 text-gray-500">Loading images...</div>
+      ) : images.length === 0 ? (
         <div className="text-center py-12 text-gray-500">
           No images generated yet. Start creating with the button above!
         </div>
@@ -241,28 +307,37 @@ export default function AiImages({ credits, setCradits }) {
           columnClassName="masonry-column"
         >
           {images.map((image) => (
-            <div 
-              key={image.id} 
+            <div
+              key={image.id}
               className="mb-4 md:mb-6 relative group rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition-shadow bg-white dark:bg-gray-800"
             >
-              <div className={`
-                ${image.aspectRatio === 'square' ? 'aspect-square' : 
-                  image.aspectRatio === 'portrait' ? 'aspect-[3/4]' : 'aspect-[4/3]'}
-                relative bg-gray-100 dark:bg-gray-700
-              `}>
+              <div
+                className={`
+                  ${image.aspectRatio === "square" ? "aspect-square" : image.aspectRatio === "portrait" ? "aspect-[3/4]" : "aspect-[4/3]"}
+                  relative bg-gray-100 dark:bg-gray-700 cursor-pointer
+                `}
+                onClick={() => handleImageClick(image.url)} // Redirect on image click
+              >
                 <img
                   src={image.url}
                   alt={image.prompt}
                   className="w-full h-full object-cover transition-opacity"
                   loading="lazy"
+                  onError={(e) => {
+                    console.error(`Failed to load image: ${image.url}`);
+                    e.target.src = "/fallback-image.jpg"; // Optional: Add a fallback image
+                  }}
                 />
-                
+
                 <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3 p-2">
                   <Button
                     variant="ghost"
                     size="icon"
                     className="text-white hover:bg-white/20 backdrop-blur-sm"
-                    onClick={() => handleDownload(image.url)}
+                    onClick={(e) => {
+                      e.stopPropagation(); // Prevent image click from triggering
+                      handleDownload(image.url);
+                    }}
                     aria-label="Download"
                   >
                     <Download className="h-5 w-5" />
@@ -271,7 +346,10 @@ export default function AiImages({ credits, setCradits }) {
                     variant="ghost"
                     size="icon"
                     className="text-white hover:bg-white/20 backdrop-blur-sm"
-                    onClick={() => handleDelete(image.id)}
+                    onClick={(e) => {
+                      e.stopPropagation(); // Prevent image click from triggering
+                      handleDelete(image.id);
+                    }}
                     aria-label="Delete"
                   >
                     <Trash2 className="h-5 w-5" />
@@ -280,18 +358,19 @@ export default function AiImages({ credits, setCradits }) {
                     variant="ghost"
                     size="icon"
                     className="text-white hover:bg-white/20 backdrop-blur-sm"
-                    onClick={() => window.open(image.url, '_blank')}
+                    onClick={(e) => {
+                      e.stopPropagation(); // Prevent image click from triggering
+                      window.open(image.url, "_blank");
+                    }}
                     aria-label="Expand"
                   >
                     <Expand className="h-5 w-5" />
                   </Button>
                 </div>
               </div>
-              
+
               <div className="p-3">
-                <p className="text-sm text-gray-600 dark:text-gray-300 line-clamp-2">
-                  {image.prompt}
-                </p>
+                <p className="text-sm text-gray-600 dark:text-gray-300 line-clamp-2">{image.prompt}</p>
                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                   {new Date(image.createdAt).toLocaleDateString()}
                 </p>
@@ -301,5 +380,5 @@ export default function AiImages({ credits, setCradits }) {
         </Masonry>
       )}
     </div>
-  )
+  );
 }

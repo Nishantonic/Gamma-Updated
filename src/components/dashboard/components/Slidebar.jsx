@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faFileLines,
@@ -17,9 +17,18 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { faIdBadge } from "@fortawesome/free-regular-svg-icons";
 
-function Navbar({setActiveComponent,activeComponent}) {
-  
+function Navbar({ setActiveComponent, activeComponent }) {
   const [searchTerm, setSearchTerm] = useState("");
+  const [userInitial, setUserInitial] = useState("U"); // Default to "U" for "User"
+
+  // Fetch user initial from localStorage on mount
+  useEffect(() => {
+    const user = JSON.parse(localStorage.getItem("user") || "{}");
+    const Name = user.username || ""; // Adjust based on your user object structure
+    const initial = Name.charAt(0).toUpperCase() || "U"; // Default to "U" if no name
+    setUserInitial(initial);
+  }, []);
+
   const handleInputChange = (event) => {
     setSearchTerm(event.target.value);
   };
@@ -35,7 +44,7 @@ function Navbar({setActiveComponent,activeComponent}) {
       <div className="flex flex-col gap-4">
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 flex items-center justify-center rounded-full bg-purple-600 text-white text-lg">
-            S
+            {userInitial}
           </div>
           <span className="text-gray-800 font-semibold">MY Workspace</span>
         </div>
@@ -52,7 +61,7 @@ function Navbar({setActiveComponent,activeComponent}) {
         </div>
       </div>
       <nav className="mt-4 space-y-2 text-gray-700">
-        {[  
+        {[
           { icon: faFileLines, label: "Gammas" },
           { icon: faUserGroup, label: "Shared with you" },
           { icon: faGlobe, label: "Sites" },
@@ -80,11 +89,13 @@ function Navbar({setActiveComponent,activeComponent}) {
         <div className="mt-2 p-3 bg-gray-100 text-sm text-gray-600 rounded-md">
           Organize your gammas by topic and share them with your team
           <br />
-          <a href="#" className="text-blue-500">Create or join a folder</a>
+          <a href="#" className="text-blue-500">
+            Create or join a folder
+          </a>
         </div>
       </div>
       <div className="mt-6 border-y border-gray-300 py-2">
-        {[  
+        {[
           { icon: faWandMagicSparkles, label: "Templates" },
           { icon: faBookOpen, label: "Inspiration" },
           { icon: faPalette, label: "Themes" },
@@ -107,7 +118,7 @@ function Navbar({setActiveComponent,activeComponent}) {
         ))}
       </div>
       <div className="mt-6">
-        {[  
+        {[
           { icon: faGear, label: "Settings & Members" },
           { icon: faIdBadge, label: "Contact Support" },
           { icon: faMessage, label: "Share Feedback" },

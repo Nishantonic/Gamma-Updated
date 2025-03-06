@@ -6,7 +6,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import Card from "./Card";
 import ProfileMenu from "./ProfileMenu";
 
-// Enhanced LoadingSkeleton component with animations
 const LoadingSkeleton = () => (
   <motion.div 
     initial={{ opacity: 0 }} 
@@ -26,7 +25,6 @@ const LoadingSkeleton = () => (
   </motion.div>
 );
 
-// Enhanced Notification component with animations
 const Notification = ({ message, type = "error", onClose }) => (
   <motion.div
     initial={{ opacity: 0, y: -20 }}
@@ -55,7 +53,7 @@ const Gammas = ({ credits = 0, setCredits }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [notification, setNotification] = useState(null);
   const navigate = useNavigate();
-  const [shareDialog, setShareDialog] = useState({ isOpen: false, url: "", slideKey: null });
+  const [shareDialog, setShareDialog] = useState({ isOpen: false, url: "", presentationId: null });
   const [copied, setCopied] = useState(false);
   const [layout, setLayout] = useState('grid');
   const [favorites, setFavorites] = useState([]);
@@ -63,44 +61,107 @@ const Gammas = ({ credits = 0, setCredits }) => {
   const [isInitialLoad, setIsInitialLoad] = useState(true);
 
   useEffect(() => {
-    try {
-      setIsLoading(true);
-      const savedSlides = localStorage.getItem("slides");
-      if (savedSlides) {
-        setArraySlides(JSON.parse(savedSlides));
+    const fetchPresentations = async () => {
+      try {
+        setIsLoading(true);
+        const token = localStorage.getItem('token');
+        const user = JSON.parse(localStorage.getItem('user'));
+
+        // Fetch presentations from API
+        const presentationsResponse = await fetch(
+          `https://presentaiapi.codesemic.com/api/presentations/user/${user.id}`,
+          {
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          }
+        );
+
+        if (!presentationsResponse.ok) throw new Error('Failed to fetch presentations');
+        const presentations = await presentationsResponse.json();
+
+        // Fetch slides for each presentation
+        const enrichedPresentations = await Promise.all(
+          presentations.map(async (presentation) => {
+            const slidesResponse = await fetch(
+              `https://presentaiapi.codesemic.com/api/slides/presentation/${presentation.id}`,
+              {
+                headers: {
+                  'Authorization': `Bearer ${token}`,
+                },
+              }
+            );
+
+            if (!slidesResponse.ok) {
+              console.error(`Failed to fetch slides for presentation ${presentation.id}`);
+              return { ...presentation, slides: [] }; // Fallback to empty slides
+            }
+
+            const slides = await slidesResponse.json();
+            const normalizedSlides = slides.map(slide => ({
+              id: slide.id,
+              type: slide.type || "custom",
+              titleContainer: slide.titleContainer ? JSON.parse(slide.titleContainer) : {
+                titleId: uuidv4(),
+                title: "Untitled",
+                styles: {},
+              },
+              descriptionContainer: slide.descriptionContainer ? JSON.parse(slide.descriptionContainer) : {
+                descriptionId: uuidv4(),
+                description: "",
+                styles: {},
+              },
+              imageContainer: slide.imageContainer ? JSON.parse(slide.imageContainer) : {
+                imageId: uuidv4(),
+                image: slide.image?.[0] || null,
+                styles: { width: 300, height: 210 },
+              },
+              dropContainer: slide.dropContainer ? JSON.parse(slide.dropContainer) : {
+                dropItems: slide.content ? JSON.parse(slide.content).dropItems || [] : [],
+              },
+              ...(slide.type === "twoColumn" && {
+                columns: slide.columns ? JSON.parse(slide.columns) : [],
+              }),
+              ...(slide.type === "threeImgCard" && {
+                cards: slide.cards ? JSON.parse(slide.cards) : [],
+              }),
+            }));
+
+            return { ...presentation, slides: normalizedSlides };
+          })
+        );
+
+        setArraySlides(enrichedPresentations);
+
+        const savedFavorites = localStorage.getItem("favorites");
+        if (savedFavorites) {
+          setFavorites(JSON.parse(savedFavorites));
+        }
+        const savedLayout = localStorage.getItem("layout");
+        if (savedLayout) {
+          setLayout(savedLayout);
+        }
+        const savedFilter = localStorage.getItem("activeFilter");
+        if (savedFilter) {
+          setActiveFilter(savedFilter);
+        }
+      } catch (err) {
+        showNotification("Failed to load presentations or slides. Please try again.", "error");
+        console.error(err);
+      } finally {
+        setTimeout(() => {
+          setIsLoading(false);
+          setTimeout(() => setIsInitialLoad(false), 600);
+        }, 500);
       }
-      const savedFavorites = localStorage.getItem("favorites");
-      if (savedFavorites) {
-        setFavorites(JSON.parse(savedFavorites));
-      }
-      // Load saved layout preference
-      const savedLayout = localStorage.getItem("layout");
-      if (savedLayout) {
-        setLayout(savedLayout);
-      }
-      // Load saved filter preference
-      const savedFilter = localStorage.getItem("activeFilter");
-      if (savedFilter) {
-        setActiveFilter(savedFilter);
-      }
-    } catch (err) {
-      showNotification("Failed to load slides. Please try again.", "error");
-    } finally {
-      // Small delay to allow for smoother animation transitions
-      setTimeout(() => {
-        setIsLoading(false);
-        // Allow initial load animations to play
-        setTimeout(() => setIsInitialLoad(false), 600);
-      }, 500);
-    }
+    };
+    fetchPresentations();
   }, []);
 
-  // Save layout preference whenever it changes
   useEffect(() => {
     localStorage.setItem("layout", layout);
   }, [layout]);
 
-  // Save filter preference whenever it changes
   useEffect(() => {
     localStorage.setItem("activeFilter", activeFilter);
   }, [activeFilter]);
@@ -110,97 +171,123 @@ const Gammas = ({ credits = 0, setCredits }) => {
     setTimeout(() => setNotification(null), 3000);
   };
 
-  const handleCardClick = (slides, key) => {
-    if (!slides?.length) return;
-    
-    const sanitizedSlides = slides.map((slide) => ({
-      ...slide,
-      dropContainer: {
-        dropItems: slide.dropContainer?.dropItems || [],
-      },
-    }));
+  const handleCardClick = async (presentationId) => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) throw new Error('No authentication token found');
 
-    // Add subtle page transition before navigation
-    document.body.classList.add('transitioning');
-    setTimeout(() => {
-      navigate("/page", { state: { slidesArray: sanitizedSlides, key } });
-      document.body.classList.remove('transitioning');
-    }, 300);
+      document.body.classList.add('transitioning');
+      setTimeout(() => {
+        navigate("/page", {
+          state: {
+            presentationId: presentationId,
+          },
+        });
+        document.body.classList.remove('transitioning');
+      }, 300);
+    } catch (err) {
+      showNotification("Failed to load presentation. Please try again.", "error");
+      console.error('Error in handleCardClick:', err);
+    }
   };
 
-  const handleDeleteSlide = (id) => {
+  const handleDeleteSlide = async (presentationId) => {
     try {
-      const slideToDelete = arraySlides.find((slide) => slide.key === id);
-      const updatedSlides = arraySlides.filter((slide) => slide.key !== id);
-      
-      setArraySlides(updatedSlides);
-      localStorage.setItem("slides", JSON.stringify(updatedSlides));
+      const token = localStorage.getItem('token');
+      const presentation = arraySlides.find(p => p.id === presentationId);
+      if (!presentation || !presentation.documentId) {
+        throw new Error('Presentation or documentId not found');
+      }
 
-      const trash = JSON.parse(localStorage.getItem("trash") || "[]");
-      trash.push(slideToDelete);
-      localStorage.setItem("trash", JSON.stringify(trash));
+      const slidesResponse = await fetch(
+        `https://presentaiapi.codesemic.com/api/slides/presentation/${presentationId}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        }
+      );
+      if (!slidesResponse.ok) {
+        throw new Error('Failed to fetch slides');
+      }
+      const slides = await slidesResponse.json();
 
-      showNotification("Slide moved to trash successfully", "success");
+      const deleteSlidePromises = slides.map(slide =>
+        fetch(`https://presentaiapi.codesemic.com/api/slides/${slide.documentId}`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        }).then(response => {
+          if (!response.ok) {
+            throw new Error(`Failed to delete slide ${slide.documentId}`);
+          }
+        })
+      );
+
+      await Promise.all(deleteSlidePromises);
+
+      const deletePresentationResponse = await fetch(
+        `https://presentaiapi.codesemic.com/api/presentations/${presentation.documentId}`,
+        {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        }
+      );
+      if (!deletePresentationResponse.ok) {
+        throw new Error('Failed to delete presentation');
+      }
+
+      setArraySlides(prev => prev.filter(p => p.id !== presentationId));
+      showNotification('Presentation and slides deleted successfully', 'success');
     } catch (err) {
-      showNotification("Failed to delete slide. Please try again.", "error");
+      showNotification('Failed to delete presentation and slides. Please try again.', 'error');
+      console.error(err);
     }
   };
 
   const compressForSharing = (data) => {
     const jsonString = JSON.stringify(data);
-    
     if (jsonString.length > 2000) {
       const minimalData = {
         key: data.key,
         slides: data.slides.map(slide => ({
           id: slide.id,
           type: slide.type,
-          titleContainer: {
-            title: slide.titleContainer?.title || ''
-          },
-          descriptionContainer: {
-            description: slide.descriptionContainer?.description || ''
-          },
-          imageContainer: {
-            image: slide.imageContainer?.image || ''
-          }
+          titleContainer: { title: slide.titleContainer?.title || '' },
+          descriptionContainer: { description: slide.descriptionContainer?.description || '' },
+          imageContainer: { image: slide.imageContainer?.image || '' }
         }))
       };
       return btoa(JSON.stringify(minimalData));
     }
-    
     return btoa(jsonString);
   };
 
-  const handleShare = (pptKey) => {
-    const slideGroup = arraySlides.find((slide) => slide.key === pptKey);
-    if (!slideGroup) {
-      showNotification("Slide not found for sharing", "error");
+  const handleShare = (presentationId) => {
+    const presentation = arraySlides.find(p => p.id === presentationId);
+    if (!presentation) {
+      showNotification("Presentation not found for sharing", "error");
       return;
     }
-
-    try {
-      const encodedData = compressForSharing(slideGroup);
-      const url = `${window.location.origin}/share/${encodedData}`;
-      
-      setShareDialog({
-        isOpen: true,
-        url,
-        slideKey: pptKey
-      });
-    } catch (err) {
-      showNotification("Failed to generate share link. Please try again.", "error");
-    }
+    const url = `${window.location.origin}/share/${presentation.documentId}`;
+    setShareDialog({
+      isOpen: true,
+      url,
+      presentationId
+    });
   };
 
-  const toggleFavorite = (slideKey) => {
-    const newFavorites = favorites.includes(slideKey)
-      ? favorites.filter(key => key !== slideKey)
-      : [...favorites, slideKey];
+  const toggleFavorite = (presentationId) => {
+    const newFavorites = favorites.includes(presentationId)
+      ? favorites.filter(id => id !== presentationId)
+      : [...favorites, presentationId];
     setFavorites(newFavorites);
     localStorage.setItem("favorites", JSON.stringify(newFavorites));
     showNotification(
-      newFavorites.includes(slideKey) ? "Added to favorites" : "Removed from favorites",
+      newFavorites.includes(presentationId) ? "Added to favorites" : "Removed from favorites",
       "success"
     );
   };
@@ -216,15 +303,14 @@ const Gammas = ({ credits = 0, setCredits }) => {
     }
   };
 
-  const filteredSlides = arraySlides.filter(slideGroup => 
-    activeFilter === 'favorites' ? favorites.includes(slideGroup.key) : true
+  const filteredSlides = arraySlides.filter(presentation => 
+    activeFilter === 'favorites' ? favorites.includes(presentation.id) : true
   );
 
   if (isLoading) {
     return <LoadingSkeleton />;
   }
 
-  // Animation variants for various elements
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
@@ -244,7 +330,7 @@ const Gammas = ({ credits = 0, setCredits }) => {
       transition: { duration: 0.5, ease: "easeOut" }
     }
   };
-  
+
   const filterVariants = {
     hidden: { opacity: 0, x: -20 },
     visible: { opacity: 1, x: 0, transition: { duration: 0.3 } }
@@ -290,7 +376,7 @@ const Gammas = ({ credits = 0, setCredits }) => {
             <motion.div
               animate={{ rotate: [0, 10, -10, 10, 0] }}
               transition={{ duration: 0.5, delay: 1, repeat: 0 }}
-            >
+              >
               <Coins className="w-5 h-5 text-yellow-600" />
             </motion.div>
             <span className="font-medium">{credits} Credits</span>
@@ -318,9 +404,7 @@ const Gammas = ({ credits = 0, setCredits }) => {
         >
           <Link 
             to="/page" 
-            className="inline-flex items-center gap-2 bg-white px-6 py-3 rounded-lg
-                      border border-gray-300 hover:bg-gray-50 transition-colors
-                      text-gray-700 font-medium"
+            className="inline-flex items-center gap-2 bg-white px-6 py-3 rounded-lg border border-gray-300 hover:bg-gray-50 transition-colors text-gray-700 font-medium"
           >
             <motion.div animate={{ rotate: [0, -10, 0] }} transition={{ delay: 2, duration: 0.5 }}>
               <FolderOpen className="w-5 h-5" />
@@ -334,7 +418,6 @@ const Gammas = ({ credits = 0, setCredits }) => {
         variants={filterVariants}
         className="flex justify-between items-center bg-white p-2 rounded-lg border border-gray-200 shadow-sm"
       >
-        {/* Filter Controls */}
         <div className="flex items-center">
           <div className="flex bg-gray-100 rounded-lg p-1">
             <motion.button 
@@ -375,7 +458,6 @@ const Gammas = ({ credits = 0, setCredits }) => {
           </div>
         </div>
         
-        {/* Layout Controls */}
         <div className="flex items-center bg-gray-100 rounded-lg p-1">
           <motion.button
             whileHover={{ scale: 1.1 }}
@@ -440,33 +522,31 @@ const Gammas = ({ credits = 0, setCredits }) => {
               </p>
             </motion.div>
           ) : (
-            filteredSlides.map((slideGroup, index) => (
-              slideGroup.slides?.length > 0 && (
-                <motion.div
-                  key={slideGroup.key}
-                  layout
-                  initial={{ opacity: 0, y: 30 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: 20 }}
-                  transition={{ 
-                    duration: 0.4,
-                    delay: isInitialLoad ? index * 0.1 : 0,
-                    type: "spring",
-                    damping: 15
-                  }}
-                >
-                  <Card
-                    slide={slideGroup.slides[0] || {}}
-                    slideGroup={slideGroup}
-                    onClick={() => handleCardClick(slideGroup.slides, slideGroup.key)}
-                    onShare={() => handleShare(slideGroup.key)}
-                    onDelete={() => handleDeleteSlide(slideGroup.key)}
-                    onToggleFavorite={() => toggleFavorite(slideGroup.key)}
-                    isFavorite={favorites.includes(slideGroup.key)}
-                    layout={layout}
-                  />
-                </motion.div>
-              )
+            filteredSlides.map((presentation, index) => (
+              <motion.div
+                key={presentation.id}
+                layout
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 20 }}
+                transition={{ 
+                  duration: 0.4,
+                  delay: isInitialLoad ? index * 0.1 : 0,
+                  type: "spring",
+                  damping: 15
+                }}
+              >
+                <Card
+                  presentation={presentation}
+                  slideGroup={presentation}
+                  onClick={handleCardClick}
+                  onShare={() => handleShare(presentation.id)}
+                  onDelete={() => handleDeleteSlide(presentation.id)}
+                  onToggleFavorite={() => toggleFavorite(presentation.id)}
+                  isFavorite={favorites.includes(presentation.id)}
+                  layout={layout}
+                />
+              </motion.div>
             ))
           )}
         </motion.div>

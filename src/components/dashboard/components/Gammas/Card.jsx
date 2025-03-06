@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from "react";
 import { Share2, Trash2, Star, MoreVertical } from 'lucide-react';
 
 const Card = ({ 
+  presentation,
   slide, 
   slideGroup,
   onClick, 
@@ -21,16 +22,23 @@ const Card = ({
     return `${cleanText.substring(0, maxLength)}...`;
   };
 
-  const title = truncateText(slide?.titleContainer?.title, 50) || 'Untitled Slide';
-  const description = truncateText(slide?.descriptionContainer?.description, 100) || 'No description available';
+  const title = truncateText(presentation?.title, 50) || 'Untitled Presentation';
+  const description = truncateText(presentation?.description, 100) || 'No description available';
   
+  // Use the first slide's image from presentation.slides[0] if available
+  const image = presentation?.slides?.[0]?.imageContainer?.image;
+
+  // Debugging logs
+  console.log("Presentation:", presentation);
+  console.log("First Slide:", presentation?.slides?.[0]);
+  console.log("Image:", image);
+
   const handleDropdownClick = (e) => {
     e.stopPropagation();
     setShowDropdown(!showDropdown);
   };
 
-  // Close dropdown when clicking outside
-  React.useEffect(() => {
+  useEffect(() => {
     const handleClickOutside = (e) => {
       if (!e.target.closest('.dropdown-container')) {
         setShowDropdown(false);
@@ -81,14 +89,13 @@ const Card = ({
   if (layout === 'list') {
     return (
       <div 
-        onClick={onClick}
-        className="flex items-stretch bg-white rounded-xl shadow-sm hover:shadow-md transition-all duration-300  cursor-pointer group relative"
+        onClick={() => onClick(presentation.id)}
+        className="flex items-stretch bg-white rounded-xl shadow-sm hover:shadow-md transition-all duration-300 cursor-pointer group relative"
       >
-        {/* Image Container */}
         <div className="relative w-48 h-32 flex-shrink-0 bg-gray-100 overflow-hidden">
-          {slide?.imageContainer?.image ? (
+          {image ? (
             <img
-              src={slide.imageContainer.image}
+              src={image}
               alt={title}
               className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-300"
             />
@@ -98,11 +105,9 @@ const Card = ({
             </div>
           )}
         </div>
-
-        {/* Content */}
         {isFavorite && (
-            <Star className="w-4 h-4 text-yellow-400 fill-current flex-shrink-0 absolute right-0 mt-2 mr-2" />
-          )}
+          <Star className="w-4 h-4 text-yellow-400 fill-current flex-shrink-0 absolute right-0 mt-2 mr-2" />
+        )}
         <div className="flex-grow p-4 flex flex-col justify-between">
           <div>
             <h3 className="text-lg font-semibold text-gray-800 mb-2">
@@ -112,26 +117,26 @@ const Card = ({
               {description}
             </p>
           </div>
-          
-          {Dropdown && <div className="flex items-center justify-between mt-4">
-            <span className="text-sm text-gray-500">
-              {slideGroup?.slides?.length} slides
-            </span>
-            <div className="relative dropdown-container">
-              <button
-                onClick={handleDropdownClick}
-                className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-              >
-                <MoreVertical className="w-5 h-5 text-gray-600" />
-              </button>
-              
-              {showDropdown  && (
-                <div className="absolute right-0 bottom-full mb-2">
-                  <DropdownMenu />
-                </div>
-              )}
+          {Dropdown && (
+            <div className="flex items-center justify-between mt-4">
+              <span className="text-sm text-gray-500">
+                {slideGroup?.slides?.length} slides
+              </span>
+              <div className="relative dropdown-container">
+                <button
+                  onClick={handleDropdownClick}
+                  className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                >
+                  <MoreVertical className="w-5 h-5 text-gray-600" />
+                </button>
+                {showDropdown && (
+                  <div className="absolute right-0 bottom-full mb-2">
+                    <DropdownMenu />
+                  </div>
+                )}
+              </div>
             </div>
-          </div>}
+          )}
         </div>
       </div>
     );
@@ -139,14 +144,13 @@ const Card = ({
 
   return (
     <div 
-      onClick={onClick}
+      onClick={() => onClick(presentation.id)}
       className="relative group bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden cursor-pointer"
     >
-      {/* Image Container */}
       <div className="relative h-48 w-full bg-gray-100 overflow-hidden">
-        {slide?.imageContainer?.image ? (
+        {image ? (
           <img
-            src={slide.imageContainer.image}
+            src={image}
             alt={title}
             className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-300"
           />
@@ -155,8 +159,6 @@ const Card = ({
             <span className="text-gray-400">No image</span>
           </div>
         )}
-        
-        {/* Action Button with Dropdown */}
         <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 dropdown-container">
           <button
             onClick={handleDropdownClick}
@@ -171,8 +173,6 @@ const Card = ({
           )}
         </div>
       </div>
-
-      {/* Content */}
       <div className="p-4">
         <div className="flex items-center justify-between mb-2">
           <h3 className="text-lg font-semibold text-gray-800 line-clamp-1">
@@ -186,8 +186,6 @@ const Card = ({
           {description}
         </p>
       </div>
-
-      {/* Hover Overlay */}
       <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-5 transition-all duration-300 rounded-xl pointer-events-none" />
     </div>
   );

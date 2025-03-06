@@ -60,7 +60,7 @@ export function Header({ setGenerateAi, startPresentation }) {
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
-        <Button variant="ghost" size="icon">
+        {/* <Button variant="ghost" size="icon">
           <MoreHorizontal className="h-5 w-5" />
         </Button>
         <Button
@@ -68,7 +68,7 @@ export function Header({ setGenerateAi, startPresentation }) {
           variant="ghost"
         >
           V
-        </Button>
+        </Button> */}
       </div>
     </header>
   );

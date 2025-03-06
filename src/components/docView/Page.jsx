@@ -80,6 +80,9 @@ export default function Page() {
     const savedCredits = localStorage.getItem("credits")
     return savedCredits !== null ? Number.parseInt(savedCredits) : 50
   })
+
+  const userToken = localStorage.getItem("token");
+
   useEffect(() => {
     const slideElement = document.getElementById(`at-${currentSlide}`)
     if (slideElement) {
@@ -87,7 +90,68 @@ export default function Page() {
     }
   }, [currentSlide])
 
-  const handleSaveSlide = () => {
+  const mapSlideToApiFormat = (slide) => {
+    return {
+      data: {
+        titleContainer: JSON.stringify(slide.titleContainer || {}),
+        descriptionContainer: JSON.stringify(slide.descriptionContainer || {}),
+        presentation: 22, // Adjust this if it should be dynamic
+        type: slide.type || "custom",
+        content: JSON.stringify({
+          id: slide.id,
+          title: slide.titleContainer?.title,
+          description: slide.descriptionContainer?.description,
+        }),
+        image: slide.imageContainer?.image ? [slide.imageContainer.image] : [],
+        impress_settings: JSON.stringify(slide.impress_settings || {}),
+        dropContainer: JSON.stringify(slide.dropContainer || {}),
+        cards: JSON.stringify(slide.cards || []),
+        columns: JSON.stringify(slide.columns || []),
+        locale: "en",
+      },
+    };
+  };
+
+  const saveSlidesToApi = async (slides) => {
+    const apiUrl = "https://presentaiapi.codesemic.com/api/slides";
+  
+    if (!userToken) {
+      toast.error("User not authenticated. Please log in.");
+      return;
+    }
+
+    try {
+      const responses = await Promise.all(
+        slides.map(async (slide) => {
+          const apiData = mapSlideToApiFormat(slide);
+          const response = await fetch(apiUrl, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${userToken}`,
+            },
+            body: JSON.stringify(apiData),
+          });
+  
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+  
+          return response.json();
+        })
+      );
+  
+      console.log("Slides saved to API successfully:", responses);
+      toast.success("Slides saved to API successfully!");
+      return true;
+    } catch (error) {
+      console.error("Failed to save slides to API:", error);
+      toast.error("Failed to save slides to API. Please check console for details.");
+      return false;
+    }
+  };
+
+  const handleSaveSlide = async () => {
   try {
     // Validate slides before proceeding
     if (!slides || slides.length === 0) {
@@ -95,120 +159,83 @@ export default function Page() {
       return;
     }
 
-    // Create a clean slide entry
-    const newEntry = {
-      key: location.state?.key || Date.now(),
-      slides: slides.map((slide) => {
-        // Validate and clean slide data
-        if (!slide.id) {
-          console.warn("Slide missing ID, generating new one:", slide);
-          slide.id = uuidv4();
-        }
-        
-        // Base slide structure
-        const cleanSlide = {
-          id: slide.id,
-          type: slide.type || "custom",
-          title: slide.titleContainer?.title || "Untitled",
-          titleContainer: {
-            titleId: slide.titleContainer?.titleId || uuidv4(),
-            title: slide.titleContainer?.title || "",
-            styles: slide.titleContainer?.styles || {}
-          },
-          descriptionContainer: {
-            descriptionId: slide.descriptionContainer?.descriptionId || uuidv4(),
-            description: slide.descriptionContainer?.description || "",
-            styles: slide.descriptionContainer?.styles || {}
-          },
-          imageContainer: {
-            imageId: slide.imageContainer?.imageId || uuidv4(),
-            image: slide.imageContainer?.image || null,
-            styles: slide.imageContainer?.styles || {}
-          },
-          dropContainer: {
-            dropItems: (slide.dropContainer?.dropItems || []).map(item => ({
-              id: item.id || uuidv4(), // Ensure ID exists
-              type: item.type || "text", // Default type
-              content: item.content || "",
-              styles: item.styles || {}
-            }))
+    // Prepare slides data (no localStorage saving)
+    const cleanedSlides = slides.map((slide) => {
+      if (!slide.id) {
+        console.warn("Slide missing ID, generating new one:", slide);
+        slide.id = uuidv4();
+      }
+
+      const cleanSlide = {
+        id: slide.id,
+        type: slide.type || "custom",
+        titleContainer: {
+          titleId: slide.titleContainer?.titleId || uuidv4(),
+          title: slide.titleContainer?.title || "",
+          styles: slide.titleContainer?.styles || {},
+        },
+        descriptionContainer: {
+          descriptionId: slide.descriptionContainer?.descriptionId || uuidv4(),
+          description: slide.descriptionContainer?.description || "",
+          styles: slide.descriptionContainer?.styles || {},
+        },
+        imageContainer: {
+          imageId: slide.imageContainer?.imageId || uuidv4(),
+          image: slide.imageContainer?.image || null,
+          styles: slide.imageContainer?.styles || {},
+        },
+        dropContainer: {
+          dropItems: (slide.dropContainer?.dropItems || []).map((item) => ({
+            id: item.id || uuidv4(),
+            type: item.type || "text",
+            content: item.content || "",
+            styles: item.styles || {},
+          })),
+        },
+      };
+
+      switch (slide.type) {
+        case "twoColumn":
+          if (slide.columns) {
+            cleanSlide.columns = slide.columns.map((column) => ({
+              id: column.id || uuidv4(),
+              content: column.content || "",
+              styles: column.styles || {},
+            }));
           }
-        };
+          break;
 
-        // Handle type-specific properties
-        switch (slide.type) {
-          case "twoColumn":
-            if (slide.columns) {
-              cleanSlide.columns = slide.columns.map(column => ({
-                id: column.id || uuidv4(),
-                content: column.content || "",
-                styles: column.styles || {}
-              }));
-            }
-            break;
+        case "threeImgCard":
+          if (slide.cards) {
+            cleanSlide.cards = slide.cards.map((card) => ({
+              id: card.id || uuidv4(),
+              headingContainer: {
+                heading: card.headingContainer?.heading || "",
+                styles: card.headingContainer?.styles || {},
+              },
+              descriptionContainer: {
+                description: card.descriptionContainer?.description || "",
+                styles: card.descriptionContainer?.styles || {},
+              },
+              image: card.image || null,
+            }));
+          }
+          break;
 
-          case "threeImgCard":
-            if (slide.cards) {
-              cleanSlide.cards = slide.cards.map(card => ({
-                id: card.id || uuidv4(),
-                headingContainer: {
-                  heading: card.headingContainer?.heading || "",
-                  styles: card.headingContainer?.styles || {}
-                },
-                descriptionContainer: {
-                  description: card.descriptionContainer?.description || "",
-                  styles: card.descriptionContainer?.styles || {}
-                },
-                image: card.image || null
-              }));
-            }
-            break;
-
-          default:
-            // No additional processing for other types
-            break;
-        }
-
-        return cleanSlide;
-      })
-    };
-
-    // Update state and storage
-    setArraySlides((prevArraySlides) => {
-      const existingIndex = prevArraySlides.findIndex(group => group.key === newEntry.key);
-      let updatedArraySlides;
-
-      if (existingIndex !== -1) {
-        // Update existing entry
-        updatedArraySlides = prevArraySlides.map(group =>
-          group.key === newEntry.key ? newEntry : group
-        );
-      } else {
-        // Add new entry
-        updatedArraySlides = [...prevArraySlides, newEntry];
+        default:
+          break;
       }
 
-      // Save to localStorage with error handling
-      try {
-        localStorage.setItem("slides", JSON.stringify(updatedArraySlides));
-        
-        // Update trash collection
-        const trash = JSON.parse(localStorage.getItem("trash") || "[]");
-        const updatedTrash = trash.filter(slide => slide.key !== newEntry.key);
-        localStorage.setItem("trash", JSON.stringify(updatedTrash));
-      } catch (storageError) {
-        console.error("Failed to save to localStorage:", storageError);
-        toast.error("Failed to save presentation!");
-        return prevArraySlides; // Return previous state if save fails
-      }
-
-      return updatedArraySlides;
+      return cleanSlide;
     });
 
-    // Success feedback and navigation
-    toast.success("Presentation saved successfully!");
-    navigate("/home");
+    // Save to API only
+    const saveSuccess = await saveSlidesToApi(cleanedSlides);
 
+    if (saveSuccess) {
+      toast.success("Presentation saved successfully!");
+      navigate("/home");
+    }
   } catch (error) {
     console.error("Error saving presentation:", error);
     toast.error("Failed to save presentation!");
@@ -231,13 +258,13 @@ export default function Page() {
     if (slideData.type === "custom") {
       return (
         <CardTemplates
-          {...commonProps}
-          key={slideData.id}
-          slidesPreview={slidesPreview}
-          id={slideData.id}
-          setSlides={setSlides}
-          setCurrentSlide={setCurrentSlide}
-          setSlidesPreview={setSlidesPreview}
+        {...commonProps}
+        key={slideData.id}
+        slidesPreview={slidesPreview}
+        id={slideData.id}
+        setSlides={setSlides}
+        setCurrentSlide={setCurrentSlide}
+        setSlidesPreview={setSlidesPreview}
         />
       )
     }
@@ -255,18 +282,18 @@ export default function Page() {
   
   useEffect(() => {
     if (location.state?.slidesArray) {
-      const normalizedSlides = location.state.slidesArray.map(slide => ({
+      const normalizedSlides = location.state.slidesArray.map((slide) => ({
         id: slide.id || uuidv4(),
-        type: slide.type || 'custom',
+        type: slide.type || "custom",
         titleContainer: {
           titleId: slide.titleContainer?.titleId || uuidv4(),
-          title: slide.titleContainer?.title || 'Untitled',
-          styles: slide.titleContainer?.styles || {}
+          title: slide.titleContainer?.title || "Untitled",
+          styles: slide.titleContainer?.styles || {},
         },
         descriptionContainer: {
           descriptionId: slide.descriptionContainer?.descriptionId || uuidv4(),
-          description: slide.descriptionContainer?.description || '',
-          styles: slide.descriptionContainer?.styles || {}
+          description: slide.descriptionContainer?.description || "",
+          styles: slide.descriptionContainer?.styles || {},
         },
         imageContainer: {
           imageId: slide.imageContainer?.imageId || uuidv4(),
@@ -274,44 +301,45 @@ export default function Page() {
           styles: {
             ...(slide.imageContainer?.styles || {}),
             width: slide.imageContainer?.styles?.width || 300,
-            height: slide.imageContainer?.styles?.height || 210
-          }
+            height: slide.imageContainer?.styles?.height || 210,
+          },
         },
         dropContainer: {
-          dropItems: (slide.dropContainer?.dropItems || []).map(item => ({
+          dropItems: (slide.dropContainer?.dropItems || []).map((item) => ({
             id: item.id || uuidv4(),
-            type: item.type || 'text',
-            content: item.content || '',
-            styles: item.styles || {}
-          }))
+            type: item.type || "text",
+            content: item.content || "",
+            styles: item.styles || {},
+          })),
         },
-        columns: slide.columns?.map(col => ({
-      contentId: col.contentId || uuidv4(),
-      content: col.content || '',
-      styles: col.styles || {}
-    })) || [],
-    // For ThreeImgTextAi
-    cards: slide.cards?.map(card => ({
-      image: card.image,
-      headingContainer: {
-        headingId: card.headingContainer?.headingId || uuidv4(),
-        heading: card.headingContainer?.heading,
-        styles: card.headingContainer?.styles || {}
-      },
-      descriptionContainer: {
-        descriptionId: card.descriptionContainer?.descriptionId || uuidv4(),
-        description: card.descriptionContainer?.description,
-        styles: card.descriptionContainer?.styles || {}
-      }
-    })) || []
+        columns:
+          slide.columns?.map((col) => ({
+            contentId: col.contentId || uuidv4(),
+            content: col.content || "",
+            styles: col.styles || {},
+          })) || [],
+        cards:
+          slide.cards?.map((card) => ({
+            image: card.image,
+            headingContainer: {
+              headingId: card.headingContainer?.headingId || uuidv4(),
+              heading: card.headingContainer?.heading,
+              styles: card.headingContainer?.styles || {},
+            },
+            descriptionContainer: {
+              descriptionId: card.descriptionContainer?.descriptionId || uuidv4(),
+              description: card.descriptionContainer?.description,
+              styles: card.descriptionContainer?.styles || {},
+            },
+          })) || [],
       }));
-  
+
       setSlides(normalizedSlides);
-  
+
       const newSlidesPreview = normalizedSlides.map((slide, index) => ({
         number: index + 1,
         id: slide.id,
-        title: slide.titleContainer?.title || 'Untitled',
+        title: slide.titleContainer?.title || "Untitled",
         type: slide.type,
         content: renderSlideComponent(slide),
         onClick: () => setCurrentSlide(index + 1),
@@ -320,51 +348,52 @@ export default function Page() {
         imageContainer: slide.imageContainer,
         dropContainer: slide.dropContainer,
       }));
-  
+
       setSlidesPreview(newSlidesPreview);
     } else {
       const defaultSlide = {
         id: uuidv4(),
-        type: 'custom',
+        type: "custom",
         titleContainer: {
           titleId: uuidv4(),
-          title: 'New Presentation',
-          styles: {}
+          title: "New Presentation",
+          styles: {},
         },
         descriptionContainer: {
           descriptionId: uuidv4(),
-          description: '',
-          styles: {}
+          description: "",
+          styles: {},
         },
         imageContainer: {
           imageId: uuidv4(),
           image: null,
           styles: {
             width: 300,
-            height: 210
-          }
+            height: 210,
+          },
         },
         dropContainer: {
-          dropItems: []
-        }
+          dropItems: [],
+        },
       };
-  
+
       setSlides([defaultSlide]);
-      setSlidesPreview([{
-        number: 1,
-        id: defaultSlide.id,
-        title: 'New Presentation',
-        type: 'custom',
-        content: renderSlideComponent(defaultSlide),
-        onClick: () => setCurrentSlide(1),
-        titleContainer: defaultSlide.titleContainer,
-        descriptionContainer: defaultSlide.descriptionContainer,
-        imageContainer: defaultSlide.imageContainer,
-        dropContainer: defaultSlide.dropContainer
-      }]);
+      setSlidesPreview([
+        {
+          number: 1,
+          id: defaultSlide.id,
+          title: "New Presentation",
+          type: "custom",
+          content: renderSlideComponent(defaultSlide),
+          onClick: () => setCurrentSlide(1),
+          titleContainer: defaultSlide.titleContainer,
+          descriptionContainer: defaultSlide.descriptionContainer,
+          imageContainer: defaultSlide.imageContainer,
+          dropContainer: defaultSlide.dropContainer,
+        },
+      ]);
     }
   }, [location.state?.slidesArray]);
-  // console.log('Slides state updated:', slides);
 
 // Add a verification useEffect
 useEffect(() => {
