@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { ChevronRight, ChevronLeft, X, ZoomIn, ZoomOut } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { FaVenusDouble } from "react-icons/fa6";
 
 export function PresentationMode({ 
   slides, 
