@@ -80,7 +80,7 @@ export function ResizableSidebar({ setCurrentSlide, slidesPreview, deleteSlide, 
   };
 
   return (
-    <div ref={sidebarRef} className="relative h-[calc(100vh-48px)] border-r bg-background flex" style={{ width }}>
+    <div ref={sidebarRef} className="relative h-[calc(100vh-48px)] px-3 py-8 mt-2 bg-slate-600/25 shadow-5xl flex " style={{ width }}>
       <div className="flex-1 overflow-hidden">
         <SortableContext items={slidesPreview} strategy={verticalListSortingStrategy}>
           <AutoSizer>
