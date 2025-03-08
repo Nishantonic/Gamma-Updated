@@ -7,9 +7,9 @@ import Card from "./Card";
 import ProfileMenu from "./ProfileMenu";
 
 const LoadingSkeleton = () => (
-  <motion.div 
-    initial={{ opacity: 0 }} 
-    animate={{ opacity: 1 }} 
+  <motion.div
+    initial={{ opacity: 0 }}
+    animate={{ opacity: 1 }}
     exit={{ opacity: 0 }}
     className="w-full space-y-4"
   >
@@ -31,15 +31,14 @@ const Notification = ({ message, type = "error", onClose }) => (
     animate={{ opacity: 1, y: 0 }}
     exit={{ opacity: 0, y: -20 }}
     transition={{ duration: 0.3 }}
-    className={`fixed top-4 right-4 p-4 rounded-lg shadow-lg flex items-center gap-2 z-50 ${
-      type === "success" ? "bg-green-50 text-green-800" : "bg-red-50 text-red-800"
-    }`}
+    className={`fixed top-4 right-4 p-4 rounded-lg shadow-lg flex items-center gap-2 z-50 ${type === "success" ? "bg-green-50 text-green-800" : "bg-red-50 text-red-800"
+      }`}
   >
     <span>{message}</span>
-    <motion.button 
-      whileHover={{ scale: 1.1 }} 
+    <motion.button
+      whileHover={{ scale: 1.1 }}
       whileTap={{ scale: 0.95 }}
-      onClick={onClose} 
+      onClick={onClose}
       className="ml-2 text-gray-500 hover:text-gray-700"
     >
       ×
@@ -303,7 +302,7 @@ const Gammas = ({ credits = 0, setCredits }) => {
     }
   };
 
-  const filteredSlides = arraySlides.filter(presentation => 
+  const filteredSlides = arraySlides.filter(presentation =>
     activeFilter === 'favorites' ? favorites.includes(presentation.id) : true
   );
 
@@ -353,8 +352,8 @@ const Gammas = ({ credits = 0, setCredits }) => {
         )}
       </AnimatePresence>
 
-      <motion.div 
-        variants={itemVariants} 
+      <motion.div
+        variants={itemVariants}
         className="flex items-center justify-between"
       >
         <div className="flex items-center gap-2">
@@ -364,11 +363,11 @@ const Gammas = ({ credits = 0, setCredits }) => {
           >
             <Folders className="w-6 h-6 text-gray-700" />
           </motion.div>
-          <h3 className="text-xl font-semibold text-gray-800">Gammas</h3>
+          <h3 className="text-xl font-semibold text-gray-800">Presentations</h3>
         </div>
-        
+
         <div className="flex items-center gap-4">
-          <motion.div 
+          <motion.div
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.98 }}
             className="flex items-center gap-2 bg-gray-100 px-4 py-2 rounded-lg"
@@ -376,7 +375,7 @@ const Gammas = ({ credits = 0, setCredits }) => {
             <motion.div
               animate={{ rotate: [0, 10, -10, 10, 0] }}
               transition={{ duration: 0.5, delay: 1, repeat: 0 }}
-              >
+            >
               <Coins className="w-5 h-5 text-yellow-600" />
             </motion.div>
             <span className="font-medium">{credits} Credits</span>
@@ -393,7 +392,7 @@ const Gammas = ({ credits = 0, setCredits }) => {
         </div>
       </motion.div>
 
-      <motion.div 
+      <motion.div
         variants={itemVariants}
         className="bg-gray-50 p-6 rounded-xl border border-gray-200"
       >
@@ -402,48 +401,46 @@ const Gammas = ({ credits = 0, setCredits }) => {
           whileTap={{ scale: 0.98 }}
           transition={{ type: "spring", stiffness: 400, damping: 17 }}
         >
-          <Link 
-            to="/page" 
+          <Link
+            to="/page"
             className="inline-flex items-center gap-2 bg-white px-6 py-3 rounded-lg border border-gray-300 hover:bg-gray-50 transition-colors text-gray-700 font-medium"
           >
             <motion.div animate={{ rotate: [0, -10, 0] }} transition={{ delay: 2, duration: 0.5 }}>
               <FolderOpen className="w-5 h-5" />
             </motion.div>
-            Create New Gamma
+            Create New Presentations
           </Link>
         </motion.div>
       </motion.div>
 
-      <motion.div 
+      <motion.div
         variants={filterVariants}
         className="flex justify-between items-center bg-white p-2 rounded-lg border border-gray-200 shadow-sm"
       >
         <div className="flex items-center">
           <div className="flex bg-gray-100 rounded-lg p-1">
-            <motion.button 
+            <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={() => setActiveFilter('all')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
-                activeFilter === 'all' 
-                  ? 'bg-white text-gray-900 font-medium shadow-sm' 
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${activeFilter === 'all'
+                  ? 'bg-white text-gray-900 font-medium shadow-sm'
                   : 'text-gray-600 hover:bg-gray-50'
-              }`}
+                }`}
               aria-label="Show all slides"
               aria-pressed={activeFilter === 'all'}
             >
-              <Folders className="w-5 h-5" /> 
+              <Folders className="w-5 h-5" />
               <span>All</span>
             </motion.button>
-            <motion.button 
+            <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={() => setActiveFilter('favorites')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
-                activeFilter === 'favorites' 
-                  ? 'bg-white text-gray-900 font-medium shadow-sm' 
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${activeFilter === 'favorites'
+                  ? 'bg-white text-gray-900 font-medium shadow-sm'
                   : 'text-gray-600 hover:bg-gray-50'
-              }`}
+                }`}
               aria-label="Show favorite slides"
               aria-pressed={activeFilter === 'favorites'}
             >
@@ -451,23 +448,22 @@ const Gammas = ({ credits = 0, setCredits }) => {
                 animate={activeFilter === 'favorites' ? { scale: [1, 1.2, 1] } : {}}
                 transition={{ duration: 0.5 }}
               >
-                <Star className={`w-5 h-5 ${activeFilter === 'favorites' ? 'text-yellow-400' : 'text-gray-500'}`} /> 
+                <Star className={`w-5 h-5 ${activeFilter === 'favorites' ? 'text-yellow-400' : 'text-gray-500'}`} />
               </motion.div>
               <span>Favorites</span>
             </motion.button>
           </div>
         </div>
-        
+
         <div className="flex items-center bg-gray-100 rounded-lg p-1">
           <motion.button
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.9 }}
             onClick={() => setLayout('grid')}
-            className={`p-2 rounded-lg transition-colors ${
-              layout === 'grid' 
-                ? 'bg-white text-gray-900 shadow-sm' 
+            className={`p-2 rounded-lg transition-colors ${layout === 'grid'
+                ? 'bg-white text-gray-900 shadow-sm'
                 : 'text-gray-600 hover:bg-gray-50'
-            }`}
+              }`}
             aria-label="Grid view"
             aria-pressed={layout === 'grid'}
           >
@@ -477,11 +473,10 @@ const Gammas = ({ credits = 0, setCredits }) => {
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.9 }}
             onClick={() => setLayout('list')}
-            className={`p-2 rounded-lg transition-colors ${
-              layout === 'list' 
-                ? 'bg-white text-gray-900 shadow-sm' 
+            className={`p-2 rounded-lg transition-colors ${layout === 'list'
+                ? 'bg-white text-gray-900 shadow-sm'
                 : 'text-gray-600 hover:bg-gray-50'
-            }`}
+              }`}
             aria-label="List view"
             aria-pressed={layout === 'list'}
           >
@@ -491,27 +486,27 @@ const Gammas = ({ credits = 0, setCredits }) => {
       </motion.div>
 
       <AnimatePresence>
-        <motion.div 
+        <motion.div
           className={layout === 'grid' ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" : "space-y-4"}
           variants={containerVariants}
           layout
         >
           {filteredSlides.length === 0 ? (
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.3 }}
               className="col-span-full text-center py-12"
             >
               <motion.div
-                animate={{ 
+                animate={{
                   y: [0, -10, 0],
-                  opacity: [0.7, 1, 0.7] 
+                  opacity: [0.7, 1, 0.7]
                 }}
-                transition={{ 
+                transition={{
                   duration: 2,
                   repeat: Infinity,
-                  repeatType: "reverse" 
+                  repeatType: "reverse"
                 }}
                 className="mx-auto mb-4"
               >
@@ -529,7 +524,7 @@ const Gammas = ({ credits = 0, setCredits }) => {
                 initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: 20 }}
-                transition={{ 
+                transition={{
                   duration: 0.4,
                   delay: isInitialLoad ? index * 0.1 : 0,
                   type: "spring",
@@ -557,7 +552,7 @@ const Gammas = ({ credits = 0, setCredits }) => {
           <DialogHeader>
             <DialogTitle>Share Gamma</DialogTitle>
           </DialogHeader>
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}

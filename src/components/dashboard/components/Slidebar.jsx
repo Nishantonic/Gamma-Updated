@@ -9,7 +9,6 @@ import {
   faWandMagicSparkles,
   faBookOpen,
   faPalette,
-  faFont,
   faTrash,
   faGear,
   faMessage,
@@ -40,7 +39,12 @@ function Navbar({ setActiveComponent, activeComponent }) {
   };
 
   return (
-    <div className="h-screen w-80 p-5 overflow-y-auto border-r border-gray-300">
+    <div className="h-screen w-80 p-5 overflow-y-auto border-r border-gray-300 [&::-webkit-scrollbar-track]:rounded-2xl [&::-webkit-scrollbar]:w-2
+  [&::-webkit-scrollbar-track]:bg-gray-100
+  [&::-webkit-scrollbar-thumb]:rounded-full
+  [&::-webkit-scrollbar-thumb]:bg-purple-500
+  dark:[&::-webkit-scrollbar-track]:bg-neutral-900
+  dark:[&::-webkit-scrollbar-thumb]:bg-neutral-500">
       <div className="flex flex-col gap-4">
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 flex items-center justify-center rounded-full bg-purple-600 text-white text-lg">
@@ -62,7 +66,7 @@ function Navbar({ setActiveComponent, activeComponent }) {
       </div>
       <nav className="mt-4 space-y-2 text-gray-700">
         {[
-          { icon: faFileLines, label: "Gammas" },
+          { icon: faFileLines, label: "Presentation" },
           { icon: faUserGroup, label: "Shared with you" },
           { icon: faGlobe, label: "Sites" },
           { icon: faStar, label: "Ai Images" },
@@ -70,10 +74,9 @@ function Navbar({ setActiveComponent, activeComponent }) {
           <div
             key={index}
             className={`flex items-center gap-2 px-2 py-2 rounded-md cursor-pointer 
-              ${
-                activeComponent === item.label
-                  ? "bg-blue-600 text-white"
-                  : "hover:bg-gray-100 hover:text-violet-600"
+              ${activeComponent === item.label
+                ? "bg-blue-600 text-white"
+                : "hover:bg-gray-100 hover:text-violet-600"
               }`}
             onClick={() => setActiveComponent(item.label)}
           >
@@ -99,16 +102,14 @@ function Navbar({ setActiveComponent, activeComponent }) {
           { icon: faWandMagicSparkles, label: "Templates" },
           { icon: faBookOpen, label: "Inspiration" },
           { icon: faPalette, label: "Themes" },
-          { icon: faFont, label: "Custom Font" },
           { icon: faTrash, label: "Trash" },
         ].map((item, index) => (
           <div
             key={index}
             className={`flex items-center gap-2 px-2 py-2 rounded-md cursor-pointer 
-              ${
-                activeComponent === item.label
-                  ? "bg-blue-600 text-white"
-                  : "hover:bg-gray-100 hover:text-violet-600"
+              ${activeComponent === item.label
+                ? "bg-blue-600 text-white"
+                : "hover:bg-gray-100 hover:text-violet-600"
               }`}
             onClick={() => setActiveComponent(item.label)}
           >
@@ -126,10 +127,9 @@ function Navbar({ setActiveComponent, activeComponent }) {
           <div
             key={index}
             className={`flex items-center gap-2 px-2 py-2 rounded-md cursor-pointer 
-              ${
-                activeComponent === item.label
-                  ? "bg-blue-600 text-white"
-                  : "hover:bg-gray-100 hover:text-violet-600"
+              ${activeComponent === item.label
+                ? "bg-blue-600 text-white"
+                : "hover:bg-gray-100 hover:text-violet-600"
               }`}
             onClick={() => setActiveComponent(item.label)}
           >
