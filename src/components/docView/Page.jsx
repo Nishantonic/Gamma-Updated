@@ -6,7 +6,7 @@ import { closestCorners, DndContext } from "@dnd-kit/core"
 import { arrayMove } from "@dnd-kit/sortable"
 import Home from "../Home/Home"
 import GenerateAi from "./GenerateAi/GenerateAi"
-import { Download, Loader2, Save, Send } from "lucide-react"
+import { Download, Ghost, Loader2, Save, Send } from "lucide-react"
 import { Button } from "../ui/button"
 import {
   Dialog,
@@ -1017,9 +1017,9 @@ useEffect(() => {
             {slides.length > 0 && (
               <Card className="bg-white/10 backdrop-blur-lg border-0">
                 <CardContent className="p-6 flex justify-center gap-4">
-                  <Button 
+                  <Button
                     onClick={downloadPPT} 
-                    className="bg-green-600 hover:bg-green-700 text-white" 
+                    className="bg-gradient-to-br from-blue-900 via-slate-900 to-slate-750" 
                     size="lg"
                   >
                     <Download className="mr-2 h-4 w-4" />
@@ -1028,7 +1028,7 @@ useEffect(() => {
 
                   <Button
                     onClick={handleSaveSlide}
-                    className="bg-green-600 hover:bg-green-700 text-white"
+                    className="bg-gradient-to-br from-blue-900 via-slate-900 to-slate-750" 
                     size="lg"
                   >
                     <Save className="mr-2 h-4 w-4" />
