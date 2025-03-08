@@ -38,7 +38,7 @@ export function SlidePreview({ number,onDoubleClick, title, isActive, onClick, i
       onClick={onClick}
       onDoubleClick={onDoubleClick}
       className={cn(
-        "p-3 cursor-pointer hover:bg-accent/50 rounded-lg transition-all border border-gray-200 shadow-md bg-white",
+        "p-1 bg-[#2a2438]/100 cursor-pointer  rounded-lg transition-all border border-gray-200 shadow-md",
         isActive && "bg-accent"
       )}
       {...attributes}
@@ -65,11 +65,11 @@ export function SlidePreview({ number,onDoubleClick, title, isActive, onClick, i
       </div> */}
 
       {/* Slide Number & Title */}
-      <div className="flex items-center gap-2 mt-3">
-        <span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-primary/10 text-primary">
+      <div className="flex items-center justify-center gap-2 mt-3">
+        <span className=" text-white py-1 text-xs font-semibold rounded-full bg-primary/10 text-primary">
           {number}
         </span>
-        <span className="flex-1 text-sm font-medium truncate text-gray-800">{title.replace(/<[^>]*>/g, '')}</span>
+        <span className="flex-1 py-1 text-sm font-medium truncate text-white">{title.replace(/<[^>]*>/g, '')}</span>
       </div>
     </div>
   );
