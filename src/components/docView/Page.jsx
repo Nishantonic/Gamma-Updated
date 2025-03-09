@@ -1,13 +1,13 @@
-import React, { useState, useEffect } from "react"
-import { Header } from "@/components/docView/Header"
-import { ResizableSidebar } from "@/components/docView/ResizableSidebar"
-import CardTemplates from "./slidesView/CardTemplates"
-import { closestCorners, DndContext } from "@dnd-kit/core"
-import { arrayMove } from "@dnd-kit/sortable"
-import Home from "../Home/Home"
-import GenerateAi from "./GenerateAi/GenerateAi"
-import { Download, Ghost, Loader2, Save, Send } from "lucide-react"
-import { Button } from "../ui/button"
+import React, { useState, useEffect } from "react";
+import { Header } from "@/components/docView/Header";
+import { ResizableSidebar } from "@/components/docView/ResizableSidebar";
+import CardTemplates from "./slidesView/CardTemplates";
+import { closestCorners, DndContext } from "@dnd-kit/core";
+import { arrayMove } from "@dnd-kit/sortable";
+import Home from "../Home/Home";
+import GenerateAi from "./GenerateAi/GenerateAi";
+import { Download, Loader2, Save, Send } from "lucide-react";
+import { Button } from "../ui/button";
 import {
   Dialog,
   DialogContent,
@@ -16,257 +16,92 @@ import {
   DialogDescription,
   DialogFooter,
   DialogClose,
-} from "../ui/dialog"
-import { Input } from "../ui/input"
-import { PresentationMode } from "./PresentationMode"
-// import ImpressPresentation from "./ImpressPresentation"
-import AddButtonAi from "./GenerateAi/AiComponents/AddButtonAi"
-import html2canvas from "html2canvas"
-import { debounce } from "lodash"
-import { Card, CardContent } from "../ui/card"
-import pptxgen from "pptxgenjs"
-import { toast, Toaster } from "sonner"
+} from "../ui/dialog";
+import { Input } from "../ui/input";
+import { PresentationMode } from "./PresentationMode";
+import AddButtonAi from "./GenerateAi/AiComponents/AddButtonAi";
+import html2canvas from "html2canvas";
+import { debounce } from "lodash";
+import { Card, CardContent } from "../ui/card";
+import pptxgen from "pptxgenjs";
+import { toast, Toaster } from "sonner";
+import { useLocation, useNavigate } from "react-router-dom";
+import AccentImageAi from "./GenerateAi/AiComponents/AccentImageAi";
+import TwoColumnAi from "./GenerateAi/AiComponents/TwoColumnAi";
+import ImageTextAi from "./GenerateAi/AiComponents/ImageTextAi";
+import ThreeColumnAi from "./GenerateAi/AiComponents/ThreeColumnAi";
+import DefaultAi from "./GenerateAi/AiComponents/DefaultAi";
+import { v4 as uuidv4 } from "uuid";
+import { useDroppedItems } from "./DroppedItemsContext";
 
-import { useLocation, useNavigate } from "react-router-dom"
-import AccentImageAi from "./GenerateAi/AiComponents/AccentImageAi"
-import TwoColumnAi from "./GenerateAi/AiComponents/TwoColumnAi"
-import ImageTextAi from "./GenerateAi/AiComponents/ImageTextAi"
-import ThreeColumnAi from "./GenerateAi/AiComponents/ThreeColumnAi"
-import DefaultAi from "./GenerateAi/AiComponents/DefaultAi"
-import { v4 as uuidv4 } from "uuid"
-import { useDroppedItems } from "./DroppedItemsContext"
 export default function Page() {
-  const [currentSlide, setCurrentSlide] = useState(1)
-  const [slidesPreview, setSlidesPreview] = useState([])
-  const [slides, setSlides] = useState([])
-  const [slideImages, setSlideImages] = useState([])
-  const [generateAi, setGenerateAi] = useState(false)
-  const [isPresentationMode, setIsPresentationMode] = useState(false)
-  const [presentationStartIndex, setPresentationStartIndex] = useState(0)
-  const navigate = useNavigate()
-  const [isGenerating, setIsGenerating] = useState(false) // Add this state
-
-  const [isLoadingCopy, setIsLoadingCopy] = useState(false)
-  const [showPopup, setShowPopup] = useState(false)
-  const [aiInputData, setAiInputData] = useState("")
-  const [isAiGenerated, setIsAiGenerated] = useState(false)
-  const [isImpressPresent,setIsImpressPresent] = useState(false)
+  const [currentSlide, setCurrentSlide] = useState(1);
+  const [slidesPreview, setSlidesPreview] = useState([]);
+  const [slides, setSlides] = useState([]);
+  const [slideImages, setSlideImages] = useState([]);
+  const [generateAi, setGenerateAi] = useState(false);
+  const [isPresentationMode, setIsPresentationMode] = useState(false);
+  const [presentationStartIndex, setPresentationStartIndex] = useState(0);
+  const navigate = useNavigate();
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [isLoadingCopy, setIsLoadingCopy] = useState(false);
+  const [showPopup, setShowPopup] = useState(false);
+  const [aiInputData, setAiInputData] = useState("");
+  const [isAiGenerated, setIsAiGenerated] = useState(false);
+  const [isImpressPresent, setIsImpressPresent] = useState(false);
   const [ArraySlides, setArraySlides] = useState(() => {
-    const savedSlides = JSON.parse(localStorage.getItem("slides")) || []
-    return savedSlides
-  })
-  const location = useLocation()
+    const savedSlides = JSON.parse(localStorage.getItem("slides")) || [];
+    return savedSlides;
+  });
+  const location = useLocation();
   const { droppedItems } = useDroppedItems();
-
-  // const { slidesArray } = location.state || {}; // Extract slidesArray
-  // useEffect(() => {
-  //   console.log(slidesArray)
-  // },[])
-
-  // useEffect(() => {
-  //   if (slide && slide.length > 0) { // Ensure slide is not empty
-  //     setSlides(slide);
-  //     console.log("Slide updated:", slide);
-  //     alert("Slide updated successfully!");
-  //   }
-  // }, [slide]);
-
-  // useEffect(() => {
-  //   console.log("Slides state updated:", slides);
-  // }, [slides]);
+  const [presentationId, setPresentationId] = useState(null);
+  const [presentationDocumentId, setPresentationDocumentId] = useState(null);
 
   const [credits, setCradits] = useState(() => {
-    // Initialize from localStorage or default to 50
-    const savedCredits = localStorage.getItem("credits")
-    return savedCredits !== null ? Number.parseInt(savedCredits) : 50
-  })
-
-  const userToken = localStorage.getItem("token");
+    const savedCredits = localStorage.getItem("credits");
+    return savedCredits !== null ? Number.parseInt(savedCredits) : 50;
+  });
 
   useEffect(() => {
-    const slideElement = document.getElementById(`at-${currentSlide}`)
+    const slideElement = document.getElementById(`at-${currentSlide}`);
     if (slideElement) {
-      slideElement.scrollIntoView({ behavior: "smooth" })
+      slideElement.scrollIntoView({ behavior: "smooth" });
     }
-  }, [currentSlide])
+  }, [currentSlide]);
 
-  const mapSlideToApiFormat = (slide) => {
-    return {
-      data: {
-        titleContainer: JSON.stringify(slide.titleContainer || {}),
-        descriptionContainer: JSON.stringify(slide.descriptionContainer || {}),
-        presentation: 22, // Adjust this if it should be dynamic
-        type: slide.type || "custom",
-        content: JSON.stringify({
-          id: slide.id,
-          title: slide.titleContainer?.title,
-          description: slide.descriptionContainer?.description,
-        }),
-        image: slide.imageContainer?.image ? [slide.imageContainer.image] : [],
-        impress_settings: JSON.stringify(slide.impress_settings || {}),
-        dropContainer: JSON.stringify(slide.dropContainer || {}),
-        cards: JSON.stringify(slide.cards || []),
-        columns: JSON.stringify(slide.columns || []),
-        locale: "en",
-      },
-    };
-  };
-
-  const saveSlidesToApi = async (slides) => {
-    const apiUrl = "https://presentaiapi.codesemic.com/api/slides";
-  
-    if (!userToken) {
-      toast.error("User not authenticated. Please log in.");
-      return;
-    }
-
-    try {
-      const responses = await Promise.all(
-        slides.map(async (slide) => {
-          const apiData = mapSlideToApiFormat(slide);
-          const response = await fetch(apiUrl, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${userToken}`,
-            },
-            body: JSON.stringify(apiData),
-          });
-  
-          if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-          }
-  
-          return response.json();
-        })
-      );
-  
-      console.log("Slides saved to API successfully:", responses);
-      toast.success("Slides saved to API successfully!");
-      return true;
-    } catch (error) {
-      console.error("Failed to save slides to API:", error);
-      toast.error("Failed to save slides to API. Please check console for details.");
-      return false;
-    }
-  };
-
-  const handleSaveSlide = async () => {
-  try {
-    // Validate slides before proceeding
-    if (!slides || slides.length === 0) {
-      toast.error("No slides to save!");
-      return;
-    }
-
-    // Prepare slides data (no localStorage saving)
-    const cleanedSlides = slides.map((slide) => {
-      if (!slide.id) {
-        console.warn("Slide missing ID, generating new one:", slide);
-        slide.id = uuidv4();
-      }
-
-      const cleanSlide = {
-        id: slide.id,
-        type: slide.type || "custom",
-        titleContainer: {
-          titleId: slide.titleContainer?.titleId || uuidv4(),
-          title: slide.titleContainer?.title || "",
-          styles: slide.titleContainer?.styles || {},
-        },
-        descriptionContainer: {
-          descriptionId: slide.descriptionContainer?.descriptionId || uuidv4(),
-          description: slide.descriptionContainer?.description || "",
-          styles: slide.descriptionContainer?.styles || {},
-        },
-        imageContainer: {
-          imageId: slide.imageContainer?.imageId || uuidv4(),
-          image: slide.imageContainer?.image || null,
-          styles: slide.imageContainer?.styles || {},
-        },
-        dropContainer: {
-          dropItems: (slide.dropContainer?.dropItems || []).map((item) => ({
-            id: item.id || uuidv4(),
-            type: item.type || "text",
-            content: item.content || "",
-            styles: item.styles || {},
-          })),
-        },
-      };
-
-      switch (slide.type) {
-        case "twoColumn":
-          if (slide.columns) {
-            cleanSlide.columns = slide.columns.map((column) => ({
-              id: column.id || uuidv4(),
-              content: column.content || "",
-              styles: column.styles || {},
-            }));
-          }
-          break;
-
-        case "threeImgCard":
-          if (slide.cards) {
-            cleanSlide.cards = slide.cards.map((card) => ({
-              id: card.id || uuidv4(),
-              headingContainer: {
-                heading: card.headingContainer?.heading || "",
-                styles: card.headingContainer?.styles || {},
-              },
-              descriptionContainer: {
-                description: card.descriptionContainer?.description || "",
-                styles: card.descriptionContainer?.styles || {},
-              },
-              image: card.image || null,
-            }));
-          }
-          break;
-
-        default:
-          break;
-      }
-
-      return cleanSlide;
-    });
-
-    // Save to API only
-    const saveSuccess = await saveSlidesToApi(cleanedSlides);
-
-    if (saveSuccess) {
-      toast.success("Presentation saved successfully!");
-      navigate("/home");
-    }
-  } catch (error) {
-    console.error("Error saving presentation:", error);
-    toast.error("Failed to save presentation!");
-  }
-};
-  
   const renderSlideComponent = (slideData) => {
-    if (!slideData) return null
+    const safeSlide = {
+      type: "custom",
+      titleContainer: {},
+      descriptionContainer: {},
+      imageContainer: {},
+      dropContainer: { dropItems: [] },
+      ...slideData,
+    };
 
-    
+    if (!slideData) return null;
 
     const commonProps = {
       generateAi: {
-        ...slideData,
+        ...safeSlide, // Use safeSlide to ensure defaults
         onEdit: (updated) => handleSlideUpdate(slideData.id, updated),
         onDelete: () => deleteSlide(slideData.id),
-      }
-    }
-    
+      },
+    };
+
     if (slideData.type === "custom") {
       return (
         <CardTemplates
-        {...commonProps}
-        key={slideData.id}
-        slidesPreview={slidesPreview}
-        id={slideData.id}
-        setSlides={setSlides}
-        setCurrentSlide={setCurrentSlide}
-        setSlidesPreview={setSlidesPreview}
+          {...commonProps}
+          key={slideData.id}
+          slidesPreview={slidesPreview}
+          id={slideData.id}
+          setSlides={setSlides}
+          setCurrentSlide={setCurrentSlide}
+          setSlidesPreview={setSlidesPreview}
         />
-      )
+      );
     }
     const components = {
       accentImage: AccentImageAi,
@@ -274,82 +109,383 @@ export default function Page() {
       imageCardText: ImageTextAi,
       threeImgCard: ThreeColumnAi,
       default: DefaultAi,
-    }
+    };
 
-    const Component = components[slideData.type] || components.default
-    return <Component {...commonProps} key={slideData.id} />
-  }
-  
-  useEffect(() => {
-    if (location.state?.slidesArray) {
-      const normalizedSlides = location.state.slidesArray.map((slide) => ({
-        id: slide.id || uuidv4(),
-        type: slide.type || "custom",
-        titleContainer: {
-          titleId: slide.titleContainer?.titleId || uuidv4(),
-          title: slide.titleContainer?.title || "Untitled",
-          styles: slide.titleContainer?.styles || {},
-        },
-        descriptionContainer: {
-          descriptionId: slide.descriptionContainer?.descriptionId || uuidv4(),
-          description: slide.descriptionContainer?.description || "",
-          styles: slide.descriptionContainer?.styles || {},
-        },
-        imageContainer: {
-          imageId: slide.imageContainer?.imageId || uuidv4(),
-          image: slide.imageContainer?.image || null,
-          styles: {
-            ...(slide.imageContainer?.styles || {}),
-            width: slide.imageContainer?.styles?.width || 300,
-            height: slide.imageContainer?.styles?.height || 210,
+    const Component = components[slideData.type] || components.default;
+    return <Component {...commonProps} key={slideData.id} />;
+  };
+
+  const getAuthHeaders = () => {
+    const token = localStorage.getItem("token");
+    return {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${token}`,
+    };
+  };
+
+  const getUserId = () => {
+    const user = JSON.parse(localStorage.getItem("user") || "{}");
+    return user.id || null;
+  };
+
+  const createPresentation = async (title, description) => {
+    try {
+      const userId = getUserId();
+      if (!userId) throw new Error("User not authenticated");
+
+      const response = await fetch("https://presentaiapi.codesemic.com/api/presentations", {
+        method: "POST",
+        headers: getAuthHeaders(),
+        body: JSON.stringify({
+          data: {
+            title: title || "Untitled",
+            description: description || "",
+            image: null,
+            user: userId,
           },
+        }),
+      });
+
+      if (!response.ok) throw new Error(`Failed to create presentation: ${response.statusText}`);
+      const result = await response.json();
+      console.log("Created presentation:", result);
+      return result.data.id;
+    } catch (error) {
+      console.error("Error creating presentation:", error);
+      toast.error("Failed to create presentation");
+      return null;
+    }
+  };
+
+  const saveSlideToAPI = async (presentationId, slideData) => {
+    try {
+      const requestBody = {
+        data: {
+          titleContainer: JSON.stringify(slideData.titleContainer || {}),
+          descriptionContainer: JSON.stringify(slideData.descriptionContainer || {}),
+          presentation: presentationId, // Pass as direct ID
+          type: slideData.type || "custom",
+          content: slideData.content || JSON.stringify({ dropItems: [] }),
+          //image: slideData.image || [],
+          impress_settings: slideData.impress_settings || "",
+          dropContainer: JSON.stringify(slideData.dropContainer || { dropItems: [] }),
+          cards: JSON.stringify(slideData.cards || []),
+          columns: JSON.stringify(slideData.columns || []),
+          imageContainer: JSON.stringify(slideData.imageContainer || {}),
+          locale: slideData.locale || "en",
         },
-        dropContainer: {
-          dropItems: (slide.dropContainer?.dropItems || []).map((item) => ({
-            id: item.id || uuidv4(),
-            type: item.type || "text",
-            content: item.content || "",
-            styles: item.styles || {},
-          })),
-        },
-        columns:
-          slide.columns?.map((col) => ({
-            contentId: col.contentId || uuidv4(),
-            content: col.content || "",
-            styles: col.styles || {},
-          })) || [],
-        cards:
-          slide.cards?.map((card) => ({
-            image: card.image,
-            headingContainer: {
-              headingId: card.headingContainer?.headingId || uuidv4(),
-              heading: card.headingContainer?.heading,
-              styles: card.headingContainer?.styles || {},
+      };
+
+      console.log("Saving slide with payload:", JSON.stringify(requestBody));
+
+      const response = await fetch("https://presentaiapi.codesemic.com/api/slides", {
+        method: "POST",
+        headers: getAuthHeaders(),
+        body: JSON.stringify(requestBody),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Failed to save slide: ${response.status} - ${errorText}`);
+      }
+
+      const savedSlide = await response.json();
+      console.log("Saved slide response:", savedSlide);
+      return savedSlide;
+    } catch (error) {
+      console.error("Error saving slide:", error);
+      toast.error("Failed to save slide");
+      return null;
+    }
+  };
+
+  const handleSaveSlide = async () => {
+    try {
+      if (!slides || slides.length === 0) {
+        toast.error("No slides to save!");
+        return;
+      }
+  
+      const token = localStorage.getItem("token");
+      if (!token) {
+        toast.error("Please login to save presentation");
+        navigate("/login");
+        return;
+      }
+  
+      const userId = getUserId();
+      if (!userId) {
+        toast.error("User not authenticated");
+        navigate("/login");
+        return;
+      }
+  
+      // Step 1: Handle presentation (create or update)
+      let finalPresentationId = presentationId;
+      let finalPresentationDocumentId = presentationDocumentId;
+  
+      if (!finalPresentationId) {
+        // Create new presentation if no presentationId exists
+        finalPresentationId = await createPresentation(
+          slides[0].titleContainer?.title.replace(/<[^>]+>/g, "") || "Untitled",
+          slides[0].descriptionContainer?.description.replace(/<[^>]+>/g, "") || ""
+        );
+        if (!finalPresentationId) {
+          toast.error("Failed to create presentation");
+          return;
+        }
+        console.log("Created presentationId:", finalPresentationId);
+        setPresentationId(finalPresentationId);
+        finalPresentationDocumentId = finalPresentationId; // Assume id is documentId if not provided
+      } else {
+        // Fetch presentation details to get documentId
+        const presentationResponse = await fetch(
+          `https://presentaiapi.codesemic.com/api/presentations/${finalPresentationId}`,
+          {
+            method: "GET",
+            headers: getAuthHeaders(),
+          }
+        );
+  
+        if (presentationResponse.ok) {
+          const presentationData = await presentationResponse.json();
+          finalPresentationDocumentId = presentationData.data?.documentId || finalPresentationId;
+          // Update existing presentation with PUT
+          const updateResponse = await fetch(
+            `https://presentaiapi.codesemic.com/api/presentations/${finalPresentationDocumentId}`,
+            {
+              method: "PUT",
+              headers: getAuthHeaders(),
+              body: JSON.stringify({
+                data: {
+                  title: slides[0].titleContainer?.title.replace(/<[^>]+>/g, "") || "Untitled",
+                  description: slides[0].descriptionContainer?.description.replace(/<[^>]+>/g, "") || "",
+                  image: null,
+                  user: userId,
+                },
+              }),
+            }
+          );
+  
+          if (!updateResponse.ok) {
+            const errorText = await updateResponse.text();
+            throw new Error(`Failed to update presentation: ${updateResponse.status} - ${errorText}`);
+          }
+          console.log("Updated presentation:", finalPresentationDocumentId);
+        } else {
+          // If fetch fails (e.g., presentation doesn’t exist), create a new one
+          finalPresentationId = await createPresentation(
+            slides[0].titleContainer?.title.replace(/<[^>]+>/g, "") || "Untitled",
+            slides[0].descriptionContainer?.description.replace(/<[^>]+>/g, "") || ""
+          );
+          if (!finalPresentationId) {
+            throw new Error("Failed to create presentation after fetch failure");
+          }
+          finalPresentationDocumentId = finalPresentationId;
+          setPresentationId(finalPresentationId);
+        }
+      }
+  
+      setPresentationDocumentId(finalPresentationDocumentId);
+      console.log("Using presentation documentId for slides:", finalPresentationDocumentId);
+  
+      // Step 2: Save or update slides
+      const savedSlides = await Promise.all(
+        slides.map(async (slide) => {
+          if (!slide.id) {
+            slide.id = uuidv4();
+          }
+  
+          const cleanSlide = {
+            titleContainer: {
+              titleId: slide.titleContainer?.titleId || uuidv4(),
+              title: slide.titleContainer?.title || "Untitled",
+              styles: slide.titleContainer?.styles || {},
             },
             descriptionContainer: {
-              descriptionId: card.descriptionContainer?.descriptionId || uuidv4(),
-              description: card.descriptionContainer?.description,
-              styles: card.descriptionContainer?.styles || {},
+              descriptionId: slide.descriptionContainer?.descriptionId || uuidv4(),
+              description: slide.descriptionContainer?.description || "",
+              styles: slide.descriptionContainer?.styles || {},
             },
-          })) || [],
-      }));
+            type: slide.type || "custom",
+            content: JSON.stringify({
+              dropItems: (slide.dropContainer?.dropItems || []).map((item) => ({
+                id: item.id || uuidv4(),
+                type: item.type || "text",
+                content: item.content || "",
+                styles: item.styles || {},
+              })),
+              ...(slide.type === "twoColumn" && { columns: slide.columns || [] }),
+              ...(slide.type === "threeImgCard" && { cards: slide.cards || [] }),
+            }),
+            impress_settings: "",
+            dropContainer: {
+              dropItems: slide.dropContainer?.dropItems || [],
+            },
+            cards: slide.cards || [],
+            columns: slide.columns || [],
+            imageContainer: {
+              imageId: slide.imageContainer?.imageId || uuidv4(),
+              image: slide.imageContainer?.image || null,
+              styles: slide.imageContainer?.styles || {},
+            },
+            locale: "en",
+          };
+  
+          // Check if slide has a server-assigned documentId
+          if (slide.documentId) {
+            // Update existing slide with PUT
+            const slideResponse = await fetch(
+              `https://presentaiapi.codesemic.com/api/slides/${slide.documentId}`,
+              {
+                method: "PUT",
+                headers: getAuthHeaders(),
+                body: JSON.stringify({
+                  data: {
+                    titleContainer: JSON.stringify(cleanSlide.titleContainer),
+                    descriptionContainer: JSON.stringify(cleanSlide.descriptionContainer),
+                    presentation: finalPresentationId,
+                    type: cleanSlide.type,
+                    content: cleanSlide.content,
+                    impress_settings: cleanSlide.impress_settings || "",
+                    dropContainer: JSON.stringify(cleanSlide.dropContainer),
+                    cards: JSON.stringify(cleanSlide.cards),
+                    columns: JSON.stringify(cleanSlide.columns),
+                    imageContainer: JSON.stringify(cleanSlide.imageContainer),
+                    locale: cleanSlide.locale,
+                  },
+                }),
+              }
+            );
+  
+            if (!slideResponse.ok) {
+              const errorText = await slideResponse.text();
+              throw new Error(`Failed to update slide ${slide.documentId}: ${slideResponse.status} - ${errorText}`);
+            }
+            const updatedSlide = await slideResponse.json();
+            console.log("Updated slide:", updatedSlide);
+            return updatedSlide;
+          } else {
+            // Create new slide with POST
+            return saveSlideToAPI(finalPresentationId, cleanSlide);
+          }
+        })
+      );
+  
+      if (savedSlides.some((slide) => !slide)) {
+        toast.error("Some slides failed to save");
+        return;
+      }
+  
+      toast.success("Presentation and slides saved successfully!");
+      navigate("/home", { state: { presentationId: finalPresentationId } });
+    } catch (error) {
+      console.error("Error saving presentation/slides:", error);
+      toast.error("Failed to save presentation or slides!");
+    }
+  };
 
-      setSlides(normalizedSlides);
+  useEffect(() => {
+    const loadPresentation = async (presentationId) => {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) {
+          toast.error("Please login to view presentation");
+          navigate("/login");
+          return;
+        }
 
-      const newSlidesPreview = normalizedSlides.map((slide, index) => ({
-        number: index + 1,
-        id: slide.id,
-        title: slide.titleContainer?.title || "Untitled",
-        type: slide.type,
-        content: renderSlideComponent(slide),
-        onClick: () => setCurrentSlide(index + 1),
-        titleContainer: slide.titleContainer,
-        descriptionContainer: slide.descriptionContainer,
-        imageContainer: slide.imageContainer,
-        dropContainer: slide.dropContainer,
-      }));
+        setIsLoadingCopy(true);
+        const response = await fetch(
+          `https://presentaiapi.codesemic.com/api/slides/presentation/${presentationId}`,
+          {
+            headers: getAuthHeaders(),
+          }
+        );
 
-      setSlidesPreview(newSlidesPreview);
+        if (!response.ok) throw new Error(`Failed to fetch slides: ${response.status} ${response.statusText}`);
+
+        const jsonResponse = await response.json();
+        console.log("Raw API response in Page:", jsonResponse);
+
+        if (!Array.isArray(jsonResponse)) {
+          throw new Error("Invalid response format: Expected an array");
+        }
+
+        const normalizedSlides = jsonResponse.map((slide) => ({
+          id: slide.id || uuidv4(),
+          type: slide.type || "custom",
+          titleContainer: slide.titleContainer
+            ? JSON.parse(slide.titleContainer)
+            : {
+                titleId: uuidv4(),
+                title: slide.title || "Untitled",
+                styles: {},
+              },
+          descriptionContainer: slide.descriptionContainer
+            ? JSON.parse(slide.descriptionContainer)
+            : {
+                descriptionId: uuidv4(),
+                description: slide.description || "",
+                styles: {},
+              },
+          imageContainer: slide.imageContainer
+            ? JSON.parse(slide.imageContainer)
+            : {
+                imageId: uuidv4(),
+                image: slide.image?.[0] || null,
+                styles: { width: 300, height: 210 },
+              },
+          dropContainer: slide.dropContainer
+            ? JSON.parse(slide.dropContainer)
+            : {
+                dropItems: slide.content ? JSON.parse(slide.content).dropItems || [] : [],
+              },
+          ...(slide.type === "twoColumn" && {
+            columns: slide.columns ? JSON.parse(slide.columns) : [],
+          }),
+          ...(slide.type === "threeImgCard" && {
+            cards: slide.cards ? JSON.parse(slide.cards) : [],
+          }),
+        }));
+
+        setSlides(normalizedSlides);
+        setSlidesPreview(
+          normalizedSlides.map((slide, index) => ({
+            number: index + 1,
+            id: slide.id,
+            title: slide.titleContainer.title,
+            type: slide.type,
+            content: renderSlideComponent(slide),
+            onClick: () => setCurrentSlide(index + 1),
+            ...slide,
+          }))
+        );
+        toast.success("Presentation loaded successfully!");
+      } catch (error) {
+        console.error("Error loading slides:", error);
+        toast.error("Failed to load presentation");
+      } finally {
+        setIsLoadingCopy(false);
+      }
+    };
+
+    if (location.state?.slidesArray) {
+      setSlides(location.state.slidesArray);
+      setSlidesPreview(
+        location.state.slidesArray.map((slide, index) => ({
+          number: index + 1,
+          id: slide.id,
+          title: slide.titleContainer?.title,
+          type: slide.type,
+          content: renderSlideComponent(slide),
+          onClick: () => setCurrentSlide(index + 1),
+          ...slide,
+        }))
+      );
+    } else if (location.state?.presentationId) {
+      setPresentationId(location.state.presentationId);
+      loadPresentation(location.state.presentationId);
     } else {
       const defaultSlide = {
         id: uuidv4(),
@@ -367,10 +503,7 @@ export default function Page() {
         imageContainer: {
           imageId: uuidv4(),
           image: null,
-          styles: {
-            width: 300,
-            height: 210,
-          },
+          styles: { width: 300, height: 210 },
         },
         dropContainer: {
           dropItems: [],
@@ -386,129 +519,108 @@ export default function Page() {
           type: "custom",
           content: renderSlideComponent(defaultSlide),
           onClick: () => setCurrentSlide(1),
-          titleContainer: defaultSlide.titleContainer,
-          descriptionContainer: defaultSlide.descriptionContainer,
-          imageContainer: defaultSlide.imageContainer,
-          dropContainer: defaultSlide.dropContainer,
+          ...defaultSlide,
         },
       ]);
     }
-  }, [location.state?.slidesArray]);
+  }, [location.state, navigate, toast]);
 
-// Add a verification useEffect
-useEffect(() => {
-  slides.length >0 ? console.log("Slide : ",slides):null;
-}, [slides]);
-  
   const handleDragEnd = (e) => {
-  const { active, over } = e;
-  if (!over || active.id === over.id) return;
+    const { active, over } = e;
+    if (!over || active.id === over.id) return;
 
-  // Update main slides state
-  setSlides((prev) => {
-    const originalPos = prev.findIndex((item) => item.id === active.id);
-    const newPos = prev.findIndex((item) => item.id === over.id);
-    return arrayMove(prev, originalPos, newPos);
-  });
+    setSlides((prev) => {
+      const originalPos = prev.findIndex((item) => item.id === active.id);
+      const newPos = prev.findIndex((item) => item.id === over.id);
+      return arrayMove(prev, originalPos, newPos);
+    });
 
-  // Update slides preview state
-  setSlidesPreview((prev) => {
-    const originalPos = prev.findIndex((item) => item.id === active.id);
-    const newPos = prev.findIndex((item) => item.id === over.id);
-    return arrayMove(prev, originalPos, newPos);
-  });
-};      
-
-useEffect(() => {
-  // Update slide numbers in preview
-  setSlidesPreview(prev => 
-    prev.map((slide, index) => ({
-      ...slide,
-      number: index + 1,
-      onClick: () => setCurrentSlide(index + 1)
-    }))
-  );
-}, [slides.length]); // Trigger when slide count changes
+    setSlidesPreview((prev) => {
+      const originalPos = prev.findIndex((item) => item.id === active.id);
+      const newPos = prev.findIndex((item) => item.id === over.id);
+      return arrayMove(prev, originalPos, newPos);
+    });
+  };
 
   const handleAiPopupSubmit = () => {
-    const currentCredits = Number.parseInt(localStorage.getItem("credits") || "50")
+    const currentCredits = Number.parseInt(localStorage.getItem("credits") || "50");
     if (currentCredits >= 40) {
-      setIsGenerating(true)
-      setIsLoadingCopy(true)
-      setGenerateAi(true)
-      const newCredits = currentCredits - 40
-      setCradits(newCredits)
-      localStorage.setItem("credits", newCredits)
-      toast.success("Presentation generated successfully!")
+      setIsGenerating(true);
+      setIsLoadingCopy(true);
+      setGenerateAi(true);
+      const newCredits = currentCredits - 40;
+      setCradits(newCredits);
+      localStorage.setItem("credits", newCredits);
+      toast.success("Presentation generated successfully!");
     } else {
-      toast.error("Insufficient credits. Please purchase more.")
+      toast.error("Insufficient credits. Please purchase more.");
     }
-  }
+  };
 
   const startPresentation = (fromBeginning = true) => {
-    setPresentationStartIndex(fromBeginning ? 0 : currentSlide - 1)
-    setIsPresentationMode(true)
-  }
+    setPresentationStartIndex(fromBeginning ? 0 : currentSlide - 1);
+    setIsPresentationMode(true);
+  };
 
   const getBase64FromImgElement = async (imgElement) => {
     return new Promise((resolve, reject) => {
-      const canvas = document.createElement("canvas")
-      const ctx = canvas.getContext("2d")
-      const img = new Image()
+      const canvas = document.createElement("canvas");
+      const ctx = canvas.getContext("2d");
+      const img = new Image();
 
       img.onload = () => {
-        canvas.width = img.width
-        canvas.height = img.height
-        ctx.drawImage(img, 0, 0)
-        const base64 = canvas.toDataURL("image/png")
-        resolve(base64)
-      }
+        canvas.width = img.width;
+        canvas.height = img.height;
+        ctx.drawImage(img, 0, 0);
+        const base64 = canvas.toDataURL("image/png");
+        resolve(base64);
+      };
 
-      img.onerror = reject
-      img.crossOrigin = "anonymous"
-      img.src = imgElement
-    })
-  }
+      img.onerror = reject;
+      img.crossOrigin = "anonymous";
+      img.src = imgElement;
+    });
+  };
 
   const parseStyles = (content, styles = {}) => {
-    const combinedStyles = { ...styles }
+    const combinedStyles = { ...styles };
 
     if (content?.includes("color:")) {
-      const colorMatch = content.match(/color:\s*rgb$$([^)]+)$$/)
+      const colorMatch = content.match(/color:\s*rgb$$([^)]+)$$/);
       if (colorMatch) {
-        const [r, g, b] = colorMatch[1].split(",").map((n) => Number.parseInt(n.trim()))
-        combinedStyles.color = `#${r.toString(16).padStart(2, "0")}${g.toString(16).padStart(2, "0")}${b.toString(16).padStart(2, "0")}`
+        const [r, g, b] = colorMatch[1].split(",").map((n) => Number.parseInt(n.trim()));
+        combinedStyles.color = `#${r.toString(16).padStart(2, "0")}${g.toString(16).padStart(2, "0")}${b.toString(16).padStart(2, "0")}`;
       }
     }
 
-    if (content?.includes("<strong>") || styles.bold) combinedStyles.bold = true
-    if (content?.includes("<em>") || styles.italic) combinedStyles.italic = true
-    if (content?.includes("<u>") || styles.underline) combinedStyles.underline = true
-    if (content?.includes('class="ql-align-center"')) combinedStyles.align = "center"
-    if (content?.includes('class="ql-align-right"')) combinedStyles.align = "right"
+    if (content?.includes("<strong>") || styles.bold) combinedStyles.bold = true;
+    if (content?.includes("<em>") || styles.italic) combinedStyles.italic = true;
+    if (content?.includes("<u>") || styles.underline) combinedStyles.underline = true;
+    if (content?.includes('class="ql-align-center"')) combinedStyles.align = "center";
+    if (content?.includes('class="ql-align-right"')) combinedStyles.align = "right";
 
     if (styles.header) {
       switch (styles.header) {
         case 1:
-          combinedStyles.fontSize = 32
-          break
+          combinedStyles.fontSize = 32;
+          break;
         case 2:
-          combinedStyles.fontSize = 18
-          break
+          combinedStyles.fontSize = 18;
+          break;
         case 3:
-          combinedStyles.fontSize = 14
-          break
+          combinedStyles.fontSize = 14;
+          break;
         default:
-          combinedStyles.fontSize = 12
+          combinedStyles.fontSize = 12;
       }
     }
 
-    return combinedStyles
-  }
+    return combinedStyles;
+  };
 
   const addStyledText = (pptSlide, text, content, styles = {}, options = {}) => {
     if (text && typeof text === "string") {
-      const parsedStyles = parseStyles(content, styles)
+      const parsedStyles = parseStyles(content, styles);
       pptSlide.addText(text.replace(/<[^>]+>/g, "").trim(), {
         color: "#FFFFFF",
         fontFace: "Arial",
@@ -516,13 +628,13 @@ useEffect(() => {
         align: parsedStyles.align || "left",
         ...parsedStyles,
         ...options,
-      })
+      });
     }
-  }
+  };
 
   const processMainContent = async (pptSlide, slideData, type) => {
-    const title = slideData.titleContainer?.title?.replace(/<[^>]+>/g, "") || ""
-    const description = slideData.descriptionContainer?.description?.replace(/<[^>]+>/g, "") || ""
+    const title = slideData.titleContainer?.title?.replace(/<[^>]+>/g, "") || "";
+    const description = slideData.descriptionContainer?.description?.replace(/<[^>]+>/g, "") || "";
 
     switch (type) {
       case "accentImage":
@@ -531,36 +643,30 @@ useEffect(() => {
           y: 0.5,
           w: "60%",
           h: 1,
-        })
+        });
 
-        addStyledText(
-          pptSlide,
-          description,
-          slideData.descriptionContainer?.description,
-          slideData.descriptionContainer?.styles,
-          {
-            x: 0.5,
-            y: 1.5,
-            w: "60%",
-            h: 3,
-          },
-        )
+        addStyledText(pptSlide, description, slideData.descriptionContainer?.description, slideData.descriptionContainer?.styles, {
+          x: 0.5,
+          y: 1.5,
+          w: "60%",
+          h: 3,
+        });
 
         if (slideData.imageContainer?.image) {
           try {
-            const base64Image = await getBase64FromImgElement(slideData.imageContainer.image)
+            const base64Image = await getBase64FromImgElement(slideData.imageContainer.image);
             pptSlide.addImage({
               data: base64Image,
               x: 5.5,
               y: 1.5,
               w: 4,
               h: 3,
-            })
+            });
           } catch (error) {
-            console.error("Failed to add image:", error)
+            console.error("Failed to add image:", error);
           }
         }
-        break
+        break;
 
       case "threeImgCard":
         addStyledText(pptSlide, title, slideData.titleContainer?.title, slideData.titleContainer?.styles, {
@@ -569,61 +675,49 @@ useEffect(() => {
           w: "90%",
           h: 0.8,
           align: "center",
-        })
+        });
 
         if (slideData.cards) {
           for (let i = 0; i < slideData.cards.length; i++) {
-            const card = slideData.cards[i]
-            const xOffset = 0.5 + i * 3.3
+            const card = slideData.cards[i];
+            const xOffset = 0.5 + i * 3.3;
 
             if (card.image) {
               try {
-                const base64Image = await getBase64FromImgElement(card.image)
+                const base64Image = await getBase64FromImgElement(card.image);
                 pptSlide.addImage({
                   data: base64Image,
                   x: xOffset,
                   y: 1.3,
                   w: 2.8,
                   h: 2,
-                })
+                });
               } catch (error) {
-                console.error(`Failed to add card image ${i}:`, error)
+                console.error(`Failed to add card image ${i}:`, error);
               }
             }
 
-            addStyledText(
-              pptSlide,
-              card.headingContainer?.heading,
-              card.headingContainer?.heading,
-              card.headingContainer?.styles,
-              {
-                x: xOffset,
-                y: 3.4,
-                w: 2.8,
-                h: 0.6,
-                align: "center",
-                fontSize: 14,
-                bold: true,
-              },
-            )
+            addStyledText(pptSlide, card.headingContainer?.heading, card.headingContainer?.heading, card.headingContainer?.styles, {
+              x: xOffset,
+              y: 3.4,
+              w: 2.8,
+              h: 0.6,
+              align: "center",
+              fontSize: 14,
+              bold: true,
+            });
 
-            addStyledText(
-              pptSlide,
-              card.descriptionContainer?.description,
-              card.descriptionContainer?.description,
-              card.descriptionContainer?.styles,
-              {
-                x: xOffset,
-                y: 4.1,
-                w: 2.8,
-                h: 1,
-                align: "center",
-                fontSize: 12,
-              },
-            )
+            addStyledText(pptSlide, card.descriptionContainer?.description, card.descriptionContainer?.description, card.descriptionContainer?.styles, {
+              x: xOffset,
+              y: 4.1,
+              w: 2.8,
+              h: 1,
+              align: "center",
+              fontSize: 12,
+            });
           }
         }
-        break
+        break;
 
       case "twoColumn":
         addStyledText(pptSlide, title, slideData.titleContainer?.title, slideData.titleContainer?.styles, {
@@ -631,18 +725,18 @@ useEffect(() => {
           y: 0.5,
           w: "90%",
           h: 1,
-        })
+        });
 
         slideData.columns?.forEach((column, idx) => {
-          const content = column.content?.replace(/<[^>]+>/g, "") || ""
+          const content = column.content?.replace(/<[^>]+>/g, "") || "";
           addStyledText(pptSlide, content, column.content, column.styles, {
             x: idx === 0 ? 0.5 : 5.5,
             y: 1.5,
             w: "45%",
             h: 3,
-          })
-        })
-        break
+          });
+        });
+        break;
 
       default:
         addStyledText(pptSlide, title, slideData.titleContainer?.title, slideData.titleContainer?.styles, {
@@ -650,166 +744,155 @@ useEffect(() => {
           y: 0.5,
           w: "90%",
           h: 1,
-        })
+        });
 
-        addStyledText(
-          pptSlide,
-          description,
-          slideData.descriptionContainer?.description,
-          slideData.descriptionContainer?.styles,
-          {
-            x: 0.5,
-            y: 1.5,
-            w: "90%",
-            h: 4,
-          },
-        )
+        addStyledText(pptSlide, description, slideData.descriptionContainer?.description, slideData.descriptionContainer?.styles, {
+          x: 0.5,
+          y: 1.5,
+          w: "90%",
+          h: 4,
+        });
     }
-  }
+  };
 
   const processDroppedItems = async (pptSlide, dropItems) => {
-    let yOffset = 5
+    let yOffset = 5;
 
     for (const item of dropItems) {
       switch (item.type) {
         case "image":
-                try {
-                    if (typeof item.content === "string") {
-                        const base64Image = await getBase64FromImgElement(item.content);
-                        const width = item.styles?.width ? item.styles.width / 100 : 3;
-                        const height = item.styles?.height ? item.styles.height / 100 : 2;
-                        pptSlide.addImage({
-                            data: base64Image,
-                            x: 0.5,
-                            y: yOffset,
-                            w: width,
-                            h: height,
-                        });
-                        yOffset += height + 0.5;
-                    }
-                } catch (error) {
-                    console.error("Error processing image:", error);
-                }
-                break;
+          try {
+            if (typeof item.content === "string") {
+              const base64Image = await getBase64FromImgElement(item.content);
+              const width = item.styles?.width ? item.styles.width / 100 : 3;
+              const height = item.styles?.height ? item.styles.height / 100 : 2;
+              pptSlide.addImage({
+                data: base64Image,
+                x: 0.5,
+                y: yOffset,
+                w: width,
+                h: height,
+              });
+              yOffset += height + 0.5;
+            }
+          } catch (error) {
+            console.error("Error processing image:", error);
+          }
+          break;
 
         case "video":
-        try {
-          if (typeof item.content === "string") {
-            // For video, we'll add a media object
-            const width = item.styles?.width ? item.styles.width / 100 : 4;
-            const height = item.styles?.height ? item.styles.height / 100 : 3;
-            
-            // Remove the data URL prefix to get just the base64 content
-            
-            
-            pptSlide.addMedia({
-              type: 'video',
-              data: item.content,
-              x: 0.5,
-              y: yOffset,
-              w: width,
-              h: height,
-              extension: '.mp4'
-            });
-            yOffset += height + 0.5;
+          try {
+            if (typeof item.content === "string") {
+              const width = item.styles?.width ? item.styles.width / 100 : 4;
+              const height = item.styles?.height ? item.styles.height / 100 : 3;
+              pptSlide.addMedia({
+                type: "video",
+                data: item.content,
+                x: 0.5,
+                y: yOffset,
+                w: width,
+                h: height,
+                extension: ".mp4",
+              });
+              yOffset += height + 0.5;
+            }
+          } catch (error) {
+            console.error("Failed to add dropped video:", error);
           }
-        } catch (error) {
-          console.error("Failed to add dropped video:", error);
-        }
-        break;
+          break;
 
         case "audio":
-        try {
-          if (typeof item.content === "string") {
-            const width = item.styles?.width ? item.styles.width / 100 : 4;
-            const height = item.styles?.height ? item.styles.height / 100 : 3;
-            pptSlide.addMedia({
-              type: 'audio',
-              data: item.content,
-              x: 0.5,
-              y: yOffset,
-              w: width,
-              h: height,
-              extension: '.mp3'
-            });
-            yOffset += height + 0.5;
+          try {
+            if (typeof item.content === "string") {
+              const width = item.styles?.width ? item.styles.width / 100 : 4;
+              const height = item.styles?.height ? item.styles.height / 100 : 3;
+              pptSlide.addMedia({
+                type: "audio",
+                data: item.content,
+                x: 0.5,
+                y: yOffset,
+                w: width,
+                h: height,
+                extension: ".mp3",
+              });
+              yOffset += height + 0.5;
+            }
+          } catch (error) {
+            console.error("Failed to add dropped audio:", error);
           }
-        } catch (error) {
-          console.error("Failed to add dropped audio:", error);
-        }
-        break;
-        
+          break;
+
         case "title":
         case "heading":
         case "paragraph":
-          const content = item.content?.replace(/<[^>]+>/g, "") || ""
+          const content = item.content?.replace(/<[^>]+>/g, "") || "";
           addStyledText(pptSlide, content, item.content, item.styles, {
             x: 0.5,
             y: yOffset,
             w: "90%",
             h: 0.8,
-          })
-          yOffset += 1
-          break
+          });
+          yOffset += 1;
+          break;
       }
     }
-  }
+  };
 
   const downloadPPT = async () => {
-    console.log("Starting PowerPoint generation...")
+    console.log("Starting PowerPoint generation...");
     try {
-      const pptx = new pptxgen()
+      const pptx = new pptxgen();
 
       for (const slideData of slides) {
-        const pptSlide = pptx.addSlide()
-        pptSlide.background = { color: "#342c4e" }
+        const pptSlide = pptx.addSlide();
+        pptSlide.background = { color: "#342c4e" };
 
-        await processMainContent(pptSlide, slideData, slideData.type || "default")
+        await processMainContent(pptSlide, slideData, slideData.type || "default");
 
         if (slideData.dropContainer?.dropItems) {
-          await processDroppedItems(pptSlide, slideData.dropContainer.dropItems)
+          await processDroppedItems(pptSlide, slideData.dropContainer.dropItems);
         }
       }
 
-      console.log("Saving PowerPoint file...")
-      await pptx.writeFile({ fileName: "presentation.pptx" })
-      console.log("PowerPoint generation completed successfully.")
-      toast.success("PowerPoint downloaded successfully!")
+      console.log("Saving PowerPoint file...");
+      await pptx.writeFile({ fileName: "presentation.pptx" });
+      console.log("PowerPoint generation completed successfully.");
+      toast.success("PowerPoint downloaded successfully!");
     } catch (error) {
-      console.error("PPT Generation Error:", error)
-      toast.error("Failed to generate PowerPoint. Please check console for details.")
+      console.error("PPT Generation Error:", error);
+      toast.error("Failed to generate PowerPoint. Please check console for details.");
     }
-  }
+  };
 
   const generateSlidePreview = async (slideElement) => {
     if (slideElement) {
       const canvas = await html2canvas(slideElement, {
-        scale: 1, // Increased from 0.2 for better quality
+        scale: 1,
         logging: false,
         useCORS: true,
-      })
-      return canvas.toDataURL("image/png", 1.0) // Use PNG format with max quality
+      });
+      return canvas.toDataURL("image/png", 1.0);
     }
-    return null
-  }
+    return null;
+  };
 
   const updateSlideImages = async () => {
     const newImages = await Promise.all(
       slides.map(async (slide) => {
-        const element = document.getElementById(`at-${slide.id}`)
-        return element ? await generateSlidePreview(element) : null
-      }),
-    )
-    setSlideImages(newImages)
-  }
+        const element = document.getElementById(`at-${slide.id}`);
+        return element ? await generateSlidePreview(element) : null;
+      })
+    );
+    setSlideImages(newImages);
+  };
 
-  const debouncedUpdateSlideImages = debounce(updateSlideImages, 300)
+  const debouncedUpdateSlideImages = debounce(updateSlideImages, 300);
 
   const addNewSlide = async (index) => {
     const newSlide = {
       number: index + 1,
       id: uuidv4(),
-      type: "custom", // Add type identifier
+      type: "custom",
       title: "New Slide",
       content: (
         <div className="flex justify-center">
@@ -823,88 +906,80 @@ useEffect(() => {
         </div>
       ),
       onClick: () => setCurrentSlide(index + 1),
-    }
+    };
 
-    setSlides(prev => [...prev.slice(0, index), newSlide, ...prev.slice(index)]);
-    setSlidesPreview(prev => [...prev.slice(0, index), newSlide, ...prev.slice(index)]);
-  }
+    setSlides((prev) => [...prev.slice(0, index), newSlide, ...prev.slice(index)]);
+    setSlidesPreview((prev) => [...prev.slice(0, index), newSlide, ...prev.slice(index)]);
+  };
 
   const deleteSlide = (slideId) => {
-    setSlides(prevSlides => prevSlides.filter(slide => slide.id !== slideId))
-    setSlidesPreview(prevSlides => prevSlides.filter(slide => slide.id !== slideId))
-  }
+    setSlides((prevSlides) => prevSlides.filter((slide) => slide.id !== slideId));
+    setSlidesPreview((prevSlides) => prevSlides.filter((slide) => slide.id !== slideId));
+  };
 
   useEffect(() => {
-    debouncedUpdateSlideImages()
-  }, [slides])      
+    debouncedUpdateSlideImages();
+  }, [slides]);
 
   useEffect(() => {
-  const savedSlides = JSON.parse(localStorage.getItem("slides")) || [];
-  setArraySlides(savedSlides.map(slideGroup => ({ 
-    ...slideGroup,
-    slides: slideGroup.slides.map(slide => ({
-      type: slide.type || 'custom', // Handle legacy slides
-      ...slide
-    }))
-  })));
-}, []);
-
-  // const startImpress = () => {
-  //   setIsImpressPresent(true);
-  // }
+    const savedSlides = JSON.parse(localStorage.getItem("slides")) || [];
+    setArraySlides(
+      savedSlides.map((slideGroup) => ({
+        ...slideGroup,
+        slides: slideGroup.slides.map((slide) => ({
+          type: slide.type || "custom",
+          ...slide,
+        })),
+      }))
+    );
+  }, []);
 
   const handleSlideUpdate = (slideId, updatedData) => {
-    console.log("slide Update : ",slideId);
-    
-    setSlides(prevSlides =>
-    prevSlides.map(slide => {
-      if (slide.id === slideId) {
-        return {
-          ...slide,
-          ...updatedData,
-          // Merge existing titleContainer with updates
-          titleContainer: {
-            ...slide.titleContainer,
-            ...updatedData.titleContainer,
-            styles: {
-              ...slide.titleContainer?.styles,
-              ...updatedData.titleContainer?.styles,
-            },
-          },
-          // Merge existing descriptionContainer with updates
-          descriptionContainer: {
-            ...slide.descriptionContainer,
-            ...updatedData.descriptionContainer,
-            styles: {
-              ...slide.descriptionContainer?.styles,
-              ...updatedData.descriptionContainer?.styles,
-            },
-          },
-          // Merge existing imageContainer with updates
-          imageContainer: {
-            ...slide.imageContainer,
-            ...updatedData.imageContainer,
-            styles: {
-              ...slide.imageContainer?.styles,
-              ...updatedData.imageContainer?.styles,
-            },
-          },
-          // Preserve existing dropItems if not in update
-          dropContainer: {
-            ...slide.dropContainer, // Preserve existing properties
-            ...updatedData.dropContainer, // Merge new properties
-            dropItems: 
-              updatedData.dropContainer?.dropItems || // Use new dropItems if provided
-              slide.dropContainer?.dropItems || [] // Fallback to existing or empty array
-          },
-        };
-      }
-      return slide;
-    })
-  );
+    console.log("slide Update : ", slideId);
 
-    setSlidesPreview(prevPreviews =>
-      prevPreviews.map(preview => {
+    setSlides((prevSlides) =>
+      prevSlides.map((slide) => {
+        if (slide.id === slideId) {
+          return {
+            ...slide,
+            ...updatedData,
+            titleContainer: {
+              ...slide.titleContainer,
+              ...updatedData.titleContainer,
+              styles: {
+                ...slide.titleContainer?.styles,
+                ...updatedData.titleContainer?.styles,
+              },
+            },
+            descriptionContainer: {
+              ...slide.descriptionContainer,
+              ...updatedData.descriptionContainer,
+              styles: {
+                ...slide.descriptionContainer?.styles,
+                ...updatedData.descriptionContainer?.styles,
+              },
+            },
+            imageContainer: {
+              ...slide.imageContainer,
+              ...updatedData.imageContainer,
+              styles: {
+                ...slide.imageContainer?.styles,
+                ...updatedData.imageContainer?.styles,
+              },
+            },
+            dropContainer: {
+              ...slide.dropContainer,
+              ...updatedData.dropContainer,
+              dropItems: updatedData.dropContainer?.dropItems || slide.dropContainer?.dropItems || [],
+            },
+          };
+        }
+        return slide;
+      })
+    );
+
+    setSlidesPreview((prevPreviews) =>
+      prevPreviews.map((preview) => {
         if (preview.id === slideId) {
           const updatedPreview = {
             ...preview,
@@ -914,32 +989,32 @@ useEffect(() => {
               ...updatedData.titleContainer,
               styles: {
                 ...preview.titleContainer?.styles,
-                ...updatedData.titleContainer?.styles
-              }
+                ...updatedData.titleContainer?.styles,
+              },
             },
             descriptionContainer: {
               ...preview.descriptionContainer,
               ...updatedData.descriptionContainer,
               styles: {
                 ...preview.descriptionContainer?.styles,
-                ...updatedData.descriptionContainer?.styles
-              }
+                ...updatedData.descriptionContainer?.styles,
+              },
             },
             imageContainer: {
               ...preview.imageContainer,
               ...updatedData.imageContainer,
               styles: {
                 ...preview.imageContainer?.styles,
-                ...updatedData.imageContainer?.styles
-              }
+                ...updatedData.imageContainer?.styles,
+              },
             },
             dropContainer: {
-              dropItems: updatedData.dropContainer?.dropItems || []
-            }
+              dropItems: updatedData.dropContainer?.dropItems || [],
+            },
           };
           return {
             ...updatedPreview,
-            content: renderSlideComponent(updatedPreview)
+            content: renderSlideComponent(updatedPreview),
           };
         }
         return preview;
@@ -947,27 +1022,18 @@ useEffect(() => {
     );
   };
 
-
   return (
     <div className="h-screen flex flex-col bg-background">
       <Header setGenerateAi={() => setShowPopup(true)} startPresentation={startPresentation} />
-
       <Toaster position="top-right" richColors />
       {isPresentationMode && (
         <PresentationMode
           slides={slides}
           startIndex={presentationStartIndex}
           onClose={() => setIsPresentationMode(false)}
-          renderSlide={renderSlideComponent} // Pass your existing render function
+          renderSlide={renderSlideComponent}
         />
       )}
-      {/* {isImpressPresent && (
-        <ImpressPresentation 
-          slides={slides} 
-          onClose={() => setIsImpressPresent(false)} 
-        />
-        )
-      } */}
       <div className="flex flex-1 overflow-hidden">
         <DndContext collisionDetection={closestCorners} onDragEnd={handleDragEnd}>
           {slidesPreview.length > 0 && (
@@ -976,92 +1042,88 @@ useEffect(() => {
               slidesPreview={slidesPreview}
               setSlidesPreview={setSlidesPreview}
               deleteSlide={deleteSlide}
-              slideImages={slideImages}   
+              slideImages={slideImages}
             />
           )}
         </DndContext>
         <main className="flex-1 overflow-y-auto">
-        {generateAi ? (
-          <div className="space-y-4">
-          <GenerateAi
-            inputData={aiInputData}
-            setShowPopup={setShowPopup}
-            setIsLoadingCopy={setIsLoadingCopy}
-            setSlidesPreview={setSlidesPreview}
-            setSlides={setSlides}
-            setGenerateAi={setGenerateAi}
-            onError={() => {
-              setIsGenerating(false)
-              setIsLoadingCopy(false)
-              toast.error("Generation failed. Please try again.")
-            }}
-            onComplete={() => {
-              setIsGenerating(false)
-              setIsAiGenerated(true)
-            }}
-          />
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {slides.map((slideData, index) => (
-              <div key={slideData.id} className="relative">
-                <div id={`slide-${slideData.id}`} className="mb-4">
-                  {renderSlideComponent(slideData)}
-                </div>
-                <div className="flex justify-center align-middle justify-self-center ">
+          {generateAi ? (
+            <div className="space-y-4">
+              <GenerateAi
+                inputData={aiInputData}
+                setShowPopup={setShowPopup}
+                setIsLoadingCopy={setIsLoadingCopy}
+                setSlidesPreview={setSlidesPreview}
+                setSlides={setSlides}
+                setGenerateAi={setGenerateAi}
+                onError={() => {
+                  setIsGenerating(false);
+                  setIsLoadingCopy(false);
+                  toast.error("Generation failed. Please try again.");
+                }}
+                onComplete={() => {
+                  setIsGenerating(false);
+                  setIsAiGenerated(true);
+                }}
+              />
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {slides.map((slideData, index) => (
+                <div key={slideData.id} className="relative">
+                  <div id={`slide-${slideData.id}`} className="mb-4">
+                    {renderSlideComponent(slideData)}
+                  </div>
+                  <div className="flex justify-center align-middle justify-self-center">
                     <AddButtonAi index={index} addNewSlide={addNewSlide} />
                   </div>
-              </div>
-            ))}
-            
-            {slides.length > 0 && (
-              <Card className="bg-white/10 backdrop-blur-lg border-0">
-                <CardContent className="p-6 flex justify-center gap-4">
-                  <Button
-                    onClick={downloadPPT} 
-                    className="bg-gradient-to-br from-blue-900 via-slate-900 to-slate-750" 
-                    size="lg"
-                  >
-                    <Download className="mr-2 h-4 w-4" />
-                    Download Presentation
-                  </Button>
+                </div>
+              ))}
 
-                  <Button
-                    onClick={handleSaveSlide}
-                    className="bg-gradient-to-br from-blue-900 via-slate-900 to-slate-750" 
-                    size="lg"
-                  >
-                    <Save className="mr-2 h-4 w-4" />
-                    Save
-                  </Button>
-                </CardContent>
-              </Card>
-            )}
-          </div>
-        )}
-      </main>
+              {slides.length > 0 && (
+                <Card className="bg-white/10 backdrop-blur-lg border-0">
+                  <CardContent className="p-6 flex justify-center gap-4">
+                    <Button
+                      onClick={downloadPPT}
+                      className="bg-green-600 hover:bg-green-700 text-white"
+                      size="lg"
+                    >
+                      <Download className="mr-2 h-4 w-4" />
+                      Download Presentation
+                    </Button>
+                    <Button
+                      onClick={handleSaveSlide}
+                      className="bg-green-600 hover:bg-green-700 text-white"
+                      size="lg"
+                    >
+                      <Save className="mr-2 h-4 w-4" />
+                      Save
+                    </Button>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+          )}
+        </main>
       </div>
 
-      {/* AI Input Dialog */}
       <Dialog open={showPopup} onOpenChange={(open) => setShowPopup(open)}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Generate with Gemini AI</DialogTitle>
             <DialogDescription>Enter the prompt for AI generation:</DialogDescription>
           </DialogHeader>
-
           <Input
             type="text"
             placeholder="Enter your prompt..."
             value={aiInputData}
             onChange={(e) => setAiInputData(e.target.value)}
           />
-
           <DialogFooter>
             <Button
               onClick={() => {
-                handleAiPopupSubmit()
-                setShowPopup(false)
+                handleAiPopupSubmit();
+                setShowPopup(false);
               }}
               disabled={!aiInputData || isLoadingCopy}
             >
@@ -1085,5 +1147,5 @@ useEffect(() => {
       </Dialog>
       <Home />
     </div>
-  )
+  );
 }
