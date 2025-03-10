@@ -344,7 +344,8 @@ export default function Page() {
 
             const uploadResult = await uploadResponse.json();
             console.log("Upload response:", uploadResult);
-            uploadedImageUrl = uploadResult[0].formats?.thumbnail?.url; // Adjust based on actual response structure
+            const xyz = uploadResult[0].formats?.thumbnail?.url; // Adjust based on actual response structure
+            uploadedImageUrl = `https://presentaiapi.codesemic.com${xyz}`
             console.log("Image uploaded successfully:", uploadedImageUrl);
           } catch (error) {
             console.error("Error uploading image:", error);
@@ -383,7 +384,7 @@ export default function Page() {
           columns: slide.columns || [],
           imageContainer: {
             imageId: slide.imageContainer?.imageId || uuidv4(),
-            image: uploadedImageUrl || slide.imageContainer?.image || null,
+            image: uploadedImageUrl  || null,
             styles: slide.imageContainer?.styles || {},
           },
           locale: "en",
