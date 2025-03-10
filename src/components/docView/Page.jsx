@@ -308,10 +308,6 @@ export default function Page() {
       const formData = new FormData();
       formData.append("files", imageBlob, "slide-image.jpg");
 
-      for (let [key, value] of formData.entries()) {
-        console.log(`FormData entry: ${key}=${value}`);
-      }
-
       const uploadResponse = await fetch("https://presentaiapi.codesemic.com/api/upload", {
         method: "POST",
         headers: {
@@ -375,6 +371,37 @@ export default function Page() {
           }
         }
 
+        // Handle image upload for dropContainer's dropItems
+        let processedDropItems = slide.dropContainer?.dropItems || [];
+        if (processedDropItems.length > 0) {
+          try {
+            processedDropItems = await Promise.all(
+              processedDropItems.map(async (item) => {
+                let newItem = { ...item };
+
+                // Upload image if applicable
+                if (newItem.type === 'image' && newItem.content?.startsWith('data:image')) {
+                  const url = await uploadImage(newItem.content, token);
+                  newItem.content = url;
+                }
+
+                // Ensure required fields with defaults
+                newItem.id = newItem.id || uuidv4();
+                newItem.type = newItem.type || 'text';
+                newItem.content = newItem.content || '';
+                newItem.styles = newItem.styles || {};
+
+                return newItem;
+              })
+            );
+            console.log("Processed dropItems:", processedDropItems);
+          } catch (error) {
+            console.error("Error processing dropItems:", error);
+            toast.error(`Failed to process dropItems: ${error.message}`);
+            return null;
+          }
+        }
+
         const cleanSlide = {
           titleContainer: {
             titleId: slide.titleContainer?.titleId || uuidv4(),
@@ -388,18 +415,13 @@ export default function Page() {
           },
           type: slide.type || "custom",
           content: JSON.stringify({
-            dropItems: (slide.dropContainer?.dropItems || []).map((item) => ({
-              id: item.id || uuidv4(),
-              type: item.type || "text",
-              content: item.content || "",
-              styles: item.styles || {},
-            })),
+            dropItems: processedDropItems,
             ...(slide.type === "twoColumn" && { columns: slide.columns || [] }),
             ...(slide.type === "threeImgCard" && { cards: uploadedCardImages || slide.cards || [] }),
           }),
           impress_settings: "",
           dropContainer: {
-            dropItems: slide.dropContainer?.dropItems || [],
+            dropItems: processedDropItems,
           },
           cards: uploadedCardImages.length > 0 ? uploadedCardImages : slide.cards || [],
           columns: slide.columns ? { ...slide.columns, image: uploadedImageUrl } : [],
