@@ -4,6 +4,7 @@ import TitleInput from "./CardComponents/TitleInput"
 import ParagraphInput from "./CardComponents/ParagraphInput"
 import { DragContext } from "@/components/SidebarLeft/DragContext"
 import AddButton from "./AddButton"
+import { useEffect } from "react"
 
 function AccentImage ({
   setSlidesPreview,
@@ -32,7 +33,7 @@ function AccentImage ({
       reader.readAsDataURL(file)
     }
   }
-
+  
   const handleMouseDown = (e) => {
     setIsResizing(true)
     setInitialMousePos({ x: e.clientX, y: e.clientY })
