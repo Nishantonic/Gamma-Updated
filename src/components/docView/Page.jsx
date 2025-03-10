@@ -424,7 +424,7 @@ export default function Page() {
             dropItems: processedDropItems,
           },
           cards: uploadedCardImages.length > 0 ? uploadedCardImages : slide.cards || [],
-          columns: slide.columns ? { ...slide.columns, image: uploadedImageUrl } : [],
+          columns: slide.columns || [],
           imageContainer: {
             imageId: slide.imageContainer?.imageId || uuidv4(),
             image: uploadedImageUrl || null,
@@ -432,7 +432,8 @@ export default function Page() {
           },
           locale: "en",
         };
-
+        console.log("render:",cleanSlide);
+        
         if (slide.documentId) {
           const slideResponse = await fetch(
             `https://presentaiapi.codesemic.com/api/slides/${slide.documentId}`,
