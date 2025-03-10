@@ -201,11 +201,13 @@ export default function Page() {
 
   const handleSaveSlide = async () => {
   try {
+    // Validate slides array
     if (!slides || slides.length === 0) {
       toast.error("No slides to save!");
       return;
     }
 
+    // Check authentication
     const token = localStorage.getItem("token");
     if (!token) {
       toast.error("Please login to save presentation");
@@ -248,6 +250,7 @@ export default function Page() {
       if (presentationResponse.ok) {
         const presentationData = await presentationResponse.json();
         finalPresentationDocumentId = presentationData.data?.documentId || finalPresentationId;
+
         const updateResponse = await fetch(
           `https://presentaiapi.codesemic.com/api/presentations/${finalPresentationDocumentId}`,
           {
@@ -297,6 +300,40 @@ export default function Page() {
       return new Blob([ab], { type: mimeString });
     };
 
+    // Helper function to upload an image
+    const uploadImage = async (base64Image, token) => {
+      const imageBlob = base64ToBlob(base64Image);
+      console.log("Blob created:", imageBlob);
+
+      const formData = new FormData();
+      formData.append("files", imageBlob, "slide-image.jpg");
+
+      for (let [key, value] of formData.entries()) {
+        console.log(`FormData entry: ${key}=${value}`);
+      }
+
+      const uploadResponse = await fetch("https://presentaiapi.codesemic.com/api/upload", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: formData,
+      });
+
+      if (!uploadResponse.ok) {
+        const errorData = await uploadResponse.json();
+        console.error("Upload response error:", errorData);
+        throw new Error(
+          `Image upload failed: ${uploadResponse.status} - ${errorData.error?.message || "Unknown error"}`
+        );
+      }
+
+      const uploadResult = await uploadResponse.json();
+      console.log("Upload response:", uploadResult);
+      const thumbnailUrl = uploadResult[0].formats?.thumbnail?.url;
+      return `https://presentaiapi.codesemic.com${thumbnailUrl}`;
+    };
+
     // Step 2: Save or update slides
     const savedSlides = await Promise.all(
       slides.map(async (slide) => {
@@ -304,53 +341,37 @@ export default function Page() {
           slide.id = uuidv4();
         }
 
-        // Handle image upload if image exists in base64 format
+        // Handle image upload for regular slides
         let uploadedImageUrl = null;
         if (slide.imageContainer?.image?.startsWith("data:image")) {
           try {
-            // Convert base64 to Blob
-            const imageBlob = base64ToBlob(slide.imageContainer.image);
-            console.log("Blob created:", imageBlob);
-
-            // Create FormData and append the image
-            const formData = new FormData();
-            formData.append("files", imageBlob, "slide-image.jpg"); // Try "file" first
-            // If "file" doesn't work, you can try "image" by uncommenting below:
-            // formData.append("image", imageBlob, "slide-image.jpg");
-
-            // Log FormData contents (for debugging, as FormData isn't directly loggable)
-            for (let [key, value] of formData.entries()) {
-              console.log(`FormData entry: ${key}=${value}`);
-            }
-
-            const uploadResponse = await fetch(
-              "https://presentaiapi.codesemic.com/api/upload",
-              {
-                method: "POST",
-                headers: {
-                  Authorization: `Bearer ${token}`, // Only Authorization header
-                },
-                body: formData,
-              }
-            );
-
-            if (!uploadResponse.ok) {
-              const errorData = await uploadResponse.json();
-              console.error("Upload response error:", errorData);
-              throw new Error(
-                `Image upload failed: ${uploadResponse.status} - ${errorData.error?.message || "Unknown error"}`
-              );
-            }
-
-            const uploadResult = await uploadResponse.json();
-            console.log("Upload response:", uploadResult);
-            const xyz = uploadResult[0].formats?.thumbnail?.url; // Adjust based on actual response structure
-            uploadedImageUrl = `https://presentaiapi.codesemic.com${xyz}`
+            uploadedImageUrl = await uploadImage(slide.imageContainer.image, token);
             console.log("Image uploaded successfully:", uploadedImageUrl);
           } catch (error) {
             console.error("Error uploading image:", error);
             toast.error(`Failed to upload slide image: ${error.message}`);
-            return null; // Return null to indicate failure for this slide
+            return null;
+          }
+        }
+
+        // Handle image upload for threeImgCard slides
+        let uploadedCardImages = [];
+        if (slide.type === "threeImgCard" && slide.cards?.length > 0) {
+          try {
+            uploadedCardImages = await Promise.all(
+              slide.cards.map(async (card) => {
+                if (card?.image?.startsWith("data:image")) {
+                  const url = await uploadImage(card.image, token);
+                  return { ...card, image: url };
+                }
+                return card;
+              })
+            );
+            console.log("Card images uploaded successfully:", uploadedCardImages);
+          } catch (error) {
+            console.error("Error uploading card images:", error);
+            toast.error(`Failed to upload card images: ${error.message}`);
+            return null;
           }
         }
 
@@ -374,17 +395,17 @@ export default function Page() {
               styles: item.styles || {},
             })),
             ...(slide.type === "twoColumn" && { columns: slide.columns || [] }),
-            ...(slide.type === "threeImgCard" && { cards: slide.cards || [] }),
+            ...(slide.type === "threeImgCard" && { cards: uploadedCardImages || slide.cards || [] }),
           }),
           impress_settings: "",
           dropContainer: {
             dropItems: slide.dropContainer?.dropItems || [],
           },
-          cards: slide.cards || [],
-          columns: slide.columns || [],
+          cards: uploadedCardImages.length > 0 ? uploadedCardImages : slide.cards || [],
+          columns: slide.columns ? { ...slide.columns, image: uploadedImageUrl } : [],
           imageContainer: {
             imageId: slide.imageContainer?.imageId || uuidv4(),
-            image: uploadedImageUrl  || null,
+            image: uploadedImageUrl || null,
             styles: slide.imageContainer?.styles || {},
           },
           locale: "en",
@@ -436,7 +457,7 @@ export default function Page() {
     navigate("/home", { state: { presentationId: finalPresentationId } });
   } catch (error) {
     console.error("Error saving presentation/slides:", error);
-    toast.error("Failed to save presentation or slides!");
+    toast.error(`Failed to save presentation or slides: ${error.message}`);
   }
 };
 
