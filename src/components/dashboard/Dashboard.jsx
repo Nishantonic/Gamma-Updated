@@ -16,7 +16,6 @@ const Dashboard = () => {
   useEffect(() => {
     localStorage.setItem("credits", credits);
   }, [credits]);
-
   const componentMap = {
     Gammas: <Gammas credits={credits} setCradits={setCradits} />,
     "Settings & Members": <Settings />,
