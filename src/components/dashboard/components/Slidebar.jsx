@@ -42,7 +42,7 @@ function Navbar({ setActiveComponent, activeComponent }) {
     <div className="h-screen w-80 p-5 overflow-y-auto border-r border-gray-300 [&::-webkit-scrollbar-track]:rounded-2xl [&::-webkit-scrollbar]:w-2
   [&::-webkit-scrollbar-track]:bg-gray-100
   [&::-webkit-scrollbar-thumb]:rounded-full
-  [&::-webkit-scrollbar-thumb]:bg-purple-500
+  [&::-webkit-scrollbar-thumb]:bg-gray-300
   dark:[&::-webkit-scrollbar-track]:bg-neutral-900
   dark:[&::-webkit-scrollbar-thumb]:bg-neutral-500">
       <div className="flex flex-col gap-4">
@@ -102,7 +102,6 @@ function Navbar({ setActiveComponent, activeComponent }) {
           { icon: faWandMagicSparkles, label: "Templates" },
           { icon: faBookOpen, label: "Inspiration" },
           { icon: faPalette, label: "Themes" },
-          { icon: faTrash, label: "Trash" },
         ].map((item, index) => (
           <div
             key={index}

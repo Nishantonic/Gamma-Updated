@@ -4,10 +4,10 @@ import Settings from "./components/Settings";
 import AiImages from "./components/AiImages";
 import Navbar from "./components/Slidebar";
 import Gammas from "./components/Gammas/Gammas";
-import Trash from "./components/Trash";
+// import Trash from "./components/Trash";
 
 const Dashboard = () => {
-  const [activeComponent, setActiveComponent] = useState("Gammas");
+  const [activeComponent, setActiveComponent] = useState("Presentation");
   const [credits, setCradits] = useState(() => {
     const savedCredits = localStorage.getItem("credits");
     return savedCredits !== null ? parseInt(savedCredits) : 50;
@@ -17,10 +17,10 @@ const Dashboard = () => {
     localStorage.setItem("credits", credits);
   }, [credits]);
   const componentMap = {
-    Gammas: <Gammas credits={credits} setCradits={setCradits} />,
+    "Presentation": <Gammas credits={credits} setCradits={setCradits} />,
     "Settings & Members": <Settings />,
     "Ai Images": <AiImages credits={credits} setCradits={setCradits} />,
-    Trash: <Trash />,
+    // Trash: <Trash />,
   };
 
   return (
