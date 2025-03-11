@@ -222,7 +222,7 @@ export default function Page() {
       return;
     }
 
-    // Step 1: Handle presentation (create or update)
+    // **Step 1: Handle presentation (create or update)**
     let finalPresentationId = presentationId;
     let finalPresentationDocumentId = presentationDocumentId;
 
@@ -288,7 +288,7 @@ export default function Page() {
     setPresentationDocumentId(finalPresentationDocumentId);
     console.log("Using presentation documentId for slides:", finalPresentationDocumentId);
 
-    // Helper function to convert base64 to Blob
+    // Helper function to convert base64 to Blob (unchanged)
     const base64ToBlob = (base64) => {
       const byteString = atob(base64.split(",")[1]);
       const mimeString = base64.split(",")[0].split(":")[1].split(";")[0];
@@ -300,7 +300,7 @@ export default function Page() {
       return new Blob([ab], { type: mimeString });
     };
 
-    // Helper function to upload an image
+    // Helper function to upload an image (unchanged)
     const uploadImage = async (base64Image, token) => {
       const imageBlob = base64ToBlob(base64Image);
       console.log("Blob created:", imageBlob);
@@ -318,166 +318,173 @@ export default function Page() {
 
       if (!uploadResponse.ok) {
         const errorData = await uploadResponse.json();
-        console.error("Upload response error:", errorData);
         throw new Error(
           `Image upload failed: ${uploadResponse.status} - ${errorData.error?.message || "Unknown error"}`
         );
       }
 
       const uploadResult = await uploadResponse.json();
-      console.log("Upload response:", uploadResult);
       const thumbnailUrl = uploadResult[0].formats?.thumbnail?.url;
       return `https://presentaiapi.codesemic.com${thumbnailUrl}`;
     };
 
-    // Step 2: Save or update slides
-    const savedSlides = await Promise.all(
-      slides.map(async (slide) => {
-        if (!slide.id) {
-          slide.id = uuidv4();
-        }
+    // **Step 2: Collect and upload all images concurrently**
+    const uploadPromises = [];
+    const imageMap = new Map(); // Maps upload promise to slide index and image type
 
-        // Handle image upload for regular slides
-        let uploadedImageUrl = null;
-        if (slide.imageContainer?.image?.startsWith("data:image")) {
-          try {
-            uploadedImageUrl = await uploadImage(slide.imageContainer.image, token);
-            console.log("Image uploaded successfully:", uploadedImageUrl);
-          } catch (error) {
-            console.error("Error uploading image:", error);
-            toast.error(`Failed to upload slide image: ${error.message}`);
-            return null;
+    slides.forEach((slide, slideIndex) => {
+      // Assign an ID if not present
+      if (!slide.id) {
+        slide.id = uuidv4();
+      }
+
+      // ImageContainer image
+      if (slide.imageContainer?.image?.startsWith("data:image")) {
+        const promise = uploadImage(slide.imageContainer.image, token);
+        uploadPromises.push(promise);
+        imageMap.set(promise, { slideIndex, type: "imageContainer" });
+      }
+
+      // ThreeImgCard slide cards
+      if (slide.type === "threeImgCard" && slide.cards?.length > 0) {
+        slide.cards.forEach((card, cardIndex) => {
+          if (card?.image?.startsWith("data:image")) {
+            const promise = uploadImage(card.image, token);
+            uploadPromises.push(promise);
+            imageMap.set(promise, { slideIndex, type: "card", cardIndex });
           }
-        }
+        });
+      }
 
-        // Handle image upload for threeImgCard slides
-        let uploadedCardImages = [];
-        if (slide.type === "threeImgCard" && slide.cards?.length > 0) {
-          try {
-            uploadedCardImages = await Promise.all(
-              slide.cards.map(async (card) => {
-                if (card?.image?.startsWith("data:image")) {
-                  const url = await uploadImage(card.image, token);
-                  return { ...card, image: url };
-                }
-                return card;
-              })
-            );
-            console.log("Card images uploaded successfully:", uploadedCardImages);
-          } catch (error) {
-            console.error("Error uploading card images:", error);
-            toast.error(`Failed to upload card images: ${error.message}`);
-            return null;
+      // DropContainer dropItems
+      if (slide.dropContainer?.dropItems?.length > 0) {
+        slide.dropContainer.dropItems.forEach((item, itemIndex) => {
+          if (item.type === "image" && item.content?.startsWith("data:image")) {
+            const promise = uploadImage(item.content, token);
+            uploadPromises.push(promise);
+            imageMap.set(promise, { slideIndex, type: "dropItem", itemIndex });
           }
-        }
+        });
+      }
+    });
 
-        // Handle image upload for dropContainer's dropItems
-        let processedDropItems = slide.dropContainer?.dropItems || [];
-        if (processedDropItems.length > 0) {
-          try {
-            processedDropItems = await Promise.all(
-              processedDropItems.map(async (item) => {
-                let newItem = { ...item };
+    // Upload all images concurrently
+    const uploadedImageUrls = await Promise.all(uploadPromises.map(p => p.catch(e => ({ error: e }))));
 
-                // Upload image if applicable
-                if (newItem.type === 'image' && newItem.content?.startsWith('data:image')) {
-                  const url = await uploadImage(newItem.content, token);
-                  newItem.content = url;
-                }
+    // Map uploaded URLs back to slides
+    const updatedSlides = slides.map(slide => ({ ...slide })); // Deep copy to avoid mutating state directly
+    uploadedImageUrls.forEach((result, idx) => {
+      const promise = uploadPromises[idx];
+      const { slideIndex, type, cardIndex, itemIndex } = imageMap.get(promise);
 
-                // Ensure required fields with defaults
-                newItem.id = newItem.id || uuidv4();
-                newItem.type = newItem.type || 'text';
-                newItem.content = newItem.content || '';
-                newItem.styles = newItem.styles || {};
+      if (result.error) {
+        console.error(`Image upload failed for slide ${slideIndex}, ${type}:`, result.error);
+        toast.error(`Failed to upload image for slide ${slideIndex + 1}`);
+        return;
+      }
 
-                return newItem;
-              })
-            );
-            console.log("Processed dropItems:", processedDropItems);
-          } catch (error) {
-            console.error("Error processing dropItems:", error);
-            toast.error(`Failed to process dropItems: ${error.message}`);
-            return null;
+      const url = result;
+      if (type === "imageContainer") {
+        updatedSlides[slideIndex].imageContainer.image = url;
+      } else if (type === "card") {
+        updatedSlides[slideIndex].cards[cardIndex].image = url;
+      } else if (type === "dropItem") {
+        updatedSlides[slideIndex].dropContainer.dropItems[itemIndex].content = url;
+      }
+    });
+
+    // **Step 3: Save slides sequentially**
+    const savedSlides = [];
+    for (const slide of updatedSlides) {
+      // Prepare cleanSlide object
+      const processedDropItems = slide.dropContainer?.dropItems || [];
+      const uploadedCardImages = slide.type === "threeImgCard" && slide.cards?.length > 0
+        ? slide.cards
+        : [];
+
+      const cleanSlide = {
+        titleContainer: {
+          titleId: slide.titleContainer?.titleId || uuidv4(),
+          title: slide.titleContainer?.title || "Untitled",
+          styles: slide.titleContainer?.styles || {},
+        },
+        descriptionContainer: {
+          descriptionId: slide.descriptionContainer?.descriptionId || uuidv4(),
+          description: slide.descriptionContainer?.description || "",
+          styles: slide.descriptionContainer?.styles || {},
+        },
+        type: slide.type || "custom",
+        content: JSON.stringify({
+          dropItems: processedDropItems,
+          ...(slide.type === "twoColumn" && { columns: slide.columns || [] }),
+          ...(slide.type === "threeImgCard" && { cards: uploadedCardImages || slide.cards || [] }),
+        }),
+        impress_settings: "",
+        dropContainer: {
+          dropItems: processedDropItems,
+        },
+        cards: uploadedCardImages.length > 0 ? uploadedCardImages : slide.cards || [],
+        columns: slide.columns || [],
+        imageContainer: {
+          imageId: slide.imageContainer?.imageId || uuidv4(),
+          image: slide.imageContainer?.image || null,
+          styles: slide.imageContainer?.styles || {},
+        },
+        locale: "en",
+      };
+
+      // Save or update the slide
+      let savedSlide;
+      if (slide.documentId) {
+        const slideResponse = await fetch(
+          `https://presentaiapi.codesemic.com/api/slides/${slide.documentId}`,
+          {
+            method: "PUT",
+            headers: getAuthHeaders(),
+            body: JSON.stringify({
+              data: {
+                titleContainer: JSON.stringify(cleanSlide.titleContainer),
+                descriptionContainer: JSON.stringify(cleanSlide.descriptionContainer),
+                presentation: finalPresentationId,
+                type: cleanSlide.type,
+                content: cleanSlide.content,
+                impress_settings: cleanSlide.impress_settings || "",
+                dropContainer: JSON.stringify(cleanSlide.dropContainer),
+                cards: JSON.stringify(cleanSlide.cards),
+                columns: JSON.stringify(cleanSlide.columns),
+                imageContainer: JSON.stringify(cleanSlide.imageContainer),
+                locale: cleanSlide.locale,
+              },
+            }),
           }
+        );
+
+        if (!slideResponse.ok) {
+          const errorText = await slideResponse.text();
+          throw new Error(`Failed to update slide ${slide.documentId}: ${slideResponse.status} - ${errorText}`);
         }
+        savedSlide = await slideResponse.json();
+        console.log("Updated slide:", savedSlide);
+      } else {
+        savedSlide = await saveSlideToAPI(finalPresentationId, cleanSlide);
+      }
 
-        const cleanSlide = {
-          titleContainer: {
-            titleId: slide.titleContainer?.titleId || uuidv4(),
-            title: slide.titleContainer?.title || "Untitled",
-            styles: slide.titleContainer?.styles || {},
-          },
-          descriptionContainer: {
-            descriptionId: slide.descriptionContainer?.descriptionId || uuidv4(),
-            description: slide.descriptionContainer?.description || "",
-            styles: slide.descriptionContainer?.styles || {},
-          },
-          type: slide.type || "custom",
-          content: JSON.stringify({
-            dropItems: processedDropItems,
-            ...(slide.type === "twoColumn" && { columns: slide.columns || [] }),
-            ...(slide.type === "threeImgCard" && { cards: uploadedCardImages || slide.cards || [] }),
-          }),
-          impress_settings: "",
-          dropContainer: {
-            dropItems: processedDropItems,
-          },
-          cards: uploadedCardImages.length > 0 ? uploadedCardImages : slide.cards || [],
-          columns: slide.columns || [],
-          imageContainer: {
-            imageId: slide.imageContainer?.imageId || uuidv4(),
-            image: uploadedImageUrl || null,
-            styles: slide.imageContainer?.styles || {},
-          },
-          locale: "en",
-        };
-        console.log("render:",cleanSlide);
-        
-        if (slide.documentId) {
-          const slideResponse = await fetch(
-            `https://presentaiapi.codesemic.com/api/slides/${slide.documentId}`,
-            {
-              method: "PUT",
-              headers: getAuthHeaders(),
-              body: JSON.stringify({
-                data: {
-                  titleContainer: JSON.stringify(cleanSlide.titleContainer),
-                  descriptionContainer: JSON.stringify(cleanSlide.descriptionContainer),
-                  presentation: finalPresentationId,
-                  type: cleanSlide.type,
-                  content: cleanSlide.content,
-                  impress_settings: cleanSlide.impress_settings || "",
-                  dropContainer: JSON.stringify(cleanSlide.dropContainer),
-                  cards: JSON.stringify(cleanSlide.cards),
-                  columns: JSON.stringify(cleanSlide.columns),
-                  imageContainer: JSON.stringify(cleanSlide.imageContainer),
-                  locale: cleanSlide.locale,
-                },
-              }),
-            }
-          );
-
-          if (!slideResponse.ok) {
-            const errorText = await slideResponse.text();
-            throw new Error(`Failed to update slide ${slide.documentId}: ${slideResponse.status} - ${errorText}`);
-          }
-          const updatedSlide = await slideResponse.json();
-          console.log("Updated slide:", updatedSlide);
-          return updatedSlide;
-        } else {
-          return await saveSlideToAPI(finalPresentationId, cleanSlide);
-        }
-      })
-    );
-
-    if (savedSlides.some((slide) => !slide)) {
-      toast.error("Some slides failed to save");
-      return;
+      if (savedSlide) {
+        savedSlides.push(savedSlide);
+      } else {
+        console.error(`Failed to save slide ${slide.id}`);
+        toast.error(`Failed to save slide ${slide.id}`);
+        savedSlides.push(null);
+      }
     }
 
-    toast.success("Presentation and slides saved successfully!");
-    navigate("/home", { state: { presentationId: finalPresentationId } });
+    // Check save results
+    if (savedSlides.every(slide => slide)) {
+      toast.success("Presentation and slides saved successfully!");
+      navigate("/home", { state: { presentationId: finalPresentationId } });
+    } else {
+      toast.warn("Some slides failed to save");
+    }
   } catch (error) {
     console.error("Error saving presentation/slides:", error);
     toast.error(`Failed to save presentation or slides: ${error.message}`);
