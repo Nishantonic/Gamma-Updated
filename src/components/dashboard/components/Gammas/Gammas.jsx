@@ -191,61 +191,75 @@ const Gammas = ({ credits = 0, setCredits }) => {
   };
 
   const handleDeleteSlide = async (presentationId) => {
-    try {
-      const token = localStorage.getItem('token');
-      const presentation = arraySlides.find(p => p.id === presentationId);
-      if (!presentation || !presentation.documentId) {
-        throw new Error('Presentation or documentId not found');
-      }
+  try {
+    const token = localStorage.getItem('token');
+    const presentation = arraySlides.find(p => p.id === presentationId);
+    
+    if (!presentation) {
+      throw new Error('Presentation not found');
+    }
 
+    let slides = [];
+    try {
       const slidesResponse = await fetch(
         `https://presentaiapi.codesemic.com/api/slides/presentation/${presentationId}`,
-        {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-          },
-        }
+        { headers: { 'Authorization': `Bearer ${token}` } }
       );
-      if (!slidesResponse.ok) {
-        throw new Error('Failed to fetch slides');
+      
+      if (slidesResponse.ok) {
+        slides = await slidesResponse.json();
+      } else {
+        console.warn('No slides found for presentation, proceeding with presentation deletion');
       }
-      const slides = await slidesResponse.json();
+    } catch (slidesError) {
+      console.warn('Error fetching slides, proceeding with presentation deletion:', slidesError);
+    }
 
-      const deleteSlidePromises = slides.map(slide =>
+    // Only attempt to delete slides if any were found
+    if (slides.length > 0) {
+      const deleteSlidePromises = slides.map(slide => 
         fetch(`https://presentaiapi.codesemic.com/api/slides/${slide.documentId}`, {
           method: 'DELETE',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-          },
-        }).then(response => {
-          if (!response.ok) {
-            throw new Error(`Failed to delete slide ${slide.documentId}`);
-          }
+          headers: { 'Authorization': `Bearer ${token}` },
         })
       );
-
-      await Promise.all(deleteSlidePromises);
-
-      const deletePresentationResponse = await fetch(
-        `https://presentaiapi.codesemic.com/api/presentations/${presentation.documentId}`,
-        {
-          method: 'DELETE',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-          },
-        }
+      
+      const slideDeletionResults = await Promise.allSettled(deleteSlidePromises);
+      const failedDeletions = slideDeletionResults.filter(result => 
+        result.status === 'rejected' || !result.value.ok
       );
-      if (!deletePresentationResponse.ok) {
-        throw new Error('Failed to delete presentation');
+      
+      if (failedDeletions.length > 0) {
+        console.error('Failed to delete some slides:', failedDeletions);
+        throw new Error(`Failed to delete ${failedDeletions.length} slides`);
       }
-
-      setArraySlides(prev => prev.filter(p => p.id !== presentationId));
-      showNotification('Presentation and slides deleted successfully', 'success');
-    } catch (err) {
-      showNotification('Failed to delete presentation and slides. Please try again.', 'error');
-      console.error(err);
     }
-  };
+
+    // Always attempt to delete the presentation
+    const deletePresentationResponse = await fetch(
+      `https://presentaiapi.codesemic.com/api/presentations/${presentation.documentId}`,
+      {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` },
+      }
+    );
+
+    if (!deletePresentationResponse.ok) {
+      throw new Error('Failed to delete presentation');
+    }
+
+    setArraySlides(prev => prev.filter(p => p.id !== presentationId));
+    showNotification('Presentation deleted successfully', 'success');
+    
+  } catch (err) {
+    console.error('Deletion error:', err);
+    const errorMessage = err.message.startsWith('Failed to delete some slides') 
+      ? 'Partially deleted - some slides could not be removed' 
+      : 'Failed to delete presentation. Please try again.';
+    
+    showNotification(errorMessage, 'error');
+  }
+};
 
   const compressForSharing = (data) => {
     const jsonString = JSON.stringify(data);
@@ -265,19 +279,15 @@ const Gammas = ({ credits = 0, setCredits }) => {
     return btoa(jsonString);
   };
 
-  const handleShare = (presentationId) => {
-    const presentation = arraySlides.find(p => p.id === presentationId);
-    if (!presentation) {
-      showNotification("Presentation not found for sharing", "error");
-      return;
-    }
-    const url = `${window.location.origin}/share/${presentation.documentId}`;
-    setShareDialog({
-      isOpen: true,
-      url,
-      presentationId
-    });
-  };
+  const handleShare = async (presentationId) => {
+  // Directly construct the URL without unnecessary API call
+  const url = `${window.location.origin}/share/${presentationId}`;
+  setShareDialog({
+    isOpen: true,
+    url,
+    presentationId
+  });
+};
 
   const toggleFavorite = (presentationId) => {
     const newFavorites = favorites.includes(presentationId)
@@ -549,41 +559,44 @@ const Gammas = ({ credits = 0, setCredits }) => {
 
       <Dialog open={shareDialog.isOpen} onOpenChange={(open) => setShareDialog(prev => ({ ...prev, isOpen: open }))}>
         <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Share Gamma</DialogTitle>
-          </DialogHeader>
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="flex items-center space-x-2 bg-gray-50 p-3 rounded-lg"
-          >
-            <input
-              type="text"
-              readOnly
-              value={shareDialog.url}
-              className="flex-1 bg-transparent border-none focus:outline-none text-sm"
-            />
-            <motion.button
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
-              onClick={copyToClipboard}
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-            >
-              {copied ? (
-                <motion.div
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  transition={{ type: "spring", stiffness: 500, damping: 15 }}
-                >
-                  <Check className="w-4 h-4 text-green-500" />
-                </motion.div>
-              ) : (
-                <Clipboard className="w-4 h-4 text-gray-500" />
-              )}
-            </motion.button>
-          </motion.div>
-        </DialogContent>
+  <DialogHeader>
+    <DialogTitle>Share Gamma</DialogTitle>
+  </DialogHeader>
+  <motion.div
+    initial={{ opacity: 0, y: 20 }}
+    animate={{ opacity: 1, y: 0 }}
+    transition={{ delay: 0.2 }}
+    className="flex items-center space-x-2 bg-gray-50 p-3 rounded-lg"
+  >
+    <a
+      href={shareDialog.url}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="flex-1 text-blue-600 hover:text-blue-800 underline truncate"
+      onClick={(e) => e.stopPropagation()}
+    >
+      {shareDialog.url}
+    </a>
+    <motion.button
+      whileHover={{ scale: 1.1 }}
+      whileTap={{ scale: 0.9 }}
+      onClick={copyToClipboard}
+      className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+    >
+      {copied ? (
+        <motion.div
+          initial={{ scale: 0 }}
+          animate={{ scale: 1 }}
+          transition={{ type: "spring", stiffness: 500, damping: 15 }}
+        >
+          <Check className="w-4 h-4 text-green-500" />
+        </motion.div>
+      ) : (
+        <Clipboard className="w-4 h-4 text-gray-500" />
+      )}
+    </motion.button>
+  </motion.div>
+</DialogContent>
       </Dialog>
 
       {/* Add global CSS for page transitions */}

@@ -48,7 +48,7 @@ export default function AiImages({ credits, setCradits }) {
             aspectRatio: img.width === img.height ? "square" : img.width > img.height ? "landscape" : "portrait",
             createdAt: img.createdAt,
           };
-        });
+        }).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));;
 
         setImages(fetchedImages);
       } catch (err) {
@@ -60,7 +60,7 @@ export default function AiImages({ credits, setCradits }) {
     };
 
     fetchImages();
-  }, []);
+  }, [images]);
 
   const handleGenerate = async () => {
     if (credits < 10) {
@@ -127,7 +127,7 @@ export default function AiImages({ credits, setCradits }) {
         createdAt: uploadedImage.createdAt,
       };
 
-      setImages(prev => [...prev, newImage]);
+      setImages(prev => [newImage, ...prev]);
       const newCredits = credits - 10;
       setCradits(newCredits);
       localStorage.setItem("credits", newCredits);
@@ -306,7 +306,9 @@ export default function AiImages({ credits, setCradits }) {
           className="flex gap-4 md:gap-6"
           columnClassName="masonry-column"
         >
-          {images.map((image) => (
+          {images
+    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)) // Add this sort
+    .map((image) => (
             <div
               key={image.id}
               className="mb-4 md:mb-6 relative group rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition-shadow bg-white dark:bg-gray-800"

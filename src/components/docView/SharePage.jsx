@@ -22,42 +22,59 @@ const SharePage = () => {
   const [presentationStartIndex, setPresentationStartIndex] = useState(0);
 
   useEffect(() => {
-    const loadSharedContent = () => {
+    const loadSharedPresentation = async () => {
       try {
-        // First try to decode the shareId as base64
-        if (shareId) {
-          try {
-            const decodedData = atob(shareId);
-            const parsedData = JSON.parse(decodedData);
-            
-            if (parsedData && parsedData.slides) {
-              setSlides(parsedData.slides);
-              setLoading(false);
-              return;
-            }
-          } catch (decodeError) {
-            console.error('Failed to decode share URL:', decodeError);
+        const response = await fetch(
+          `https://presentaiapi.codesemic.com/api/slides/presentation/${shareId}`,
+          {
+            headers: {
+              'Authorization': `Bearer ${localStorage.getItem('token')}`,
+            },
           }
-        }
+        );
 
-        // Fallback to checking localStorage if direct decode fails
-        const savedSlides = JSON.parse(localStorage.getItem('slides')) || [];
-        const presentation = savedSlides.find((ppt) => String(ppt.key) === String(shareId));
-        
-        if (presentation) {
-          setSlides(presentation.slides);
-        } else {
-          setError('Presentation not found. The share link may be invalid or expired.');
-        }
+        if (!response.ok) throw new Error('Presentation not found');
+        const slidesData = await response.json();
+
+        const normalizedSlides = slidesData.map(slide => ({
+          id: slide.id,
+          type: slide.type || "custom",
+          titleContainer: slide.titleContainer ? JSON.parse(slide.titleContainer) : {
+            titleId: uuidv4(),
+            title: "Untitled",
+            styles: {},
+          },
+          descriptionContainer: slide.descriptionContainer ? JSON.parse(slide.descriptionContainer) : {
+            descriptionId: uuidv4(),
+            description: "",
+            styles: {},
+          },
+          imageContainer: slide.imageContainer ? JSON.parse(slide.imageContainer) : {
+            imageId: uuidv4(),
+            image: slide.image?.[0] || null,
+            styles: { width: 300, height: 210 },
+          },
+          dropContainer: slide.dropContainer ? JSON.parse(slide.dropContainer) : {
+            dropItems: slide.content ? JSON.parse(slide.content).dropItems || [] : [],
+          },
+          ...(slide.type === "twoColumn" && {
+            columns: slide.columns ? JSON.parse(slide.columns) : [],
+          }),
+          ...(slide.type === "threeImgCard" && {
+            cards: slide.cards ? JSON.parse(slide.cards) : [],
+          }),
+        }));
+
+        setSlides(normalizedSlides);
       } catch (err) {
-        setError('Failed to load presentation. Please try again later.');
-        console.error('Error loading presentation:', err);
+        setError('Presentation not found or sharing failed');
+        console.error('Error loading shared presentation:', err);
       } finally {
         setLoading(false);
       }
     };
 
-    loadSharedContent();
+    loadSharedPresentation();
   }, [shareId]);
 
   useEffect(() => {
