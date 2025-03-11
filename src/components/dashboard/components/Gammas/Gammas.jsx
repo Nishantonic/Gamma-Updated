@@ -518,7 +518,7 @@ const Gammas = ({ credits = 0, setCredits }) => {
                   repeat: Infinity,
                   repeatType: "reverse"
                 }}
-                className="mx-auto mb-4"
+                className="mx-auto mb-4 flex justify-center items-center"
               >
                 <Folders className="w-12 h-12 text-gray-400" />
               </motion.div>
