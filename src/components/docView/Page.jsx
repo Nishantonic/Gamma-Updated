@@ -298,7 +298,7 @@ export default function Page() {
 
     // Calculate lockerIds before handling presentation
     const lockerIds = Object.values(slideDockers)
-      .flatMap(dockers => dockers.map(docker => docker.documentId))
+      .flatMap(dockers => dockers.map(docker => docker.id))
       .filter(id => id);
     console.log("slideDockers before save:", slideDockers);
     console.log("Extracted lockerIds for save:", lockerIds);

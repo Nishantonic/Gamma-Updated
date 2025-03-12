@@ -30,7 +30,8 @@ export function Header({ setGenerateAi, startPresentation, slides, slideDockers,
   const [isDockerPopupOpen, setIsDockerPopupOpen] = useState(false);
   const [selectedLockerType, setSelectedLockerType] = useState("Banner");
   const [dockerForm, setDockerForm] = useState({
-    documentId: null,  // Changed from 'id' to 'documentId'
+    id: null, // Added 'id' field
+    documentId: null,
     lockerType: "Banner",
     image: null,
     video: null,
@@ -66,14 +67,15 @@ export function Header({ setGenerateAi, startPresentation, slides, slideDockers,
       if (!response.ok) throw new Error("Failed to fetch lockers");
       const data = await response.json();
       const updatedDockers = {};
-      
+
       data.data.forEach((locker) => {
         const slideIndex = locker.attributes.slide_number - 1;
         const slideId = slides[slideIndex]?.id;
         if (slideId) {
           updatedDockers[slideId] = updatedDockers[slideId] || [];
           updatedDockers[slideId].push({
-            documentId: locker.id,  // Changed from 'id' to 'documentId'
+            id: locker.id, // Store numeric 'id'
+            documentId: locker.documentId, // Store string 'documentId'
             type: locker.attributes.type,
             title: locker.attributes.title,
             details: {
@@ -188,16 +190,19 @@ export function Header({ setGenerateAi, startPresentation, slides, slideDockers,
       const slideId = slides[slideIndex]?.id;
 
       if (slideId) {
-        const lockerDocumentId = dockerForm.documentId || responseData.data.documentId;  // Use documentId from response
+        const lockerId = responseData.data.id; // Store numeric 'id'
+        const lockerDocumentId = dockerForm.documentId || responseData.data.documentId; // Use existing or new 'documentId'
         const newDocker = {
-          documentId: lockerDocumentId,  // Changed from 'id' to 'documentId'
+          id: lockerId, // Added 'id'
+          documentId: lockerDocumentId,
           type: dockerForm.lockerType,
           title: dockerForm.title || dockerForm.ctaText || dockerForm.lockerType,
           details: {
             ...dockerForm,
             image: imageUrl,
             video: dockerForm.lockerType === "Video" ? imageUrl : null,
-            documentId: lockerDocumentId,  // Changed from 'id' to 'documentId'
+            id: lockerId, // Added 'id' to details
+            documentId: lockerDocumentId,
           },
         };
 
@@ -221,7 +226,8 @@ export function Header({ setGenerateAi, startPresentation, slides, slideDockers,
   const handleEditDocker = (slideId, docker) => {
     const details = docker.details || {};
     setDockerForm({
-      documentId: docker.documentId,  // Changed from 'id' to 'documentId'
+      id: docker.id, // Added 'id'
+      documentId: docker.documentId,
       lockerType: docker.type || "Banner",
       image: details.image || null,
       video: details.video || null,
@@ -240,7 +246,7 @@ export function Header({ setGenerateAi, startPresentation, slides, slideDockers,
     setIsDockerPopupOpen(true);
   };
 
-  const handleDeleteDocker = async (slideId, dockerDocumentId) => {  // Changed parameter name
+  const handleDeleteDocker = async (slideId, dockerDocumentId) => {
     try {
       const response = await fetch(`https://presentaiapi.codesemic.com/api/locakers/${dockerDocumentId}`, {
         method: "DELETE",
@@ -265,7 +271,8 @@ export function Header({ setGenerateAi, startPresentation, slides, slideDockers,
 
   const resetForm = () => {
     setDockerForm({
-      documentId: null,  // Changed from 'id' to 'documentId'
+      id: null, // Added 'id'
+      documentId: null,
       lockerType: "Banner",
       image: null,
       video: null,
@@ -381,7 +388,7 @@ export function Header({ setGenerateAi, startPresentation, slides, slideDockers,
                           {slideDockers[slide.id]?.length > 0 ? (
                             slideDockers[slide.id].map((docker) => (
                               <div
-                                key={docker.id}
+                                key={docker.documentId} // Use documentId as key for uniqueness
                                 className="flex items-center justify-between p-2 hover:bg-gray-100 rounded-md"
                               >
                                 <span className="text-sm text-gray-700">
