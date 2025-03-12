@@ -63,6 +63,8 @@ export default function Page() {
     return savedCredits !== null ? Number.parseInt(savedCredits) : 50;
   });
 
+  const [slideDockers, setSlideDockers] = useState({});
+
   useEffect(() => {
     const slideElement = document.getElementById(`at-${currentSlide}`);
     if (slideElement) {
@@ -1181,7 +1183,7 @@ export default function Page() {
 
   return (
     <div className="h-screen flex flex-col bg-background">
-      <Header slides={slides} setGenerateAi={() => setShowPopup(true)} startPresentation={startPresentation} />
+      <Header slideDockers={slideDockers} setSlideDockers={setSlideDockers} presentationId={presentationId} slides={slides} setGenerateAi={() => setShowPopup(true)} startPresentation={startPresentation} />
       <Toaster position="top-right" richColors />
       {isPresentationMode && (
         <PresentationMode
