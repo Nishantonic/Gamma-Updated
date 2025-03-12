@@ -30,7 +30,7 @@ export function Header({ setGenerateAi, startPresentation, slides, slideDockers,
   const [isDockerPopupOpen, setIsDockerPopupOpen] = useState(false);
   const [selectedLockerType, setSelectedLockerType] = useState("Banner");
   const [dockerForm, setDockerForm] = useState({
-    id: null,
+    documentId: null,  // Changed from 'id' to 'documentId'
     lockerType: "Banner",
     image: null,
     video: null,
@@ -46,7 +46,7 @@ export function Header({ setGenerateAi, startPresentation, slides, slideDockers,
     ctaBtnTxtColor: "#ffffff",
   });
   const [isLoadingLockers, setIsLoadingLockers] = useState(false);
-  const [isSavingLocker, setIsSavingLocker] = useState(false); // New loading state for save/update
+  const [isSavingLocker, setIsSavingLocker] = useState(false);
 
   const isPresentationIdValid = !!presentationId;
 
@@ -66,13 +66,14 @@ export function Header({ setGenerateAi, startPresentation, slides, slideDockers,
       if (!response.ok) throw new Error("Failed to fetch lockers");
       const data = await response.json();
       const updatedDockers = {};
+      
       data.data.forEach((locker) => {
         const slideIndex = locker.attributes.slide_number - 1;
         const slideId = slides[slideIndex]?.id;
         if (slideId) {
           updatedDockers[slideId] = updatedDockers[slideId] || [];
           updatedDockers[slideId].push({
-            id: locker.id,
+            documentId: locker.id,  // Changed from 'id' to 'documentId'
             type: locker.attributes.type,
             title: locker.attributes.title,
             details: {
@@ -169,10 +170,10 @@ export function Header({ setGenerateAi, startPresentation, slides, slideDockers,
         payload.data.code = dockerForm[dockerForm.lockerType === "Custom HTML" ? "html" : "autoresponder"] || null;
       }
 
-      const endpoint = dockerForm.id
-        ? `https://presentaiapi.codesemic.com/api/locakers/${dockerForm.id}`
+      const endpoint = dockerForm.documentId
+        ? `https://presentaiapi.codesemic.com/api/locakers/${dockerForm.documentId}`
         : "https://presentaiapi.codesemic.com/api/locakers";
-      const method = dockerForm.id ? "PUT" : "POST";
+      const method = dockerForm.documentId ? "PUT" : "POST";
 
       const response = await fetch(endpoint, {
         method,
@@ -187,27 +188,29 @@ export function Header({ setGenerateAi, startPresentation, slides, slideDockers,
       const slideId = slides[slideIndex]?.id;
 
       if (slideId) {
+        const lockerDocumentId = dockerForm.documentId || responseData.data.documentId;  // Use documentId from response
         const newDocker = {
-          id: dockerForm.id || responseData.data.id,
+          documentId: lockerDocumentId,  // Changed from 'id' to 'documentId'
           type: dockerForm.lockerType,
           title: dockerForm.title || dockerForm.ctaText || dockerForm.lockerType,
           details: {
             ...dockerForm,
             image: imageUrl,
             video: dockerForm.lockerType === "Video" ? imageUrl : null,
+            documentId: lockerDocumentId,  // Changed from 'id' to 'documentId'
           },
         };
 
         setSlideDockers((prev) => ({
           ...prev,
-          [slideId]: dockerForm.id
-            ? (prev[slideId] || []).map((d) => (d.id === dockerForm.id ? newDocker : d))
+          [slideId]: dockerForm.documentId
+            ? (prev[slideId] || []).map((d) => (d.documentId === dockerForm.documentId ? newDocker : d))
             : [...(prev[slideId] || []), newDocker],
         }));
       }
 
       resetForm();
-      setIsDockerPopupOpen(false);
+      // setIsDockerPopupOpen(false);
     } catch (error) {
       console.error("Error saving locker:", error);
     } finally {
@@ -218,7 +221,7 @@ export function Header({ setGenerateAi, startPresentation, slides, slideDockers,
   const handleEditDocker = (slideId, docker) => {
     const details = docker.details || {};
     setDockerForm({
-      id: docker.id || null,
+      documentId: docker.documentId,  // Changed from 'id' to 'documentId'
       lockerType: docker.type || "Banner",
       image: details.image || null,
       video: details.video || null,
@@ -237,18 +240,24 @@ export function Header({ setGenerateAi, startPresentation, slides, slideDockers,
     setIsDockerPopupOpen(true);
   };
 
-  const handleDeleteDocker = async (slideId, dockerId) => {
+  const handleDeleteDocker = async (slideId, dockerDocumentId) => {  // Changed parameter name
     try {
-      const response = await fetch(`https://presentaiapi.codesemic.com/api/locakers/${dockerId}`, {
+      const response = await fetch(`https://presentaiapi.codesemic.com/api/locakers/${dockerDocumentId}`, {
         method: "DELETE",
         headers: getAuthHeaders(),
       });
       if (!response.ok) throw new Error("Failed to delete locker");
 
-      setSlideDockers((prev) => ({
-        ...prev,
-        [slideId]: prev[slideId].filter((d) => d.id !== dockerId),
-      }));
+      setSlideDockers((prev) => {
+        const updatedDockers = { ...prev };
+        if (updatedDockers[slideId]) {
+          updatedDockers[slideId] = updatedDockers[slideId].filter((d) => d.documentId !== dockerDocumentId);
+          if (updatedDockers[slideId].length === 0) {
+            delete updatedDockers[slideId];
+          }
+        }
+        return updatedDockers;
+      });
     } catch (error) {
       console.error("Error deleting locker:", error);
     }
@@ -256,7 +265,7 @@ export function Header({ setGenerateAi, startPresentation, slides, slideDockers,
 
   const resetForm = () => {
     setDockerForm({
-      id: null,
+      documentId: null,  // Changed from 'id' to 'documentId'
       lockerType: "Banner",
       image: null,
       video: null,
@@ -390,7 +399,7 @@ export function Header({ setGenerateAi, startPresentation, slides, slideDockers,
                                   <Button
                                     variant="ghost"
                                     size="sm"
-                                    onClick={() => handleDeleteDocker(slide.id, docker.id)}
+                                    onClick={() => handleDeleteDocker(slide.id, docker.documentId)}
                                     className="p-1"
                                   >
                                     <Trash2 className="h-4 w-4 text-red-500" />

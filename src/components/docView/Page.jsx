@@ -64,7 +64,7 @@ export default function Page() {
   });
 
   const [slideDockers, setSlideDockers] = useState({});
-
+  
   useEffect(() => {
     const slideElement = document.getElementById(`at-${currentSlide}`);
     if (slideElement) {
