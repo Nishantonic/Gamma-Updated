@@ -210,7 +210,7 @@ export function Header({ setGenerateAi, startPresentation, slides, slideDockers,
       }
 
       resetForm();
-      // setIsDockerPopupOpen(false);
+      setIsDockerPopupOpen(false);
     } catch (error) {
       console.error("Error saving locker:", error);
     } finally {
@@ -626,7 +626,7 @@ export function Header({ setGenerateAi, startPresentation, slides, slideDockers,
                   <Loader2 className="h-4 w-4 animate-spin" />
                   Saving...
                 </>
-              ) : dockerForm.id ? (
+              ) : dockerForm.documentId ? (
                 "Update Locker"
               ) : (
                 "Save Locker"
