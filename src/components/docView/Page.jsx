@@ -141,16 +141,19 @@ export default function Page() {
         description: description || "",
         image: null,
         user: userId,
-        locakers: lockerIds, // Fixed typo: "locakers" -> "lockers"
+        locakers: lockerIds, // Ensure this matches your Strapi field name
       },
     };
     console.log("createPresentation payload:", JSON.stringify(payload));
 
-    const response = await fetch("https://presentaiapi.codesemic.com/api/presentations", {
-      method: "POST",
-      headers: getAuthHeaders(),
-      body: JSON.stringify(payload),
-    });
+    const response = await fetch(
+      "https://presentaiapi.codesemic.com/api/presentations?populate=locakers",
+      {
+        method: "POST",
+        headers: getAuthHeaders(),
+        body: JSON.stringify(payload),
+      }
+    );
 
     if (!response.ok) throw new Error(`Failed to create presentation: ${response.statusText}`);
     const result = await response.json();
