@@ -24,13 +24,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { toast } from "react-hot-toast";
 
-export function Header({ setGenerateAi, startPresentation, slides, slideDockers, setSlideDockers, presentationId }) {
+export function Header({ setGenerateAi, startPresentation, slides, slideDockers, setSlideDockers, presentationId, presentationDocumentId }) {
   const navigate = useNavigate();
   const [isDockerPopupOpen, setIsDockerPopupOpen] = useState(false);
   const [selectedLockerType, setSelectedLockerType] = useState("Banner");
   const [dockerForm, setDockerForm] = useState({
-    id: null, // Added 'id' field
     documentId: null,
     lockerType: "Banner",
     image: null,
@@ -41,7 +41,7 @@ export function Header({ setGenerateAi, startPresentation, slides, slideDockers,
     ctaUrl: "",
     title: "",
     description: "",
-    slideNumber: "",
+    slideNumber: "", // Will now store slide.id (e.g., "1107")
     allowClose: false,
     ctaBtnColor: "#000000",
     ctaBtnTxtColor: "#ffffff",
@@ -49,7 +49,10 @@ export function Header({ setGenerateAi, startPresentation, slides, slideDockers,
   const [isLoadingLockers, setIsLoadingLockers] = useState(false);
   const [isSavingLocker, setIsSavingLocker] = useState(false);
 
-  const isPresentationIdValid = !!presentationId;
+  const isPresentationIdValid = presentationId;
+
+  // Log slides prop for debugging
+  console.log("Slides prop:", slides);
 
   useEffect(() => {
     if (isPresentationIdValid && isDockerPopupOpen) {
@@ -57,46 +60,77 @@ export function Header({ setGenerateAi, startPresentation, slides, slideDockers,
     }
   }, [isPresentationIdValid, isDockerPopupOpen]);
 
+  // Log slideDockers state changes
+  useEffect(() => {
+    console.log("Current slideDockers state:", slideDockers);
+  }, [slideDockers]);
+
   const fetchLockers = async () => {
     if (!isPresentationIdValid) return;
     setIsLoadingLockers(true);
-    try {
-      const response = await fetch(`https://presentaiapi.codesemic.com/api/locakers/${presentationId}`, {
-        headers: getAuthHeaders(),
-      });
-      if (!response.ok) throw new Error("Failed to fetch lockers");
-      const data = await response.json();
-      const updatedDockers = {};
+    const updatedDockers = {};
 
-      data.data.forEach((locker) => {
-        const slideIndex = locker.attributes.slide_number - 1;
-        const slideId = slides[slideIndex]?.id;
-        if (slideId) {
+    try {
+      console.log("Fetching lockers for presentationId:", presentationId);
+      const response = await fetch(
+        `https://presentaiapi.codesemic.com/api/locakers?filters[presentation]=${presentationId}`,
+        {
+          headers: getAuthHeaders(),
+        }
+      );
+
+      if (!response.ok) {
+        if (response.status === 404) {
+          setSlideDockers({});
+          toast.info("No lockers found for this presentation.");
+          return;
+        }
+        throw new Error(`Failed to fetch lockers: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log("Fetch lockers response:", data);
+      const lockers = data.data || [];
+      console.log('lockers',lockers )
+      if (lockers.length === 0) {
+        setSlideDockers({});
+        toast.info("No lockers found for this presentation.");
+        return;
+      }
+
+      lockers.forEach((locker) => {
+        const slideId = locker.slide_number; // Now expecting slide.id (e.g., "1107")
+        const slideExists = slides.some((slide) => slide.id === slideId);
+        if (slideExists) {
           updatedDockers[slideId] = updatedDockers[slideId] || [];
           updatedDockers[slideId].push({
-            id: locker.id, // Store numeric 'id'
-            documentId: locker.documentId, // Store string 'documentId'
-            type: locker.attributes.type,
-            title: locker.attributes.title,
+            documentId: locker.documentId,
+            type: locker.type,
+            title: locker.title,
             details: {
-              image: locker.attributes.image,
-              video: locker.attributes.type === "Video" ? locker.attributes.image : null,
-              html: locker.attributes.code || "",
-              autoresponder: locker.attributes.code || "",
-              ctaText: locker.attributes.cta_text || "",
-              ctaUrl: locker.attributes.cta_url || "",
-              title: locker.attributes.title || "",
-              description: locker.attributes.description || "",
-              allowClose: !locker.attributes.disable_close,
-              ctaBtnColor: locker.attributes.cta_btn_color || "#000000",
-              ctaBtnTxtColor: locker.attributes.cta_btn_txt_color || "#ffffff",
+              image: locker.image,
+              video: locker.type === "Video" ? locker.image : null,
+              html: locker.code || "",
+              autoresponder: locker.code || "",
+              ctaText: locker.cta_text || "",
+              ctaUrl: locker.cta_url || "",
+              title: locker.title || "",
+              description: locker.description || "",
+              allowClose: !locker.disable_close,
+              ctaBtnColor: locker.cta_btn_color || "#000000",
+              ctaBtnTxtColor: locker.cta_btn_txt_color || "#ffffff",
             },
           });
+        } else {
+          console.warn(`No slide found with id ${slideId} for locker ${locker.documentId}`);
         }
       });
+
+      console.log("Updated dockers:", updatedDockers);
       setSlideDockers(updatedDockers);
     } catch (error) {
       console.error("Error fetching lockers:", error);
+      toast.error(`Failed to load lockers: ${error.message}`);
     } finally {
       setIsLoadingLockers(false);
     }
@@ -131,6 +165,9 @@ export function Header({ setGenerateAi, startPresentation, slides, slideDockers,
   const handleSaveDocker = async () => {
     setIsSavingLocker(true);
     try {
+      console.log("Saving locker with presentationId:", presentationId);
+      console.log("Docker form data:", dockerForm);
+
       let imageUrl = dockerForm.image;
       const needsFileUpload = ["Banner", "Image", "Video"].includes(dockerForm.lockerType);
       const fileToUpload = dockerForm.lockerType === "Video" ? dockerForm.video : dockerForm.image;
@@ -143,7 +180,10 @@ export function Header({ setGenerateAi, startPresentation, slides, slideDockers,
           headers: { "Authorization": `Bearer ${localStorage.getItem("token")}` },
           body: formData,
         });
-        if (!uploadResponse.ok) throw new Error("Failed to upload file");
+        if (!uploadResponse.ok) {
+          const errorText = await uploadResponse.text();
+          throw new Error(`Failed to upload file: ${uploadResponse.status} - ${errorText}`);
+        }
         const uploadData = await uploadResponse.json();
         if (uploadData && uploadData.length > 0) {
           imageUrl = `https://presentaiapi.codesemic.com${uploadData[0].url}`;
@@ -156,7 +196,7 @@ export function Header({ setGenerateAi, startPresentation, slides, slideDockers,
           type: dockerForm.lockerType,
           description: dockerForm.description || null,
           code: null,
-          slide_number: parseInt(dockerForm.slideNumber),
+          slide_number: dockerForm.slideNumber, // Use slide.id (e.g., "1107")
           disable_close: !dockerForm.allowClose,
           presentation: presentationId,
           locale: "en",
@@ -177,23 +217,27 @@ export function Header({ setGenerateAi, startPresentation, slides, slideDockers,
         : "https://presentaiapi.codesemic.com/api/locakers";
       const method = dockerForm.documentId ? "PUT" : "POST";
 
+      console.log("Saving to endpoint:", endpoint);
+      console.log("Payload:", payload);
+
       const response = await fetch(endpoint, {
         method,
         headers: getAuthHeaders(),
         body: JSON.stringify(payload),
       });
 
-      if (!response.ok) throw new Error("Failed to save locker");
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Failed to save locker: ${response.status} - ${errorText}`);
+      }
 
       const responseData = await response.json();
-      const slideIndex = parseInt(dockerForm.slideNumber) - 1;
-      const slideId = slides[slideIndex]?.id;
+      console.log("Save locker response:", responseData);
 
+      const slideId = dockerForm.slideNumber; // Use slide.id directly
       if (slideId) {
-        const lockerId = responseData.data.id; // Store numeric 'id'
-        const lockerDocumentId = dockerForm.documentId || responseData.data.documentId; // Use existing or new 'documentId'
+        const lockerDocumentId = dockerForm.documentId || responseData.data.documentId;
         const newDocker = {
-          id: lockerId, // Added 'id'
           documentId: lockerDocumentId,
           type: dockerForm.lockerType,
           title: dockerForm.title || dockerForm.ctaText || dockerForm.lockerType,
@@ -201,7 +245,6 @@ export function Header({ setGenerateAi, startPresentation, slides, slideDockers,
             ...dockerForm,
             image: imageUrl,
             video: dockerForm.lockerType === "Video" ? imageUrl : null,
-            id: lockerId, // Added 'id' to details
             documentId: lockerDocumentId,
           },
         };
@@ -214,10 +257,12 @@ export function Header({ setGenerateAi, startPresentation, slides, slideDockers,
         }));
       }
 
+      toast.success("Locker saved successfully!");
       resetForm();
-      setIsDockerPopupOpen(false);
+      await fetchLockers();
     } catch (error) {
       console.error("Error saving locker:", error);
+      toast.error(`Failed to save locker: ${error.message}`);
     } finally {
       setIsSavingLocker(false);
     }
@@ -226,7 +271,6 @@ export function Header({ setGenerateAi, startPresentation, slides, slideDockers,
   const handleEditDocker = (slideId, docker) => {
     const details = docker.details || {};
     setDockerForm({
-      id: docker.id, // Added 'id'
       documentId: docker.documentId,
       lockerType: docker.type || "Banner",
       image: details.image || null,
@@ -237,7 +281,7 @@ export function Header({ setGenerateAi, startPresentation, slides, slideDockers,
       ctaUrl: details.ctaUrl || "",
       title: details.title || docker.title || "",
       description: details.description || "",
-      slideNumber: (slides.findIndex((s) => s.id === slideId) + 1).toString() || "",
+      slideNumber: slideId, // Use slide.id (e.g., "1107")
       allowClose: details.allowClose ?? false,
       ctaBtnColor: details.ctaBtnColor || "#000000",
       ctaBtnTxtColor: details.ctaBtnTxtColor || "#ffffff",
@@ -248,11 +292,16 @@ export function Header({ setGenerateAi, startPresentation, slides, slideDockers,
 
   const handleDeleteDocker = async (slideId, dockerDocumentId) => {
     try {
+      console.log("Deleting locker with documentId:", dockerDocumentId);
       const response = await fetch(`https://presentaiapi.codesemic.com/api/locakers/${dockerDocumentId}`, {
         method: "DELETE",
         headers: getAuthHeaders(),
       });
-      if (!response.ok) throw new Error("Failed to delete locker");
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Failed to delete locker: ${response.status} - ${errorText}`);
+      }
+      console.log("Delete locker response:", await response.text());
 
       setSlideDockers((prev) => {
         const updatedDockers = { ...prev };
@@ -264,14 +313,15 @@ export function Header({ setGenerateAi, startPresentation, slides, slideDockers,
         }
         return updatedDockers;
       });
+      toast.success("Locker deleted successfully!");
     } catch (error) {
       console.error("Error deleting locker:", error);
+      toast.error(`Failed to delete locker: ${error.message}`);
     }
   };
 
   const resetForm = () => {
     setDockerForm({
-      id: null, // Added 'id'
       documentId: null,
       lockerType: "Banner",
       image: null,
@@ -361,7 +411,7 @@ export function Header({ setGenerateAi, startPresentation, slides, slideDockers,
       <Dialog open={isDockerPopupOpen} onOpenChange={(open) => !open && resetForm()}>
         <DialogContent className="max-w-5xl max-h-[90vh] my-8 overflow-auto">
           <DialogHeader className="border-b pb-4">
-            <DialogTitle className="text-2xl">{dockerForm.id ? "Edit Locker" : "Add New Locker"}</DialogTitle>
+            <DialogTitle className="text-2xl">{dockerForm.documentId ? "Edit Locker" : "Add New Locker"}</DialogTitle>
             <DialogDescription>Configure your locker settings below</DialogDescription>
           </DialogHeader>
 
@@ -373,14 +423,14 @@ export function Header({ setGenerateAi, startPresentation, slides, slideDockers,
                   {isLoadingLockers ? (
                     <p className="text-gray-500">Loading lockers...</p>
                   ) : (
-                    slides.map((slide, index) => (
+                    slides.map((slide) => (
                       <DropdownMenu key={slide.id}>
                         <DropdownMenuTrigger asChild>
                           <Button
                             variant="outline"
                             className="w-full justify-between text-left font-medium text-gray-700 hover:bg-gray-50 border-gray-200"
                           >
-                            <span>{slide.titleContainer?.title.replace(/<[^>]*>/g, "") || `Slide ${index + 1}`}</span>
+                            <span>{slide.titleContainer?.title.replace(/<[^>]*>/g, "") || `Slide ${slides.indexOf(slide) + 1}`}</span>
                             <ChevronDown className="h-4 w-4 text-gray-500" />
                           </Button>
                         </DropdownMenuTrigger>
@@ -388,7 +438,7 @@ export function Header({ setGenerateAi, startPresentation, slides, slideDockers,
                           {slideDockers[slide.id]?.length > 0 ? (
                             slideDockers[slide.id].map((docker) => (
                               <div
-                                key={docker.documentId} // Use documentId as key for uniqueness
+                                key={docker.documentId}
                                 className="flex items-center justify-between p-2 hover:bg-gray-100 rounded-md"
                               >
                                 <span className="text-sm text-gray-700">
@@ -591,7 +641,7 @@ export function Header({ setGenerateAi, startPresentation, slides, slideDockers,
                   )}
 
                   <div>
-                    <Label className="mb-1 text-gray-700">Slide Number</Label>
+                    <Label className="mb-1 text-gray-700">Slide</Label>
                     <Select
                       value={dockerForm.slideNumber}
                       onValueChange={(value) => handleInputChange("slideNumber", value)}
@@ -600,9 +650,9 @@ export function Header({ setGenerateAi, startPresentation, slides, slideDockers,
                         <SelectValue placeholder="Select slide" />
                       </SelectTrigger>
                       <SelectContent>
-                        {slides.map((slide, index) => (
-                          <SelectItem key={slide.id} value={`${index + 1}`}>
-                            {slide.titleContainer?.title.replace(/<[^>]*>/g, "") || `Slide ${index + 1}`}
+                        {slides.map((slide) => (
+                          <SelectItem key={slide.id} value={String(slide.id)}> {/* Use slide.id as value */}
+                            {slide.titleContainer?.title.replace(/<[^>]*>/g, "") || `Slide ${slides.indexOf(slide) + 1}`}
                           </SelectItem>
                         ))}
                       </SelectContent>

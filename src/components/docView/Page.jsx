@@ -130,41 +130,34 @@ export default function Page() {
     return user.id || null;
   };
 
-  const createPresentation = async (title, description, lockerIds = []) => {
-  try {
-    const userId = getUserId();
-    if (!userId) throw new Error("User not authenticated");
+  const createPresentation = async (title, description) => {
+    try {
+      const userId = getUserId();
+      if (!userId) throw new Error("User not authenticated");
 
-    const payload = {
-      data: {
-        title: title || "Untitled",
-        description: description || "",
-        image: null,
-        user: userId,
-        locakers: lockerIds, // Ensure this matches your Strapi field name
-      },
-    };
-    console.log("createPresentation payload:", JSON.stringify(payload));
-
-    const response = await fetch(
-      "https://presentaiapi.codesemic.com/api/presentations?populate=locakers",
-      {
+      const response = await fetch("https://presentaiapi.codesemic.com/api/presentations", {
         method: "POST",
         headers: getAuthHeaders(),
-        body: JSON.stringify(payload),
-      }
-    );
+        body: JSON.stringify({
+          data: {
+            title: title || "Untitled",
+            description: description || "",
+            image: null,
+            user: userId,
+          },
+        }),
+      });
 
-    if (!response.ok) throw new Error(`Failed to create presentation: ${response.statusText}`);
-    const result = await response.json();
-    console.log("Created presentation response:", result);
-    return result.data.id;
-  } catch (error) {
-    console.error("Error creating presentation:", error);
-    toast.error("Failed to create presentation");
-    return null;
-  }
-};
+      if (!response.ok) throw new Error(`Failed to create presentation: ${response.statusText}`);
+      const result = await response.json();
+      console.log("Created presentation:", result);
+      return result.data.id;
+    } catch (error) {
+      console.error("Error creating presentation:", error);
+      toast.error("Failed to create presentation");
+      return null;
+    }
+  };
 
   const saveSlideToAPI = async (presentationId, slideData) => {
     try {
@@ -213,7 +206,7 @@ export default function Page() {
   let finalPresentationDocumentId = presentationDocumentId; // Declare outside try block
   let savedSlides = []; // Declare outside try block and initialize as empty array
 
-  // Helper function to delete presentation
+  // Helper function to delete presentation (moved outside try block)
   const deletePresentation = async (presentationId) => {
     try {
       const deleteResponse = await fetch(
@@ -235,46 +228,6 @@ export default function Page() {
       console.error("Error deleting presentation:", error);
       return false;
     }
-  };
-
-  // Helper function to convert base64 to Blob
-  const base64ToBlob = (base64) => {
-    const byteString = atob(base64.split(",")[1]);
-    const mimeString = base64.split(",")[0].split(":")[1].split(";")[0];
-    const ab = new ArrayBuffer(byteString.length);
-    const ia = new Uint8Array(ab);
-    for (let i = 0; i < byteString.length; i++) {
-      ia[i] = byteString.charCodeAt(i);
-    }
-    return new Blob([ab], { type: mimeString });
-  };
-
-  // Helper function to upload an image
-  const uploadImage = async (base64Image, token) => {
-    const imageBlob = base64ToBlob(base64Image);
-    console.log("Blob created:", imageBlob);
-
-    const formData = new FormData();
-    formData.append("files", imageBlob, "slide-image.jpg");
-
-    const uploadResponse = await fetch("https://presentaiapi.codesemic.com/api/upload", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-      body: formData,
-    });
-
-    if (!uploadResponse.ok) {
-      const errorData = await uploadResponse.json();
-      throw new Error(
-        `Image upload failed: ${uploadResponse.status} - ${errorData.error?.message || "Unknown error"}`
-      );
-    }
-
-    const uploadResult = await uploadResponse.json();
-    const thumbnailUrl = uploadResult[0].formats?.thumbnail?.url;
-    return `https://presentaiapi.codesemic.com${thumbnailUrl}`;
   };
 
   try {
@@ -299,19 +252,11 @@ export default function Page() {
       return;
     }
 
-    // Calculate lockerIds before handling presentation
-    const lockerIds = Object.values(slideDockers)
-      .flatMap(dockers => dockers.map(docker => docker.id))
-      .filter(id => id);
-    console.log("slideDockers before save:", slideDockers);
-    console.log("Extracted lockerIds for save:", lockerIds);
-
-    // Step 1: Handle presentation (create or update)
+    // **Step 1: Handle presentation (create or update)**
     if (!finalPresentationId) {
       finalPresentationId = await createPresentation(
         slides[0].titleContainer?.title.replace(/<[^>]+>/g, "") || "Untitled",
-        slides[0].descriptionContainer?.description.replace(/<[^>]+>/g, "") || "",
-        lockerIds
+        slides[0].descriptionContainer?.description.replace(/<[^>]+>/g, "") || ""
       );
       if (!finalPresentationId) {
         toast.error("Failed to create presentation");
@@ -333,24 +278,19 @@ export default function Page() {
         const presentationData = await presentationResponse.json();
         finalPresentationDocumentId = presentationData.data?.documentId || finalPresentationId;
 
-        const updatePayload = {
-          data: {
-            title: slides[0].titleContainer?.title.replace(/<[^>]+>/g, "") || "Untitled",
-            description: slides[0].descriptionContainer?.description.replace(/<[^>]+>/g, "") || "",
-            image: null,
-            user: userId,
-            locakers: lockerIds,
-            locale: null,
-          },
-        };
-        console.log("PUT presentation payload:", JSON.stringify(updatePayload));
-
         const updateResponse = await fetch(
           `https://presentaiapi.codesemic.com/api/presentations/${finalPresentationDocumentId}`,
           {
             method: "PUT",
             headers: getAuthHeaders(),
-            body: JSON.stringify(updatePayload),
+            body: JSON.stringify({
+              data: {
+                title: slides[0].titleContainer?.title.replace(/<[^>]+>/g, "") || "Untitled",
+                description: slides[0].descriptionContainer?.description.replace(/<[^>]+>/g, "") || "",
+                image: null,
+                user: userId,
+              },
+            }),
           }
         );
 
@@ -358,13 +298,11 @@ export default function Page() {
           const errorText = await updateResponse.text();
           throw new Error(`Failed to update presentation: ${updateResponse.status} - ${errorText}`);
         }
-        const updateResult = await updateResponse.json();
-        console.log("Updated presentation response:", updateResult);
+        console.log("Updated presentation:", finalPresentationDocumentId);
       } else {
         finalPresentationId = await createPresentation(
           slides[0].titleContainer?.title.replace(/<[^>]+>/g, "") || "Untitled",
-          slides[0].descriptionContainer?.description.replace(/<[^>]+>/g, "") || "",
-          lockerIds
+          slides[0].descriptionContainer?.description.replace(/<[^>]+>/g, "") || ""
         );
         if (!finalPresentationId) {
           throw new Error("Failed to create presentation after fetch failure");
@@ -377,11 +315,52 @@ export default function Page() {
     setPresentationDocumentId(finalPresentationDocumentId);
     console.log("Using presentation documentId for slides:", finalPresentationDocumentId);
 
-    // Step 2: Collect and upload all images concurrently
+    // Helper function to convert base64 to Blob
+    const base64ToBlob = (base64) => {
+      const byteString = atob(base64.split(",")[1]);
+      const mimeString = base64.split(",")[0].split(":")[1].split(";")[0];
+      const ab = new ArrayBuffer(byteString.length);
+      const ia = new Uint8Array(ab);
+      for (let i = 0; i < byteString.length; i++) {
+        ia[i] = byteString.charCodeAt(i);
+      }
+      return new Blob([ab], { type: mimeString });
+    };
+
+    // Helper function to upload an image
+    const uploadImage = async (base64Image, token) => {
+      const imageBlob = base64ToBlob(base64Image);
+      console.log("Blob created:", imageBlob);
+
+      const formData = new FormData();
+      formData.append("files", imageBlob, "slide-image.jpg");
+
+      const uploadResponse = await fetch("https://presentaiapi.codesemic.com/api/upload", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: formData,
+      });
+
+      if (!uploadResponse.ok) {
+        const errorData = await uploadResponse.json();
+        throw new Error(
+          `Image upload failed: ${uploadResponse.status} - ${errorData.error?.message || "Unknown error"}`
+        );
+      }
+
+      const uploadResult = await uploadResponse.json();
+      const thumbnailUrl = uploadResult[0].formats?.thumbnail?.url;
+      return `https://presentaiapi.codesemic.com${thumbnailUrl}`;
+    };
+
+    // **Step 2: Collect and upload all images concurrently**
     const uploadPromises = [];
     const imageMap = new Map(); // Maps upload promise to slide index and image type
 
     slides.forEach((slide, slideIndex) => {
+      // Assign an ID if not present
       if (!slide.id) {
         slide.id = uuidv4();
       }
@@ -420,7 +399,7 @@ export default function Page() {
     const uploadedImageUrls = await Promise.all(uploadPromises.map(p => p.catch(e => ({ error: e }))));
 
     // Map uploaded URLs back to slides
-    const updatedSlides = slides.map(slide => ({ ...slide }));
+    const updatedSlides = slides.map(slide => ({ ...slide })); // Deep copy to avoid mutating state directly
     uploadedImageUrls.forEach((result, idx) => {
       const promise = uploadPromises[idx];
       const { slideIndex, type, cardIndex, itemIndex } = imageMap.get(promise);
@@ -441,10 +420,11 @@ export default function Page() {
       }
     });
 
-    // Step 3: Save slides sequentially
+    // **Step 3: Save slides sequentially**
     let hasSaveErrors = false;
 
     for (const slide of updatedSlides) {
+      // Prepare cleanSlide object
       const processedDropItems = slide.dropContainer?.dropItems || [];
       const uploadedCardImages = slide.type === "threeImgCard" && slide.cards?.length > 0
         ? slide.cards
@@ -481,6 +461,7 @@ export default function Page() {
         locale: "en",
       };
 
+      // Save or update the slide
       let savedSlide;
       try {
         if (slide.documentId) {
@@ -530,13 +511,14 @@ export default function Page() {
       }
     }
 
-    // Step 4: Handle save results and cleanup if necessary
+    // **Step 4: Handle save results and cleanup if necessary**
     const successfulSaves = savedSlides.filter(slide => slide !== null).length;
 
     if (successfulSaves === slides.length) {
       toast.success("Presentation and slides saved successfully!");
       navigate("/home", { state: { presentationId: finalPresentationId } });
     } else if (successfulSaves === 0 && finalPresentationId && !presentationId) {
+      // If no slides were saved and this was a new presentation, clean up
       toast.error("No slides were saved. Removing empty presentation.");
       const deleted = await deletePresentation(finalPresentationDocumentId);
       if (deleted) {
@@ -583,6 +565,8 @@ export default function Page() {
         if (!response.ok) throw new Error(`Failed to fetch slides: ${response.status} ${response.statusText}`);
 
         const jsonResponse = await response.json();
+        const documentId = jsonResponse[0]?.presentation?.documentId;
+        setPresentationDocumentId(documentId);
         console.log("Raw API response in Page:", jsonResponse);
 
         if (!Array.isArray(jsonResponse)) {
@@ -1198,10 +1182,10 @@ export default function Page() {
       })
     );
   };
-  
+
   return (
     <div className="h-screen flex flex-col bg-background">
-      <Header slideDockers={slideDockers} setSlideDockers={setSlideDockers} presentationId={presentationId} slides={slides} setGenerateAi={() => setShowPopup(true)} startPresentation={startPresentation} />
+      <Header slideDockers={slideDockers} setSlideDockers={setSlideDockers} presentationId={presentationId} presentationDocumentId={presentationDocumentId} slides={slides} setGenerateAi={() => setShowPopup(true)} startPresentation={startPresentation} />
       <Toaster position="top-right" richColors />
       {isPresentationMode && (
         <PresentationMode
