@@ -202,11 +202,11 @@ export default function Page() {
   };
 
   const handleSaveSlide = async () => {
-  let finalPresentationId = presentationId; // Declare outside try block
-  let finalPresentationDocumentId = presentationDocumentId; // Declare outside try block
-  let savedSlides = []; // Declare outside try block and initialize as empty array
+  let finalPresentationId = presentationId; // Use existing presentationId if available
+  let finalPresentationDocumentId = presentationDocumentId; // Backend documentId for presentation
+  let savedSlides = []; // Track saved/updated slides
 
-  // Helper function to delete presentation (moved outside try block)
+  // Helper function to delete a presentation if something goes wrong
   const deletePresentation = async (presentationId) => {
     try {
       const deleteResponse = await fetch(
@@ -216,7 +216,6 @@ export default function Page() {
           headers: getAuthHeaders(),
         }
       );
-
       if (!deleteResponse.ok) {
         const errorText = await deleteResponse.text();
         console.error(`Failed to delete presentation: ${deleteResponse.status} - ${errorText}`);
@@ -252,70 +251,51 @@ export default function Page() {
       return;
     }
 
-    // **Step 1: Handle presentation (create or update)**
+    // **Step 1: Handle Presentation (Create or Update)**
     if (!finalPresentationId) {
+      // Create a new presentation if none exists
+      console.log("No presentationId exists, creating a new presentation...");
       finalPresentationId = await createPresentation(
         slides[0].titleContainer?.title.replace(/<[^>]+>/g, "") || "Untitled",
         slides[0].descriptionContainer?.description.replace(/<[^>]+>/g, "") || ""
       );
       if (!finalPresentationId) {
-        toast.error("Failed to create presentation");
-        return;
+        throw new Error("Failed to create presentation");
       }
       console.log("Created presentationId:", finalPresentationId);
       setPresentationId(finalPresentationId);
-      finalPresentationDocumentId = finalPresentationId;
+      finalPresentationDocumentId = finalPresentationId; // For new presentations
     } else {
-      const presentationResponse = await fetch(
-        `https://presentaiapi.codesemic.com/api/presentations/${finalPresentationId}`,
+      // Update existing presentation
+      console.log("Updating existing presentation with ID:", finalPresentationId);
+      const updateResponse = await fetch(
+        `https://presentaiapi.codesemic.com/api/presentations/${presentationDocumentId}`,
         {
-          method: "GET",
+          method: "PUT",
           headers: getAuthHeaders(),
+          body: JSON.stringify({
+            data: {
+              title: slides[0].titleContainer?.title.replace(/<[^>]+>/g, "") || "Untitled",
+              description: slides[0].descriptionContainer?.description.replace(/<[^>]+>/g, "") || "",
+              image: null,
+              user: userId,
+            },
+          }),
         }
       );
 
-      if (presentationResponse.ok) {
-        const presentationData = await presentationResponse.json();
-        finalPresentationDocumentId = presentationData.data?.documentId || finalPresentationId;
-
-        const updateResponse = await fetch(
-          `https://presentaiapi.codesemic.com/api/presentations/${finalPresentationDocumentId}`,
-          {
-            method: "PUT",
-            headers: getAuthHeaders(),
-            body: JSON.stringify({
-              data: {
-                title: slides[0].titleContainer?.title.replace(/<[^>]+>/g, "") || "Untitled",
-                description: slides[0].descriptionContainer?.description.replace(/<[^>]+>/g, "") || "",
-                image: null,
-                user: userId,
-              },
-            }),
-          }
-        );
-
-        if (!updateResponse.ok) {
-          const errorText = await updateResponse.text();
-          throw new Error(`Failed to update presentation: ${updateResponse.status} - ${errorText}`);
-        }
-        console.log("Updated presentation:", finalPresentationDocumentId);
-      } else {
-        finalPresentationId = await createPresentation(
-          slides[0].titleContainer?.title.replace(/<[^>]+>/g, "") || "Untitled",
-          slides[0].descriptionContainer?.description.replace(/<[^>]+>/g, "") || ""
-        );
-        if (!finalPresentationId) {
-          throw new Error("Failed to create presentation after fetch failure");
-        }
-        finalPresentationDocumentId = finalPresentationId;
-        setPresentationId(finalPresentationId);
+      if (!updateResponse.ok) {
+        const errorText = await updateResponse.text();
+        throw new Error(`Failed to update presentation: ${updateResponse.status} - ${errorText}`);
       }
+      const updatedPresentation = await updateResponse.json();
+      finalPresentationDocumentId = updatedPresentation.data.documentId || finalPresentationId;
+      console.log("Updated presentation, documentId:", finalPresentationDocumentId);
     }
 
     setPresentationDocumentId(finalPresentationDocumentId);
-    console.log("Using presentation documentId for slides:", finalPresentationDocumentId);
 
-    // Helper function to convert base64 to Blob
+    // **Step 2: Handle Image Uploads**
     const base64ToBlob = (base64) => {
       const byteString = atob(base64.split(",")[1]);
       const mimeString = base64.split(",")[0].split(":")[1].split(";")[0];
@@ -327,43 +307,34 @@ export default function Page() {
       return new Blob([ab], { type: mimeString });
     };
 
-    // Helper function to upload an image
     const uploadImage = async (base64Image, token) => {
       const imageBlob = base64ToBlob(base64Image);
-      console.log("Blob created:", imageBlob);
+      console.log("Uploading image blob:", imageBlob);
 
       const formData = new FormData();
       formData.append("files", imageBlob, "slide-image.jpg");
 
       const uploadResponse = await fetch("https://presentaiapi.codesemic.com/api/upload", {
         method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { Authorization: `Bearer ${token}` },
         body: formData,
       });
 
       if (!uploadResponse.ok) {
         const errorData = await uploadResponse.json();
-        throw new Error(
-          `Image upload failed: ${uploadResponse.status} - ${errorData.error?.message || "Unknown error"}`
-        );
+        throw new Error(`Image upload failed: ${uploadResponse.status} - ${errorData.error?.message || "Unknown error"}`);
       }
 
       const uploadResult = await uploadResponse.json();
-      const thumbnailUrl = uploadResult[0].formats?.thumbnail?.url;
+      const thumbnailUrl = uploadResult[0].formats?.thumbnail?.url || uploadResult[0].url;
       return `https://presentaiapi.codesemic.com${thumbnailUrl}`;
     };
 
-    // **Step 2: Collect and upload all images concurrently**
     const uploadPromises = [];
-    const imageMap = new Map(); // Maps upload promise to slide index and image type
+    const imageMap = new Map();
 
     slides.forEach((slide, slideIndex) => {
-      // Assign an ID if not present
-      if (!slide.id) {
-        slide.id = uuidv4();
-      }
+      if (!slide.id) slide.id = uuidv4(); // Ensure every slide has a frontend ID
 
       // ImageContainer image
       if (slide.imageContainer?.image?.startsWith("data:image")) {
@@ -396,10 +367,10 @@ export default function Page() {
     });
 
     // Upload all images concurrently
-    const uploadedImageUrls = await Promise.all(uploadPromises.map(p => p.catch(e => ({ error: e }))));
+    const uploadedImageUrls = await Promise.all(uploadPromises.map((p) => p.catch((e) => ({ error: e }))));
 
     // Map uploaded URLs back to slides
-    const updatedSlides = slides.map(slide => ({ ...slide })); // Deep copy to avoid mutating state directly
+    const updatedSlides = slides.map((slide) => ({ ...slide })); // Deep copy
     uploadedImageUrls.forEach((result, idx) => {
       const promise = uploadPromises[idx];
       const { slideIndex, type, cardIndex, itemIndex } = imageMap.get(promise);
@@ -420,15 +391,12 @@ export default function Page() {
       }
     });
 
-    // **Step 3: Save slides sequentially**
-    let hasSaveErrors = false;
-
+    // **Step 3: Save or Update Slides**
     for (const slide of updatedSlides) {
-      // Prepare cleanSlide object
+      console.log(`Processing slide ID: ${slide.id}, DocumentId: ${slide.documentId || "None"}`);
+
       const processedDropItems = slide.dropContainer?.dropItems || [];
-      const uploadedCardImages = slide.type === "threeImgCard" && slide.cards?.length > 0
-        ? slide.cards
-        : [];
+      const uploadedCardImages = slide.type === "threeImgCard" && slide.cards?.length > 0 ? slide.cards : [];
 
       const cleanSlide = {
         titleContainer: {
@@ -447,10 +415,8 @@ export default function Page() {
           ...(slide.type === "twoColumn" && { columns: slide.columns || [] }),
           ...(slide.type === "threeImgCard" && { cards: uploadedCardImages || slide.cards || [] }),
         }),
-        impress_settings: "",
-        dropContainer: {
-          dropItems: processedDropItems,
-        },
+        impress_settings: slide.impress_settings || "",
+        dropContainer: { dropItems: processedDropItems },
         cards: uploadedCardImages.length > 0 ? uploadedCardImages : slide.cards || [],
         columns: slide.columns || [],
         imageContainer: {
@@ -461,81 +427,77 @@ export default function Page() {
         locale: "en",
       };
 
-      // Save or update the slide
       let savedSlide;
-      try {
-        if (slide.documentId) {
-          const slideResponse = await fetch(
-            `https://presentaiapi.codesemic.com/api/slides/${slide.documentId}`,
-            {
-              method: "PUT",
-              headers: getAuthHeaders(),
-              body: JSON.stringify({
-                data: {
-                  titleContainer: JSON.stringify(cleanSlide.titleContainer),
-                  descriptionContainer: JSON.stringify(cleanSlide.descriptionContainer),
-                  presentation: finalPresentationId,
-                  type: cleanSlide.type,
-                  content: cleanSlide.content,
-                  impress_settings: cleanSlide.impress_settings || "",
-                  dropContainer: JSON.stringify(cleanSlide.dropContainer),
-                  cards: JSON.stringify(cleanSlide.cards),
-                  columns: JSON.stringify(cleanSlide.columns),
-                  imageContainer: JSON.stringify(cleanSlide.imageContainer),
-                  locale: cleanSlide.locale,
-                },
-              }),
-            }
-          );
-
-          if (!slideResponse.ok) {
-            const errorText = await slideResponse.text();
-            throw new Error(`Failed to update slide ${slide.documentId}: ${slideResponse.status} - ${errorText}`);
+      if (slide.documentId) {
+        // Update existing slide
+        console.log(`Updating slide with documentId: ${slide.documentId}`);
+        const slideResponse = await fetch(
+          `https://presentaiapi.codesemic.com/api/slides/${slide.documentId}`,
+          {
+            method: "PUT",
+            headers: getAuthHeaders(),
+            body: JSON.stringify({
+              data: {
+                titleContainer: JSON.stringify(cleanSlide.titleContainer),
+                descriptionContainer: JSON.stringify(cleanSlide.descriptionContainer),
+                presentation: finalPresentationId,
+                type: cleanSlide.type,
+                content: cleanSlide.content,
+                impress_settings: cleanSlide.impress_settings,
+                dropContainer: JSON.stringify(cleanSlide.dropContainer),
+                cards: JSON.stringify(cleanSlide.cards),
+                columns: JSON.stringify(cleanSlide.columns),
+                imageContainer: JSON.stringify(cleanSlide.imageContainer),
+                locale: cleanSlide.locale,
+              },
+            }),
           }
-          savedSlide = await slideResponse.json();
-          console.log("Updated slide:", savedSlide);
-        } else {
-          savedSlide = await saveSlideToAPI(finalPresentationId, cleanSlide);
-        }
+        );
 
-        if (savedSlide) {
-          savedSlides.push(savedSlide);
-        } else {
-          throw new Error(`Failed to save slide ${slide.id}`);
+        if (!slideResponse.ok) {
+          const errorText = await slideResponse.text();
+          throw new Error(`Failed to update slide ${slide.documentId}: ${slideResponse.status} - ${errorText}`);
         }
-      } catch (error) {
-        console.error(`Error saving slide ${slide.id}:`, error);
-        toast.error(`Failed to save slide ${slide.id}`);
-        hasSaveErrors = true;
-        savedSlides.push(null);
+        savedSlide = await slideResponse.json();
+        console.log("Updated slide:", savedSlide.data);
+      } else {
+        // Create new slide
+        console.log("Creating new slide for ID:", slide.id);
+        savedSlide = await saveSlideToAPI(finalPresentationId, cleanSlide);
+        if (savedSlide) {
+          // Update local state with documentId for future updates
+          setSlides((prev) =>
+            prev.map((s) =>
+              s.id === slide.id ? { ...s, documentId: savedSlide.data.documentId } : s
+            )
+          );
+          console.log("New slide created with documentId:", savedSlide.data.documentId);
+        }
+      }
+
+      if (savedSlide) {
+        savedSlides.push(savedSlide);
+      } else {
+        throw new Error(`Failed to save slide ${slide.id}`);
       }
     }
 
-    // **Step 4: Handle save results and cleanup if necessary**
-    const successfulSaves = savedSlides.filter(slide => slide !== null).length;
-
+    // **Step 4: Handle Save Results**
+    const successfulSaves = savedSlides.filter((slide) => slide !== null).length;
     if (successfulSaves === slides.length) {
       toast.success("Presentation and slides saved successfully!");
       navigate("/home", { state: { presentationId: finalPresentationId } });
-    } else if (successfulSaves === 0 && finalPresentationId && !presentationId) {
-      // If no slides were saved and this was a new presentation, clean up
-      toast.error("No slides were saved. Removing empty presentation.");
-      const deleted = await deletePresentation(finalPresentationDocumentId);
-      if (deleted) {
-        setPresentationId(null);
-        setPresentationDocumentId(null);
-      }
-      navigate("/home");
     } else {
       toast.warn("Some slides failed to save, but presentation was retained");
       navigate("/home", { state: { presentationId: finalPresentationId } });
     }
   } catch (error) {
     console.error("Error saving presentation/slides:", error);
-    toast.error(`Failed to save presentation or slides: ${error.message}`);
+    toast.error(`Failed to save: ${error.message}`);
 
-    // Cleanup in case of catastrophic failure before slide saving starts
+    // Cleanup if a new presentation was created but no slides were saved
     if (finalPresentationId && !presentationId && savedSlides.length === 0) {
+      console.log("Cleaning up failed presentation:", finalPresentationId);
       await deletePresentation(finalPresentationId);
       setPresentationId(null);
       setPresentationDocumentId(null);
@@ -575,6 +537,7 @@ export default function Page() {
 
         const normalizedSlides = jsonResponse.map((slide) => ({
           id: slide.id || uuidv4(),
+          documentId:slide.documentId || uuidv4(),
           type: slide.type || "custom",
           titleContainer: slide.titleContainer
             ? JSON.parse(slide.titleContainer)
@@ -615,6 +578,7 @@ export default function Page() {
           normalizedSlides.map((slide, index) => ({
             number: index + 1,
             id: slide.id,
+            documentId: slide.documentId, // Include in preview too if needed
             title: slide.titleContainer.title,
             type: slide.type,
             content: renderSlideComponent(slide),
