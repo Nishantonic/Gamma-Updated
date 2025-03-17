@@ -92,12 +92,12 @@ const Card = ({
         onClick={() => onClick(presentation.id)}
         className="flex items-stretch bg-white rounded-xl shadow-sm hover:shadow-md transition-all duration-300 cursor-pointer group relative"
       >
-        <div className="relative w-48 h-32 flex-shrink-0 bg-gray-100 overflow-hidden">
+        <div className="relative w-48 h-33 flex-shrink-0 bg-gray-100 overflow-hidden rounded-xl ">
           {image ? (
             <img
               src={image}
               alt={title}
-              className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-300"
+              className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-300 "
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center bg-gray-200">

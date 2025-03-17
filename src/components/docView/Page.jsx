@@ -1157,6 +1157,7 @@ export default function Page() {
           startIndex={presentationStartIndex}
           onClose={() => setIsPresentationMode(false)}
           renderSlide={renderSlideComponent}
+          presentationId={presentationId} // Pass presentationId
         />
       )}
       <div className="flex flex-1 overflow-hidden">
