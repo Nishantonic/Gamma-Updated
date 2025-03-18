@@ -91,7 +91,7 @@ const DirectPresentationMode = () => {
     };
 
     const Component = components[slideData.type] || components.default;
-    return <Component {...commonProps} key={slideData.id} />;
+    return <Component {...commonProps} key={slideData.id} isPresentationMode={true} />;
   };
 
   const handleClosePresentation = () => {

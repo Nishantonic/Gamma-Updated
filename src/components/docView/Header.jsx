@@ -318,7 +318,10 @@ export function Header({ setGenerateAi, startPresentation, slides, slideDockers,
       toast.error(`Failed to delete locker: ${error.message}`);
     }
   };
-
+  useEffect(()=>{
+    console.log("inside:",slides);
+    
+  },[])
   const resetForm = () => {
     setDockerForm({
       documentId: null,
@@ -349,7 +352,7 @@ export function Header({ setGenerateAi, startPresentation, slides, slideDockers,
             <Home className="h-5 w-5" />
           </Button>
           <span className="text-sm text-muted-foreground">/</span>
-          <span className="text-sm font-medium">Customer Targeting Strategy</span>
+          <span className="text-sm font-medium">{slides[0]?.titleContainer? slides[0].titleContainer.title.replace(/<[^>]*>/g, '') : "New Presentation" }</span>
         </div>
 
         <div className="flex items-center gap-2">
