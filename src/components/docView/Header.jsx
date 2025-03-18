@@ -24,7 +24,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { toast } from "react-hot-toast";
+import { toast, Toaster } from "sonner";
 
 export function Header({ setGenerateAi, startPresentation, slides, slideDockers, setSlideDockers, presentationId, presentationDocumentId }) {
   const navigate = useNavigate();
@@ -41,7 +41,7 @@ export function Header({ setGenerateAi, startPresentation, slides, slideDockers,
     ctaUrl: "",
     title: "",
     description: "",
-    slideNumber: "", // Will now store slide.id (e.g., "1107")
+    slideNumber: "",
     allowClose: false,
     ctaBtnColor: "#000000",
     ctaBtnTxtColor: "#ffffff",
@@ -51,7 +51,6 @@ export function Header({ setGenerateAi, startPresentation, slides, slideDockers,
 
   const isPresentationIdValid = presentationId;
 
-  // Log slides prop for debugging
   console.log("Slides prop:", slides);
 
   useEffect(() => {
@@ -60,7 +59,6 @@ export function Header({ setGenerateAi, startPresentation, slides, slideDockers,
     }
   }, [isPresentationIdValid, isDockerPopupOpen]);
 
-  // Log slideDockers state changes
   useEffect(() => {
     console.log("Current slideDockers state:", slideDockers);
   }, [slideDockers]);
@@ -82,7 +80,7 @@ export function Header({ setGenerateAi, startPresentation, slides, slideDockers,
       if (!response.ok) {
         if (response.status === 404) {
           setSlideDockers({});
-          toast.info("No lockers found for this presentation.");
+          toast("No lockers found for this presentation.", { style: { background: '#fef3c7' } });
           return;
         }
         throw new Error(`Failed to fetch lockers: ${response.status}`);
@@ -91,15 +89,15 @@ export function Header({ setGenerateAi, startPresentation, slides, slideDockers,
       const data = await response.json();
       console.log("Fetch lockers response:", data);
       const lockers = data.data || [];
-      console.log('lockers',lockers )
+      console.log('lockers', lockers);
       if (lockers.length === 0) {
         setSlideDockers({});
-        toast.info("No lockers found for this presentation.");
+        toast("No lockers found for this presentation.", { style: { background: '#fef3c7' } });
         return;
       }
 
       lockers.forEach((locker) => {
-        const slideId = locker.slide_number; // Now expecting slide.id (e.g., "1107")
+        const slideId = locker.slide_number;
         const slideExists = slides.some((slide) => slide.id === slideId);
         if (slideExists) {
           updatedDockers[slideId] = updatedDockers[slideId] || [];
@@ -182,6 +180,7 @@ export function Header({ setGenerateAi, startPresentation, slides, slideDockers,
         });
         if (!uploadResponse.ok) {
           const errorText = await uploadResponse.text();
+          toast.error("Video size is too large!");
           throw new Error(`Failed to upload file: ${uploadResponse.status} - ${errorText}`);
         }
         const uploadData = await uploadResponse.json();
@@ -196,7 +195,7 @@ export function Header({ setGenerateAi, startPresentation, slides, slideDockers,
           type: dockerForm.lockerType,
           description: dockerForm.description || null,
           code: null,
-          slide_number: dockerForm.slideNumber, // Use slide.id (e.g., "1107")
+          slide_number: dockerForm.slideNumber,
           disable_close: !dockerForm.allowClose,
           presentation: presentationId,
           locale: "en",
@@ -234,7 +233,7 @@ export function Header({ setGenerateAi, startPresentation, slides, slideDockers,
       const responseData = await response.json();
       console.log("Save locker response:", responseData);
 
-      const slideId = dockerForm.slideNumber; // Use slide.id directly
+      const slideId = dockerForm.slideNumber;
       if (slideId) {
         const lockerDocumentId = dockerForm.documentId || responseData.data.documentId;
         const newDocker = {
@@ -281,7 +280,7 @@ export function Header({ setGenerateAi, startPresentation, slides, slideDockers,
       ctaUrl: details.ctaUrl || "",
       title: details.title || docker.title || "",
       description: details.description || "",
-      slideNumber: slideId, // Use slide.id (e.g., "1107")
+      slideNumber: slideId,
       allowClose: details.allowClose ?? false,
       ctaBtnColor: details.ctaBtnColor || "#000000",
       ctaBtnTxtColor: details.ctaBtnTxtColor || "#ffffff",
@@ -480,6 +479,24 @@ export function Header({ setGenerateAi, startPresentation, slides, slideDockers,
                 <h3 className="text-lg font-semibold mb-4 text-gray-800">Locker Configuration</h3>
                 <div className="space-y-4 max-h-[50vh] overflow-y-auto pr-2">
                   <div>
+                    <Label className="mb-1 text-gray-700">Slide</Label>
+                    <Select
+                      value={dockerForm.slideNumber}
+                      onValueChange={(value) => handleInputChange("slideNumber", value)}
+                    >
+                      <SelectTrigger className="w-full border-gray-300">
+                        <SelectValue placeholder="Select slide" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {slides.map((slide) => (
+                          <SelectItem key={slide.id} value={String(slide.id)}>
+                            {slide.titleContainer?.title.replace(/<[^>]*>/g, "") || `Slide ${slides.indexOf(slide) + 1}`}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
                     <Label className="mb-1 text-gray-700">Locker Type</Label>
                     <Select
                       value={selectedLockerType}
@@ -568,14 +585,27 @@ export function Header({ setGenerateAi, startPresentation, slides, slideDockers,
                         />
                       </div>
                       <div>
-                        <Label className="mb-1 text-gray-700">Call to Action Button URL</Label>
-                        <Input
-                          type="url"
-                          placeholder="https://example.com"
-                          value={dockerForm.ctaUrl}
-                          onChange={(e) => handleInputChange("ctaUrl", e.target.value)}
-                          className="w-full border-gray-300"
-                        />
+                        {selectedLockerType === 'Whatsapp' ? 
+                        <>
+                          <Label className="mb-1 text-gray-700">Phone Number</Label>
+                          <Input
+                            type="url"
+                            placeholder="Enter Phone Number"
+                            value={dockerForm.ctaUrl}
+                            onChange={(e) => handleInputChange("ctaUrl", e.target.value)}
+                            className="w-full border-gray-300"
+                          />
+                        </> : 
+                        <>
+                          <Label className="mb-1 text-gray-700">Call to Action Button URL</Label>
+                          <Input
+                            type="url"
+                            placeholder="https://example.com"
+                            value={dockerForm.ctaUrl}
+                            onChange={(e) => handleInputChange("ctaUrl", e.target.value)}
+                            className="w-full border-gray-300"
+                          />
+                        </>}
                       </div>
                       <div>
                         <Label className="mb-1 text-gray-700">CTA Button Color</Label>
@@ -640,25 +670,6 @@ export function Header({ setGenerateAi, startPresentation, slides, slideDockers,
                     </>
                   )}
 
-                  <div>
-                    <Label className="mb-1 text-gray-700">Slide</Label>
-                    <Select
-                      value={dockerForm.slideNumber}
-                      onValueChange={(value) => handleInputChange("slideNumber", value)}
-                    >
-                      <SelectTrigger className="w-full border-gray-300">
-                        <SelectValue placeholder="Select slide" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {slides.map((slide) => (
-                          <SelectItem key={slide.id} value={String(slide.id)}> {/* Use slide.id as value */}
-                            {slide.titleContainer?.title.replace(/<[^>]*>/g, "") || `Slide ${slides.indexOf(slide) + 1}`}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
                   <div className="flex items-center justify-between">
                     <Label htmlFor="allow-close" className="mb-0 text-gray-700">Allow Close</Label>
                     <Switch
@@ -697,6 +708,8 @@ export function Header({ setGenerateAi, startPresentation, slides, slideDockers,
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <Toaster position="top-right" richColors />
     </>
   );
 }
