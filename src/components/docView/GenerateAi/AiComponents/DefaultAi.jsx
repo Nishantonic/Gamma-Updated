@@ -16,7 +16,7 @@ import ResponsiveImage from "@/components/SidebarLeft/components/ToolBarElements
 import ResponsiveVideo from "@/components/SidebarLeft/components/ToolBarElements/ResponsiveVideo";
 import ResponsiveAudio from "@/components/SidebarLeft/components/ToolBarElements/ResponsiveAudio";
 
-function DefaultAi({ generateAi = {}, index }) {
+function DefaultAi({ generateAi = {},isPresentationMode,  index }) {
   const [title, setTitle] = useState(generateAi.titleContainer?.title || "Untitled Card");
   const [titleStyles, setTitleStyles] = useState(generateAi.titleContainer?.styles || {})
   const [description, setDescription] = useState(generateAi.descriptionContainer?.description || "Start typing...");
@@ -168,6 +168,9 @@ function DefaultAi({ generateAi = {}, index }) {
       <CardContent className="p-6">
         {/* Card Menu with Delete Functionality */}
         <div className="absolute top-4 left-11">
+        {!isPresentationMode && 
+          
+
           <CardMenu
             onEdit={() => console.log("Edit clicked")}
             onDelete={() => {
@@ -178,6 +181,7 @@ function DefaultAi({ generateAi = {}, index }) {
             onShare={() => console.log("Share clicked")}
             onDownload={() => console.log("Download clicked")}
           />
+}
         </div>
 
         {/* Title and Description Sections */}

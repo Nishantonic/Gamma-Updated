@@ -18,6 +18,7 @@ export default function GenerateAi({
   setSlidesPreview,
   setSlides: setParentSlides,
   setGenerateAi,
+  isPresentationMode
 }) {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState(null)
@@ -77,6 +78,11 @@ ensure the user's requirement for perticular slide
 use all templates in ppt
 Note : the content foe each slide managed your self because each templates height and width is width: '1024px', height: '768px'.**give midium content for each slide and each templates in specially accentImage template  but make sure the content is profatinal**.**for CardTemplateImgHeadingThree template description must be shorter and all 3 column which present in this templates these description's word size also must same** and  Ensure all images are accessible, relevant, and high-quality for the topic image url must available if not change url and provide only accessable image url.
 the last slide must be conclusion slide in default template`
+
+ useEffect(()=>{
+      console.log("isPresentation Mode",isPresentationMode);
+      
+    })
 
   const validateAndParseJson = useCallback((text) => {
     try {
@@ -233,7 +239,7 @@ the last slide must be conclusion slide in default template`
     }
 
     const Component = components[slide.type] || components.default
-    return <Component generateAi={slideProps} />
+    return <Component generateAi={slideProps}  />
   }, [])
 
   const handleEdit = useCallback((id, updatedSlide) => {

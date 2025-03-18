@@ -21,6 +21,11 @@ export default function TitleInput({ slideId, inputId, onDelete, onChange }) {
     }
   }, [slideId, inputId]);
 
+   useEffect(()=>{
+      console.log("ispreisPresentationMode title",isPresentationMode, isPresentationMode);
+      
+    })
+
   const handleChange = (value) => {
     setEditorHtml(value);
 
@@ -63,7 +68,7 @@ export default function TitleInput({ slideId, inputId, onDelete, onChange }) {
           modules={modules}
           theme="bubble"
           placeholder="Compose an epic..."
-          className="custom-quill-bubble w-full text-lg"
+          className="custom-quill-bubble w-full text-lg border-none"
         />
       </CardContent>
     </Card>

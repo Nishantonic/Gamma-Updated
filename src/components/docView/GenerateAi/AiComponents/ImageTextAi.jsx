@@ -17,7 +17,7 @@ import ResponsiveImage from "@/components/SidebarLeft/components/ToolBarElements
 import ResponsiveVideo from "@/components/SidebarLeft/components/ToolBarElements/ResponsiveVideo";
 import ResponsiveAudio from "@/components/SidebarLeft/components/ToolBarElements/ResponsiveAudio";
 
-function ImageTextAi({ generateAi = {}, ...props }) {
+function ImageTextAi({ generateAi = {},isPresentationMode, ...props }) {
   const [preview, setPreview] = useState(generateAi.imageContainer?.image);
   const [imageSize, setImageSize] = useState(() => ({
     width: generateAi.imageContainer?.styles?.width || 300,
@@ -316,13 +316,15 @@ function ImageTextAi({ generateAi = {}, ...props }) {
     >
       {/* Card Menu with Delete Option */}
       <div className="absolute top-4 left-11">
-        <CardMenu
-          onEdit={() => console.log("Edit clicked")}
-          onDelete={handleDelete} // Pass the onDelete function from parent
-          onDuplicate={() => console.log("Duplicate clicked")}
-          onShare={() => console.log("Share clicked")}
-          onDownload={() => console.log("Download clicked")}
-        />
+      {!isPresentationMode && 
+          <CardMenu
+            onDelete={() => {
+              setIsDeleted(true)
+              generateAi.onDelete?.(generateAi.id)
+            }}
+            onDuplicate={() => console.log("Duplicate clicked")}
+          />
+}
       </div>
 
       <div className="flex flex-col md:flex-row gap-8 ml-3 mt-16">
@@ -389,6 +391,7 @@ function ImageTextAi({ generateAi = {}, ...props }) {
                 onUpdate={handleTitleUpdate}
                 slideId={generateAi.id}
                 inputId={generateAi.titleContainer?.titleId}
+                isPresentationMode={isPresentationMode}
               className="title text-3xl font-bold text-white mb-4 relative overflow-visible"
             />
             </div>
@@ -399,6 +402,7 @@ function ImageTextAi({ generateAi = {}, ...props }) {
               onUpdate={handleDescriptionUpdate}
               slideId={generateAi.id}
               inputId={generateAi.descriptionContainer?.descriptionId}
+              isPresentationMode={isPresentationMode}
               className="description text-lg text-gray-300"
             />
             </div>

@@ -1,7 +1,9 @@
 import React, { useState, useRef, useEffect, useContext } from "react";
-import { CaseSensitive, AlignJustify, Heading, Type } from "lucide-react";
+import { CaseSensitive, AlignJustify, Heading as HeadingIcon, Type } from "lucide-react";
 import { DragContext } from "../DragContext";
-
+import HeadingInput from "@/components/docView/GenerateAi/AiComponents/Heading"; // Your Heading component
+import TitleAi from "@/components/docView/GenerateAi/AiComponents/TitleAi"; // Your Title component
+import ParagraphAi from "@/components/docView/GenerateAi/AiComponents/ParagraphAi";
 
 const BasicBlock = () => {
   const [isCardVisible, setIsCardVisible] = useState(false);
@@ -23,19 +25,56 @@ const BasicBlock = () => {
   }, []);
 
   const handleDragStart = (event, componentType) => {
-    const draggedElement = {
-      type: componentType, // 'title', 'heading', or 'paragraph'
-      data: {
-        value: "Default Value", // Default content
-        style: {}, // Default style
-      },
-    };
-  
-    // Set the dragged element in the context
+    let draggedElement;
+
+    // Define the dragged element based on componentType
+    switch (componentType) {
+      case "title":
+        draggedElement = {
+          type: "title",
+          data: {
+            value: "Default Title",
+            style: {},
+          },
+          component: TitleAi, // Pass the TitleAi component directly
+        };
+        break;
+      case "heading":
+        draggedElement = {
+          type: "heading",
+          data: {
+            value: "Default Heading",
+            style: { header: 2 }, // Default style for HeadingInput
+          },
+          component: HeadingInput, // Pass the HeadingInput component directly
+        };
+        break;
+      case "paragraph":
+        draggedElement = {
+          type: "paragraph",
+          data: {
+            value: "Default Paragraph",
+            style: {},
+          },
+          component: ParagraphAi, // Pass the ParagraphAi component
+        };
+        break;
+      default:
+        return;
+    }
+
+    // Set the dragged element in the DragContext
     setDraggedElement(draggedElement);
-  
-    // Set the drag data
-    event.dataTransfer.setData("application/json", JSON.stringify(draggedElement));
+
+    // Serialize only the type and data for dataTransfer (component can't be serialized)
+    const transferData = {
+      type: draggedElement.type,
+      data: draggedElement.data,
+    };
+    event.dataTransfer.setData("application/json", JSON.stringify(transferData));
+
+    // Optional: Set a simple string for drag feedback (if needed)
+    event.dataTransfer.setData("text/plain", draggedElement.type);
   };
 
   return (
@@ -72,7 +111,7 @@ const BasicBlock = () => {
               draggable
               onDragStart={(e) => handleDragStart(e, "heading")}
             >
-              <Heading className="text-blue-500 w-5 h-5 mr-2" />
+              <HeadingIcon className="text-blue-500 w-5 h-5 mr-2" />
               <h1 className="text-black">Add Heading</h1>
             </div>
 
@@ -97,4 +136,4 @@ const BasicBlock = () => {
   );
 };
 
-export default BasicBlock;
+export default BasicBlock;
