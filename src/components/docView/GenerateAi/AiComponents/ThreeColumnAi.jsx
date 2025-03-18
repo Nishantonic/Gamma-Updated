@@ -34,7 +34,7 @@ const generateDefaultCards = () => {
   }));
 };
 
-const ThreeImgTextAi = ({ generateAi = {}, ...props }) => {
+const ThreeImgTextAi = ({ generateAi = {},isPresentationMode, ...props }) => {
   const [state, setState] = useState({
     title: generateAi.titleContainer?.title || "Untitled Card",
     titleStyles: generateAi.titleContainer?.styles || {},
@@ -53,6 +53,11 @@ const ThreeImgTextAi = ({ generateAi = {}, ...props }) => {
     video: ResponsiveVideo, // Add this
   audio: ResponsiveAudio, // Add this
   }
+
+  useEffect(()=>{
+    console.log("isPresentation Mode sjdnfndsfnknsdkf",isPresentationMode);
+    
+  })
 
   const [cards, setCards] = useState(() => {
     if (generateAi.cards?.length) {
@@ -223,6 +228,7 @@ const ThreeImgTextAi = ({ generateAi = {}, ...props }) => {
             inputId={item.id}
             initialData={item.content}
             initialStyles={item.styles}
+            isPresentationMode={isPresentationMode}
             onUpdate={(value, styles) => {
               handleUpdateDroppedItem(item.id, { 
                 content: value,
@@ -253,13 +259,15 @@ const ThreeImgTextAi = ({ generateAi = {}, ...props }) => {
       onDrop={handleDrop}
     >
       <div className="absolute top-4 left-11">
-        <CardMenu
-          onEdit={() => console.log("Edit clicked")}
-          onDelete={handleDelete}
-          onDuplicate={() => console.log("Duplicate clicked")}
-          onShare={() => console.log("Share clicked")}
-          onDownload={() => console.log("Download clicked")}
-        />
+      {!isPresentationMode && 
+          <CardMenu
+            onDelete={() => {
+              setIsDeleted(true)
+              generateAi.onDelete?.(generateAi.id)
+            }}
+            onDuplicate={() => console.log("Duplicate clicked")}
+          />
+}
       </div>
 
       <div className="mt-16 space-y-6">
@@ -275,6 +283,7 @@ const ThreeImgTextAi = ({ generateAi = {}, ...props }) => {
           }}
           slideId={generateAi.id}
           inputId={generateAi.titleContainer?.titleId}
+          isPresentationMode={isPresentationMode}
         />
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5 px-10">
@@ -325,6 +334,7 @@ const ThreeImgTextAi = ({ generateAi = {}, ...props }) => {
                 }}
                 slideId={generateAi.id}
                 inputId={card.headingId}
+                isPresentationMode={isPresentationMode}
               />
               
               <ParagraphAi
@@ -338,6 +348,7 @@ const ThreeImgTextAi = ({ generateAi = {}, ...props }) => {
                 }}
                 slideId={generateAi.id}
                 inputId={card.descriptionId}
+                isPresentationMode={isPresentationMode}
               />
             </div>
           ))}

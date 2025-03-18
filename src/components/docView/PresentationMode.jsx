@@ -254,16 +254,17 @@ export function PresentationMode({
               <img
                 src={details.image}
                 alt={details.title}
-                className="w-full h-48 object-cover rounded-lg mb-4"
+                className="w-full h-48 object-cover rounded-lg mb-4 border-none outline-none boxshadow-none"
               />
             )}
-            <h3 className="text-2xl font-bold text-gray-800 mb-2">{details.title}</h3>
-            <p className="text-gray-600 mb-4">{details.description}</p>
+            <h3 className="text-2xl font-bold text-gray-800 mb-2 border-none outline-none boxshadow-none">{details.title}</h3>
+            <p className="text-gray-600 mb-4 border-none outline-none boxshadow-none">{details.description}</p>
             {details.ctaText && details.ctaUrl && (
               <Button
                 style={{
                   backgroundColor: details.ctaBtnColor,
                   color: details.ctaBtnTxtColor,
+                  
                 }}
                 className="w-full py-2 rounded-lg hover:opacity-90 transition-opacity"
                 onClick={handleTaskCompletion}
@@ -360,13 +361,13 @@ export function PresentationMode({
       animate="visible"
       exit="exit"
       variants={overlayVariants}
-      className="fixed inset-0 z-[1000] bg-white flex flex-col touch-none"
+      className="fixed inset-0 z-[1000] bg-white flex flex-col  "
       onMouseMove={() => setControlsVisible(true)}
       onMouseLeave={() => setControlsVisible(false)}
       style={{ isolation: "isolate" }}
     >
       {/* Main Content Area */}
-      <div className="flex-1 relative overflow-hidden bg-white flex items-center justify-center p-8">
+      <div className="flex-1 relative overflow-hidden bg-white flex items-center justify-center p-8  ">
         {!showLockerPopup && (
           <AnimatePresence initial={false} custom={navigationDirection}>
             <motion.div
@@ -379,11 +380,17 @@ export function PresentationMode({
               className="w-full h-full flex items-center  justify-center"
             >
               <div
-                className="presentation-content bg-white w-full p-6 rounded-lg "
-                style={{ transform: `scale(${zoomLevel})` }}
-              >
-                {renderSlide(slides[currentSlideIndex])}
-              </div>
+  className="presentation-content bg-white w-full p-6 rounded-lg"
+  style={{
+    transform: `scale(${zoomLevel})`,
+    pointerEvents: "none",
+    userSelect: "none",
+    border:"none"
+  }}
+>
+  {renderSlide(slides[currentSlideIndex])}
+</div>
+
             </motion.div>
           </AnimatePresence>
         )}

@@ -53,6 +53,8 @@ export default function Page() {
     const savedSlides = JSON.parse(localStorage.getItem("slides")) || [];
     return savedSlides;
   });
+
+  const [presentationOpen,setPresentationOpen] = useState(false);
   const location = useLocation();
   const { droppedItems } = useDroppedItems();
   const [presentationId, setPresentationId] = useState(null);
@@ -72,6 +74,7 @@ export default function Page() {
     }
   }, [currentSlide]);
 
+ 
   const renderSlideComponent = (slideData) => {
     const safeSlide = {
       type: "custom",
@@ -102,6 +105,7 @@ export default function Page() {
           setSlides={setSlides}
           setCurrentSlide={setCurrentSlide}
           setSlidesPreview={setSlidesPreview}
+          isPresentationMode={isPresentationMode}
         />
       );
     }
@@ -114,7 +118,7 @@ export default function Page() {
     };
 
     const Component = components[slideData.type] || components.default;
-    return <Component {...commonProps} key={slideData.id} />;
+    return <Component {...commonProps} key={slideData.id} isPresentationMode={isPresentationMode} />;
   };
 
   const getAuthHeaders = () => {
@@ -1149,7 +1153,7 @@ export default function Page() {
 
   return (
     <div className="h-screen flex flex-col bg-background">
-      <Header slideDockers={slideDockers} setSlideDockers={setSlideDockers} presentationId={presentationId} presentationDocumentId={presentationDocumentId} slides={slides} setGenerateAi={() => setShowPopup(true)} startPresentation={startPresentation} />
+      <Header slideDockers={slideDockers} setSlideDockers={setSlideDockers} presentationId={presentationId} presentationDocumentId={presentationDocumentId} slides={slides} setGenerateAi={() => setShowPopup(true)} startPresentation={startPresentation} isPresentationMode={isPresentationMode} />
       <Toaster position="top-right" richColors />
       {isPresentationMode && (
         <PresentationMode
@@ -1191,6 +1195,7 @@ export default function Page() {
                   setIsGenerating(false);
                   setIsAiGenerated(true);
                 }}
+                isPresentationMode={isPresentationMode}
               />
             </div>
           ) : (

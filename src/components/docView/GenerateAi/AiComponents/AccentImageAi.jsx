@@ -16,7 +16,7 @@ import ResponsiveImage from "@/components/SidebarLeft/components/ToolBarElements
 import ResponsiveVideo from "@/components/SidebarLeft/components/ToolBarElements/ResponsiveVideo"
 import ResponsiveAudio from "@/components/SidebarLeft/components/ToolBarElements/ResponsiveAudio"
 
-function AccentImageAi({ generateAi = {}, ...props }) {
+function AccentImageAi({ generateAi = {}, isPresentationMode, ...props }) {
   const [preview, setPreview] = useState(generateAi.imageContainer?.image)
   const [imageSize, setImageSize] = useState(() => ({
     width: generateAi.imageContainer?.styles?.width || 300,
@@ -257,6 +257,7 @@ function AccentImageAi({ generateAi = {}, ...props }) {
     >
       <CardContent className="p-6">
         <div className="absolute top-4 left-11">
+          {!isPresentationMode && 
           <CardMenu
             onDelete={() => {
               setIsDeleted(true)
@@ -264,6 +265,7 @@ function AccentImageAi({ generateAi = {}, ...props }) {
             }}
             onDuplicate={() => console.log("Duplicate clicked")}
           />
+}
         </div>
 
         <div className="flex flex-col md:flex-row gap-8 mt-16">
@@ -276,6 +278,7 @@ function AccentImageAi({ generateAi = {}, ...props }) {
                 slideId={generateAi.id}
                 inputId={generateAi.titleContainer?.titleId}
                 className="title text-3xl font-bold text-white mb-4 relative overflow-visible"
+                isPresentationMode={isPresentationMode}
               />
             </div>
             <div className="relative overflow-visible z-50 w-full">
@@ -286,6 +289,7 @@ function AccentImageAi({ generateAi = {}, ...props }) {
                 slideId={generateAi.id}
                 inputId={generateAi.descriptionContainer?.descriptionId}
                 className="description text-lg text-gray-300"
+                isPresentationMode={isPresentationMode}
               />
             </div>
           </div>

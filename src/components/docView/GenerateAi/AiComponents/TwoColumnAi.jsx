@@ -15,7 +15,7 @@ import ResponsiveImage from "@/components/SidebarLeft/components/ToolBarElements
 import ResponsiveVideo from "@/components/SidebarLeft/components/ToolBarElements/ResponsiveVideo"
 import ResponsiveAudio from "@/components/SidebarLeft/components/ToolBarElements/ResponsiveAudio"
 
-function CardTemplateTwoColumn({ generateAi = {}, ...props }) {
+function CardTemplateTwoColumn({ generateAi = {}, isPresentationMode, ...props }) {
   const [title, setTitle] = useState(generateAi.titleContainer?.title || "Untitled Card");
   const [titleStyles, setTitleStyles] = useState(generateAi.titleContainer?.styles || {});
   const [isDeleted, setIsDeleted] = useState(false);
@@ -240,6 +240,7 @@ function CardTemplateTwoColumn({ generateAi = {}, ...props }) {
       onDrop={handleDrop}
     >
       <div className="absolute top-4 left-11">
+        {!isPresentationMode &&
         <CardMenu
           onEdit={() => console.log("Edit clicked")}
           onDelete={handleDelete}
@@ -247,6 +248,7 @@ function CardTemplateTwoColumn({ generateAi = {}, ...props }) {
           onShare={() => console.log("Share clicked")}
           onDownload={() => console.log("Download clicked")}
         />
+}
       </div>
 
       <div className="flex flex-col gap-8 mt-16">
@@ -256,6 +258,7 @@ function CardTemplateTwoColumn({ generateAi = {}, ...props }) {
           onUpdate={handleTitleUpdate}
           slideId={generateAi.id}
           inputId={generateAi.titleContainer?.titleId}
+          isPresentationMode={isPresentationMode}
         />
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -269,6 +272,7 @@ function CardTemplateTwoColumn({ generateAi = {}, ...props }) {
               }
               slideId={generateAi.id}
               inputId={column.columnId}
+              isPresentationMode={isPresentationMode}
             />
           ))}
         </div>

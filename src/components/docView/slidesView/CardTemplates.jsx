@@ -30,6 +30,7 @@ export default function CardTemplates({
   slidesPreview, // Add this
   setSlidesPreview, // Add this
   setSlides, // Add this
+  isPresentationMode,
   ...props
 }) {  // Add dropped items context
   const [droppedItems, setDroppedItems] = useState([]);
@@ -233,10 +234,10 @@ const handleTitleUpdate = (newTitle, styles) => {
     }
   }
 
-if (showTwoColumn) return <TwoColumnAi {...props} id={id} slidesPreview={slidesPreview} setSlidesPreview={setSlidesPreview} setSlides={setSlides} generateAi={generateAi} />;
-if (showImageText) return <ImageTextAi {...props} id={id} slidesPreview={slidesPreview} setSlidesPreview={setSlidesPreview} setSlides={setSlides} generateAi={generateAi} />;
-if (showAccentImage) return <AccentImageAi {...props} id={id} slidesPreview={slidesPreview} setSlidesPreview={setSlidesPreview} setSlides={setSlides} generateAi={generateAi} />;
-if (showThreeColumn) return <ThreeImgTextAi {...props} id={id} slidesPreview={slidesPreview} setSlidesPreview={setSlidesPreview} setSlides={setSlides} generateAi={generateAi} />;
+if (showTwoColumn) return <TwoColumnAi {...props} id={id} slidesPreview={slidesPreview} setSlidesPreview={setSlidesPreview} setSlides={setSlides} generateAi={generateAi}      isPresentationMode={isPresentationMode}/>;
+if (showImageText) return <ImageTextAi {...props} id={id} slidesPreview={slidesPreview} setSlidesPreview={setSlidesPreview} setSlides={setSlides} generateAi={generateAi}      isPresentationMode={isPresentationMode} />;
+if (showAccentImage) return <AccentImageAi {...props} id={id} slidesPreview={slidesPreview} setSlidesPreview={setSlidesPreview} setSlides={setSlides} generateAi={generateAi}  isPresentationMode={isPresentationMode} />;
+if (showThreeColumn) return <ThreeImgTextAi {...props} id={id} slidesPreview={slidesPreview} setSlidesPreview={setSlidesPreview} setSlides={setSlides} generateAi={generateAi} isPresentationMode={isPresentationMode} />;
 if (replacedTemplate) return <div>{replacedTemplate}</div>;
 
 // Then check if deleted
@@ -280,9 +281,11 @@ const renderDroppedItems = () => {
     <div>
       <Card id={`slide-${generateAi.index}`} onDragOver={handleDragOver} onDrop={handleDrop} className="min-h-screen w-full md:min-h-[25vw] md:mt-[3vh] md:mb-[3vh] rounded-lg px-1 bg-[#342c4e] p-6 relative max-w-4xl mx-auto">
         <div className="absolute top-4 left-11">
+          {!isPresentationMode &&
           <CardMenu
             onDelete={handleDelete}
           />
+}
         </div>
         <CardContent>
           <div className="relative overflow-visible z-50 w-full   ">
@@ -293,6 +296,7 @@ const renderDroppedItems = () => {
               slideId={generateAi.id}
               inputId={generateAi.titleContainer?.titleId}
               className="title text-3xl font-bold text-white mb-4 relative overflow-visible"
+              isPresentationMode={isPresentationMode}
             />
             </div>
         </CardContent>
@@ -301,7 +305,8 @@ const renderDroppedItems = () => {
           {renderDroppedItems()}
         </div>
       ) : (
-          <div className="space-y-3">
+          !isPresentationMode && (
+            <div className="space-y-3">
             <h2 className="text-[#9d8ba7] text-lg px-10">
               Or start with a template
             </h2>
@@ -394,6 +399,7 @@ const renderDroppedItems = () => {
               </Card>
             </div>
           </div>
+          )
         )}
       </Card>
     </div>

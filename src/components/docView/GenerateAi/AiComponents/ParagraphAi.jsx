@@ -3,7 +3,7 @@ import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
 import "react-quill/dist/quill.bubble.css";
 
-function ParagraphAi({ slideId, inputId, onUpdate, initialData,initialStyles}) {
+function ParagraphAi({ slideId, inputId, onUpdate, initialData,initialStyles,isPresentationMode}) {
   const quillRef = useRef(null);
 
   const formattedInitialData = initialData || "Paragraph";
@@ -17,6 +17,11 @@ function ParagraphAi({ slideId, inputId, onUpdate, initialData,initialStyles}) {
         quill.formatText(0, quill.getLength(), 'header', 3);
       }
     }, []);
+
+     useEffect(()=>{
+        console.log("ispreisPresentationMode paragraph",isPresentationMode, isPresentationMode);
+        
+      })
 
   const handleChange = (value) => {
   // Add null check for quillRef
@@ -52,7 +57,7 @@ function ParagraphAi({ slideId, inputId, onUpdate, initialData,initialStyles}) {
 
   return (
     <div className="w-full mx-auto p-4">
-      <div className="border border-none p-2 bg-transparent outline rounded  text-white/50 ">
+      <div className="p-2 bg-transparent outline-none rounded text-white/50">
         <ReactQuill
           ref={quillRef}
           value={editorHtml}
@@ -76,14 +81,17 @@ function ParagraphAi({ slideId, inputId, onUpdate, initialData,initialStyles}) {
             "video",
           ]}
           theme="bubble"
-          placeholder="Paragraph"
-          className="custom-quill-bubble w-full text-lg relative "
+          placeholder="Heading nishant"
+          className="custom-quill-bubble w-full text-lg relative"
           style={{
             "--ql-toolbar-margin-left": "auto",
+            border: isPresentationMode ? "none" : "2px solid gray",  // Ensures no border is applied
+            outline: isPresentationMode ?  "none" : " 1px " , // Removes any focus outline
+            boxShadow: isPresentationMode ?  "none" : "initial", // Prevents unwanted shadows
           }}
         />
       </div>
-    </div>
+    </div> 
   );  
 }
 
