@@ -34,143 +34,173 @@ export default function AiImages({ credits, setCradits }) {
   const userId = getUserId();
 
   useEffect(() => {
-    const fetchImages = async () => {
-      try {
-        const token = localStorage.getItem("token");
-        const response = await axios.get(`${API_BASE_URL}/api/ai-images?user_id=${userId}`, {
+  const fetchImages = async () => {
+    if (!userId) {
+      console.error("No userId found, skipping fetch.");
+      setIsLoadingImages(false);
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem("token");
+      console.log(`Fetching images for user: ${userId}`);
+      const response = await axios.get(
+        `${API_BASE_URL}/api/ai-images?filters[user][id][$eq]=${userId}`,
+        {
           headers: {
             Authorization: `Bearer ${token}`,
           },
-        });
+        }
+      );
 
-        const fetchedImages = response.data.data.map((img) => {
-          const imageUrl = img.image_path; // Full URL from the API
-          console.log("Fetched Image URL:", imageUrl);
-          return {
-            id: img.documentId, // Use documentId as the unique identifier
-            url: imageUrl,
-            prompt: img.prompt || "Generated Image",
-            aspectRatio: aspectRatio, // Use the selected aspect ratio (no width/height in response)
-            createdAt: img.createdAt,
-          };
-        }).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      console.log("API Response:", response.data);
 
-        setImages(fetchedImages);
-      } catch (err) {
-        console.error("Error fetching images:", err);
-        toast.error("Failed to load images from server.");
-      } finally {
-        setIsLoadingImages(false);
-      }
-    };
+      // Load stored images from localStorage to preserve aspect ratios
+      const storedImages = JSON.parse(localStorage.getItem(`aiImages_${userId}`) || "[]");
+      const storedImageMap = new Map(storedImages.map(img => [img.id, img]));
 
-    if (userId) fetchImages();
-  }, [userId]); // Dependency on userId instead of images to avoid infinite loop
+      const fetchedImages = response.data.data.map((img) => {
+        const imageUrl = img.image_path;
+        console.log("Fetched Image URL:", imageUrl);
+        const storedImage = storedImageMap.get(img.documentId);
+        return {
+          id: img.documentId,
+          url: imageUrl,
+          prompt: img.prompt || "Generated Image",
+          aspectRatio: storedImage ? storedImage.aspectRatio : aspectRatio, // Use stored aspectRatio or current if new
+          createdAt: img.createdAt,
+        };
+      }).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+      setImages(fetchedImages);
+      // Update localStorage with fetched images to ensure consistency
+      localStorage.setItem(`aiImages_${userId}`, JSON.stringify(fetchedImages));
+    } catch (err) {
+      console.error("Error fetching images:", err);
+      toast.error("Failed to load images from server.");
+    } finally {
+      setIsLoadingImages(false);
+    }
+  };
+
+  if (userId) fetchImages();
+}, [userId]);
 
   const handleGenerate = async () => {
-    if (credits < 10) {
-      setError("Insufficient credits. You need at least 10 credits.");
-      toast.error("Insufficient credits. You need at least 10 credits. Please purchase more.");
-      return;
-    }
+  if (credits < 10) {
+    setError("Insufficient credits. You need at least 10 credits.");
+    toast.error("Insufficient credits. You need at least 10 credits. Please purchase more.");
+    return;
+  }
 
-    if (!prompt.trim()) {
-      setError("Please enter a description");
-      return;
-    }
+  if (!prompt.trim()) {
+    setError("Please enter a description");
+    return;
+  }
 
-    if (!userId) {
-      setError("User ID not found. Please log in.");
-      toast.error("User ID not found. Please log in.");
-      return;
-    }
+  if (!userId) {
+    setError("User ID not found. Please log in.");
+    toast.error("User ID not found. Please log in.");
+    return;
+  }
 
-    setIsGenerating(true);
-    setError("");
+  setIsGenerating(true);
+  setError("");
 
-    try {
-      const generateResponse = await axios.post(
-        "https://fal.run/fal-ai/fast-sdxl",
-        {
-          prompt: prompt,
-          image_size: aspectRatioMap[aspectRatio],
+  try {
+    const generateResponse = await axios.post(
+      "https://fal.run/fal-ai/fast-sdxl",
+      {
+        prompt: prompt,
+        image_size: aspectRatioMap[aspectRatio],
+      },
+      {
+        headers: {
+          Authorization: "Key 695211bf-74de-4864-9e7a-9eb254f63508:bc32a1373fd24dc225b7d0955f5e1ac6",
+          "Content-Type": "application/json",
         },
-        {
-          headers: {
-            Authorization: "Key 695211bf-74de-4864-9e7a-9eb254f63508:bc32a1373fd24dc225b7d0955f5e1ac6",
-            "Content-Type": "application/json",
-          },
-        }
-      );
-
-      if (!generateResponse.data?.images?.[0]?.url) {
-        throw new Error("No image URL returned from API");
       }
+    );
 
-      const imageUrl = generateResponse.data.images[0].url;
-      console.log("Generated Image URL:", imageUrl);
-
-      const payload = {
-        data: {
-          image_path: imageUrl,
-          user: userId,
-          prompt: prompt,
-        },
-      };
-
-      const token = localStorage.getItem("token");
-      const uploadResponse = await axios.post(
-        `${API_BASE_URL}/api/ai-images`,
-        payload,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json", // Correct content type for JSON payload
-          },
-        }
-      );
-
-      const uploadedImage = uploadResponse.data.data; // Access the single object from the response
-      const newImage = {
-        id: uploadedImage.documentId,
-        url: uploadedImage.image_path,
-        prompt: uploadedImage.prompt,
-        aspectRatio: aspectRatio, // Use the selected aspect ratio
-        createdAt: uploadedImage.createdAt,
-      };
-
-      setImages((prev) => [newImage, ...prev]);
-      const newCredits = credits - 10;
-      setCradits(newCredits);
-      localStorage.setItem("credits", newCredits);
-      toast.success("Image generated and uploaded successfully!");
-    } catch (err) {
-      console.error("Error generating or uploading image:", err);
-      const errorMessage = err.response?.data?.detail || "Failed to generate or upload image. Please try again.";
-      toast.error(errorMessage);
-    } finally {
-      setIsGenerating(false);
-      setIsOpen(false);
-      setPrompt("");
+    if (!generateResponse.data?.images?.[0]?.url) {
+      throw new Error("No image URL returned from API");
     }
-  };
 
-  const handleDelete = async (id) => {
-    try {
-      const token = localStorage.getItem("token");
-      await axios.delete(`${API_BASE_URL}/api/ai-images/${id}`, {
+    const imageUrl = generateResponse.data.images[0].url;
+    console.log("Generated Image URL:", imageUrl);
+
+    const payload = {
+      data: {
+        image_path: imageUrl,
+        user: userId,
+        prompt: prompt,
+      },
+    };
+
+    const token = localStorage.getItem("token");
+    const uploadResponse = await axios.post(
+      `${API_BASE_URL}/api/ai-images`,
+      payload,
+      {
         headers: {
           Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
         },
-      });
+      }
+    );
 
-      setImages((prev) => prev.filter((img) => img.id !== id));
-      toast.success("Image deleted successfully!");
-    } catch (err) {
-      console.error("Error deleting image:", err);
-      toast.error("Failed to delete image.");
-    }
-  };
+    const uploadedImage = uploadResponse.data.data;
+    const newImage = {
+      id: uploadedImage.documentId,
+      url: uploadedImage.image_path,
+      prompt: uploadedImage.prompt,
+      aspectRatio: aspectRatio, // Store the selected aspect ratio
+      createdAt: uploadedImage.createdAt,
+    };
+
+    setImages((prev) => {
+      const updatedImages = [newImage, ...prev];
+      // Persist to localStorage for this user
+      localStorage.setItem(`aiImages_${userId}`, JSON.stringify(updatedImages));
+      return updatedImages;
+    });
+
+    const newCredits = credits - 10;
+    setCradits(newCredits);
+    localStorage.setItem("credits", newCredits);
+    toast.success("Image generated and uploaded successfully!");
+  } catch (err) {
+    console.error("Error generating or uploading image:", err);
+    const errorMessage = err.response?.data?.detail || "Failed to generate or upload image. Please try again.";
+    toast.error(errorMessage);
+  } finally {
+    setIsGenerating(false);
+    setIsOpen(false);
+    setPrompt("");
+  }
+};
+
+  const handleDelete = async (id) => {
+  try {
+    const token = localStorage.getItem("token");
+    await axios.delete(`${API_BASE_URL}/api/ai-images/${id}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    setImages((prev) => {
+      const updatedImages = prev.filter((img) => img.id !== id);
+      // Update localStorage after deletion
+      localStorage.setItem(`aiImages_${userId}`, JSON.stringify(updatedImages));
+      return updatedImages;
+    });
+    toast.success("Image deleted successfully!");
+  } catch (err) {
+    console.error("Error deleting image:", err);
+    toast.error("Failed to delete image.");
+  }
+};
 
   const handleDownload = async (url) => {
     try {
