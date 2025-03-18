@@ -19,8 +19,8 @@ export function PresentationMode({
   const [slideDockers, setSlideDockers] = useState({});
   const [isLoadingLockers, setIsLoadingLockers] = useState(false);
   const [showLockerPopup, setShowLockerPopup] = useState(false);
-  const [currentLocker, setCurrentLocker] = useState(null);
-  const [taskCompleted, setTaskCompleted] = useState(false); // Moved to top level
+  const [currentLockerIndex, setCurrentLockerIndex] = useState(0); // Track current locker in sequence
+  const [lockersQueue, setLockersQueue] = useState([]); // Queue of lockers for current slide
   const containerRef = useRef(null);
 
   const confirmVariants = {
@@ -115,17 +115,16 @@ export function PresentationMode({
     }
   }, [presentationId]);
 
-  // Check for lockers and reset taskCompleted on slide change
+  // Manage locker queue for the current slide
   useEffect(() => {
     const currentSlideId = slides[currentSlideIndex]?.id;
     const lockers = slideDockers[currentSlideId] || [];
-    setTaskCompleted(false); // Reset task completion for new slide
+    setLockersQueue(lockers); // Set all lockers for the current slide
+    setCurrentLockerIndex(0); // Start with the first locker
     if (lockers.length > 0) {
-      setCurrentLocker(lockers[0]);
       setShowLockerPopup(true);
     } else {
       setShowLockerPopup(false);
-      setCurrentLocker(null);
     }
   }, [currentSlideIndex, slideDockers]);
 
@@ -241,32 +240,58 @@ export function PresentationMode({
   const renderLocker = (locker) => {
     const { type, details } = locker;
 
-    const handleTaskCompletion = () => {
-      setTaskCompleted(true);
-      setShowLockerPopup(false);
+    const handleTaskCompletion = (url) => {
+      if (url) {
+        window.open(url, "_blank");
+      }
+      proceedToNextLocker();
+    };
+
+    const handleWhatsappClick = () => {
+      const phoneNumber = details.ctaUrl;
+      const message = encodeURIComponent("Hello! This is a predefined message from PresentAI.");
+      const whatsappUrl = `https://wa.me/${phoneNumber}?text=${message}`;
+      window.open(whatsappUrl, "_blank");
+      proceedToNextLocker();
+    };
+
+    const proceedToNextLocker = () => {
+      if (currentLockerIndex + 1 < lockersQueue.length) {
+        // Move to the next locker in the queue
+        setCurrentLockerIndex((prev) => prev + 1);
+      } else {
+        // No more lockers, show the slide
+        setShowLockerPopup(false);
+      }
+    };
+
+    const handleCloseLocker = () => {
+      if (details.allowClose) {
+        proceedToNextLocker();
+      }
     };
 
     switch (type) {
       case "Banner":
         return (
-          <div className="bg-white p-6 rounded-xl shadow-2xl max-w-md w-full">
+          <div className="bg-white p-8 rounded-2xl shadow-xl max-w-lg w-full border border-gray-200">
             {details.image && (
               <img
                 src={details.image}
                 alt={details.title}
-                className="w-full h-48 object-cover rounded-lg mb-4"
+                className="w-full h-56 object-cover rounded-lg mb-6 shadow-md"
               />
             )}
-            <h3 className="text-2xl font-bold text-gray-800 mb-2">{details.title}</h3>
-            <p className="text-gray-600 mb-4">{details.description}</p>
+            <h3 className="text-3xl font-bold text-gray-900 mb-3">{details.title}</h3>
+            <p className="text-gray-700 mb-6 leading-relaxed">{details.description}</p>
             {details.ctaText && details.ctaUrl && (
               <Button
                 style={{
                   backgroundColor: details.ctaBtnColor,
                   color: details.ctaBtnTxtColor,
                 }}
-                className="w-full py-2 rounded-lg hover:opacity-90 transition-opacity"
-                onClick={handleTaskCompletion}
+                className="w-full py-3 rounded-lg text-lg font-semibold hover:opacity-85 transition-all shadow-sm"
+                onClick={() => handleTaskCompletion(details.ctaUrl)}
               >
                 {details.ctaText}
               </Button>
@@ -275,16 +300,16 @@ export function PresentationMode({
         );
       case "Image":
         return (
-          <div className="bg-white p-6 rounded-xl shadow-2xl max-w-md w-full">
+          <div className="bg-white p-8 rounded-2xl shadow-xl max-w-lg w-full border border-gray-200">
             <img
               src={details.image}
               alt="Locker Image"
-              className="w-full max-h-64 object-contain rounded-lg"
+              className="w-full max-h-72 object-contain rounded-lg shadow-md"
             />
             {!details.allowClose && (
               <Button
-                className="w-full mt-4 bg-blue-600 hover:bg-blue-700 text-white"
-                onClick={handleTaskCompletion}
+                className="w-full mt-6 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white py-3 rounded-lg text-lg font-semibold transition-all shadow-sm"
+                onClick={() => handleTaskCompletion(details.image)}
               >
                 Continue
               </Button>
@@ -293,11 +318,11 @@ export function PresentationMode({
         );
       case "Video":
         return (
-          <div className="bg-white p-6 rounded-xl shadow-2xl max-w-md w-full">
+          <div className="bg-white p-8 rounded-2xl shadow-xl max-w-lg w-full border border-gray-200">
             <video
               controls
-              className="w-full max-h-64 rounded-lg"
-              onEnded={handleTaskCompletion}
+              className="w-full max-h-72 rounded-lg shadow-md"
+              onEnded={() => handleTaskCompletion(details.video)}
             >
               <source src={details.video} type="video/mp4" />
               Your browser does not support the video tag.
@@ -305,44 +330,58 @@ export function PresentationMode({
           </div>
         );
       case "Custom HTML":
-        return (
-          <div className="bg-white p-6 rounded-xl shadow-2xl max-w-md w-full overflow-auto max-h-[80vh]">
-            <div dangerouslySetInnerHTML={{ __html: details.html }} />
-            {!details.allowClose && (
-              <Button
-                className="w-full mt-4 bg-blue-600 hover:bg-blue-700 text-white"
-                onClick={handleTaskCompletion}
-              >
-                Submit
-              </Button>
-            )}
-          </div>
-        );
+  return (
+    <div className="bg-white p-8 rounded-2xl shadow-xl max-w-lg w-full border border-gray-200 overflow-auto max-h-[85vh]">
+      <div className="text-gray-800" dangerouslySetInnerHTML={{ __html: details.html }} />
+      {!details.allowClose && (
+        <Button
+          className="w-full mt-6 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white py-3 rounded-lg text-lg font-semibold transition-all shadow-sm"
+          onClick={() => handleTaskCompletion(null)} // No URL, just proceed
+        >
+          Submit
+        </Button>
+      )}
+    </div>
+  );
       case "Autoresponder":
-        return (
-          <div className="bg-white p-6 rounded-xl shadow-2xl max-w-md w-full overflow-auto max-h-[80vh]">
-            <div dangerouslySetInnerHTML={{ __html: details.autoresponder }} />
-            {!details.allowClose && (
-              <Button
-                className="w-full mt-4 bg-blue-600 hover:bg-blue-700 text-white"
-                onClick={handleTaskCompletion}
-              >
-                Submit Form
-              </Button>
-            )}
-          </div>
-        );
+  return (
+    <div className="bg-white p-8 rounded-2xl shadow-xl max-w-lg w-full border border-gray-200 overflow-auto max-h-[85vh]">
+      <div className="text-gray-800" dangerouslySetInnerHTML={{ __html: details.autoresponder }} />
+      {!details.allowClose && (
+        <Button
+          className="w-full mt-6 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white py-3 rounded-lg text-lg font-semibold transition-all shadow-sm"
+          onClick={() => handleTaskCompletion(null)} // No URL, just proceed
+        >
+          Submit 
+        </Button>
+      )}
+    </div>
+  );
       case "Click to Action":
-      case "Whatsapp":
         return (
-          <div className="bg-white p-6 rounded-xl shadow-2xl max-w-md w-full">
+          <div className="bg-white p-8 rounded-2xl shadow-xl max-w-lg w-full border border-gray-200">
             <Button
               style={{
                 backgroundColor: details.ctaBtnColor,
                 color: details.ctaBtnTxtColor,
               }}
-              className="w-full py-3 rounded-lg hover:opacity-90 transition-opacity text-lg font-semibold"
-              onClick={handleTaskCompletion}
+              className="w-full py-4 rounded-lg text-xl font-semibold hover:opacity-85 transition-all shadow-sm"
+              onClick={() => handleTaskCompletion(details.ctaUrl)}
+            >
+              {details.ctaText}
+            </Button>
+          </div>
+        );
+      case "Whatsapp":
+        return (
+          <div className="bg-white p-8 rounded-2xl shadow-xl max-w-lg w-full border border-gray-200">
+            <Button
+              style={{
+                backgroundColor: details.ctaBtnColor,
+                color: details.ctaBtnTxtColor,
+              }}
+              className="w-full py-4 rounded-lg text-xl font-semibold hover:opacity-85 transition-all shadow-sm"
+              onClick={handleWhatsappClick}
             >
               {details.ctaText}
             </Button>
@@ -376,10 +415,10 @@ export function PresentationMode({
               initial="enter"
               animate="center"
               exit="exit"
-              className="w-full h-full flex items-center  justify-center"
+              className="w-full h-full flex items-center justify-center"
             >
               <div
-                className="presentation-content bg-white w-full p-6 rounded-lg "
+                className="presentation-content bg-white w-full p-6 rounded-lg"
                 style={{ transform: `scale(${zoomLevel})` }}
               >
                 {renderSlide(slides[currentSlideIndex])}
@@ -390,21 +429,30 @@ export function PresentationMode({
 
         {/* Locker Popup */}
         <AnimatePresence>
-          {showLockerPopup && currentLocker && (
+          {showLockerPopup && lockersQueue.length > 0 && currentLockerIndex < lockersQueue.length && (
             <motion.div
               initial="hidden"
               animate="visible"
               exit="exit"
               variants={lockerPopupVariants}
-              className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[1001]"
+              className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-[1001]"
             >
-              {renderLocker(currentLocker)}
-              {currentLocker.details.allowClose && (
+              {renderLocker(lockersQueue[currentLockerIndex])}
+              {lockersQueue[currentLockerIndex].details.allowClose && (
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="absolute top-4 right-4 text-white hover:bg-gray-700"
-                  onClick={() => setShowLockerPopup(false)}
+                  className="absolute top-4 right-4 text-white hover:bg-gray-700/80 rounded-full"
+                  onClick={() => {
+                    const currentLocker = lockersQueue[currentLockerIndex];
+                    if (currentLocker.details.allowClose) {
+                      if (currentLockerIndex + 1 < lockersQueue.length) {
+                        setCurrentLockerIndex((prev) => prev + 1);
+                      } else {
+                        setShowLockerPopup(false);
+                      }
+                    }
+                  }}
                 >
                   <X className="h-6 w-6" />
                 </Button>
@@ -420,7 +468,7 @@ export function PresentationMode({
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[1001]"
+              className="fixed inset-0 bg-black/50 backdrop-blur-md flex items-center justify-center z-[1001]"
               onClick={() => setShowCloseConfirm(false)}
             >
               <motion.div
@@ -428,21 +476,25 @@ export function PresentationMode({
                 initial="hidden"
                 animate="visible"
                 exit="exit"
-                className="bg-white p-6 rounded-xl shadow-xl max-w-md w-full mx-4"
-                onClick={(e) => e.stopPropagation()}
+                className="bg-white p-6 rounded-xl shadow-xl max-w-md w-full mx-4 border border-gray-200"
               >
-                <h3 className="text-lg font-semibold mb-4">Close Presentation?</h3>
+                <h3 className="text-xl font-semibold mb-4 text-gray-900">Close Presentation?</h3>
                 <p className="text-gray-600 mb-6">
                   Are you sure you want to exit presentation mode?
                 </p>
                 <div className="flex gap-3 justify-end">
                   <Button
                     variant="outline"
+                    className="border-gray-300 hover:bg-gray-100"
                     onClick={() => setShowCloseConfirm(false)}
                   >
                     Cancel
                   </Button>
-                  <Button variant="destructive" onClick={confirmClose}>
+                  <Button
+                    variant="destructive"
+                    className="bg-red-600 hover:bg-red-700"
+                    onClick={confirmClose}
+                  >
                     Confirm
                   </Button>
                 </div>
@@ -464,19 +516,19 @@ export function PresentationMode({
             <Button
               variant="ghost"
               size="icon"
-              className="text-black hover:bg-gray-700 shadow-lg pointer-events-auto backdrop-blur-sm"
+              className="text-black hover:bg-gray-200 shadow-lg pointer-events-auto backdrop-blur-sm rounded-full"
               onClick={handleCloseRequest}
             >
               <X className="h-6 w-6" />
             </Button>
           </motion.div>
 
-          <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex items-center gap-4 px-6 py-3 bg-gray-800/90 shadow-xl backdrop-blur-sm rounded-full pointer-events-auto text-white">
+          <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex items-center gap-4 px-6 py-3 bg-white/90 shadow-xl backdrop-blur-sm rounded-full pointer-events-auto text-gray-800 border border-gray-200">
             <motion.div whileTap={{ scale: 0.95 }}>
               <Button
                 variant="ghost"
                 size="icon"
-                className="text-white hover:bg-gray-700"
+                className="text-gray-700 hover:bg-gray-100"
                 onClick={goToPreviousSlide}
                 disabled={currentSlideIndex === 0}
               >
@@ -495,7 +547,7 @@ export function PresentationMode({
               <Button
                 variant="ghost"
                 size="icon"
-                className="text-white hover:bg-gray-700"
+                className="text-gray-700 hover:bg-gray-100"
                 onClick={goToNextSlide}
                 disabled={currentSlideIndex === slides.length - 1}
               >
@@ -512,7 +564,7 @@ export function PresentationMode({
               <Button
                 variant="ghost"
                 size="icon"
-                className="text-black hover:bg-gray-700 shadow-lg pointer-events-auto backdrop-blur-sm"
+                className="text-black hover:bg-gray-200 shadow-lg pointer-events-auto backdrop-blur-sm rounded-full"
                 onClick={zoomIn}
               >
                 <ZoomIn className="h-6 w-6" />
@@ -522,7 +574,7 @@ export function PresentationMode({
               <Button
                 variant="ghost"
                 size="icon"
-                className="text-black hover:bg-gray-700 shadow-lg pointer-events-auto backdrop-blur-sm"
+                className="text-black hover:bg-gray-200 shadow-lg pointer-events-auto backdrop-blur-sm rounded-full"
                 onClick={zoomOut}
               >
                 <ZoomOut className="h-6 w-6" />

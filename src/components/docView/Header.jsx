@@ -24,7 +24,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { toast } from "react-hot-toast";
+import { toast, Toaster } from "sonner";
 
 export function Header({ setGenerateAi, startPresentation, slides, slideDockers, setSlideDockers, presentationId, presentationDocumentId }) {
   const navigate = useNavigate();
@@ -182,6 +182,7 @@ export function Header({ setGenerateAi, startPresentation, slides, slideDockers,
         });
         if (!uploadResponse.ok) {
           const errorText = await uploadResponse.text();
+          toast("Video size is High!")
           throw new Error(`Failed to upload file: ${uploadResponse.status} - ${errorText}`);
         }
         const uploadData = await uploadResponse.json();
@@ -480,6 +481,24 @@ export function Header({ setGenerateAi, startPresentation, slides, slideDockers,
                 <h3 className="text-lg font-semibold mb-4 text-gray-800">Locker Configuration</h3>
                 <div className="space-y-4 max-h-[50vh] overflow-y-auto pr-2">
                   <div>
+                    <Label className="mb-1 text-gray-700">Slide</Label>
+                    <Select
+                      value={dockerForm.slideNumber}
+                      onValueChange={(value) => handleInputChange("slideNumber", value)}
+                    >
+                      <SelectTrigger className="w-full border-gray-300">
+                        <SelectValue placeholder="Select slide" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {slides.map((slide) => (
+                          <SelectItem key={slide.id} value={String(slide.id)}> {/* Use slide.id as value */}
+                            {slide.titleContainer?.title.replace(/<[^>]*>/g, "") || `Slide ${slides.indexOf(slide) + 1}`}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
                     <Label className="mb-1 text-gray-700">Locker Type</Label>
                     <Select
                       value={selectedLockerType}
@@ -568,14 +587,28 @@ export function Header({ setGenerateAi, startPresentation, slides, slideDockers,
                         />
                       </div>
                       <div>
-                        <Label className="mb-1 text-gray-700">Call to Action Button URL</Label>
-                        <Input
+                        
+                        {selectedLockerType === 'Whatsapp'? 
+                        <>
+                          <Label className="mb-1 text-gray-700">Phone Number</Label>
+                          <Input
+                          type="url"
+                          placeholder="Enter Phone Number"
+                          value={dockerForm.ctaUrl}
+                          onChange={(e) => handleInputChange("ctaUrl", e.target.value)}
+                          className="w-full border-gray-300"
+                        /> </>  : 
+                          <>
+                          <Label className="mb-1 text-gray-700">Call to Action Button URL</Label>
+                          <Input
                           type="url"
                           placeholder="https://example.com"
                           value={dockerForm.ctaUrl}
                           onChange={(e) => handleInputChange("ctaUrl", e.target.value)}
                           className="w-full border-gray-300"
                         />
+                          </> }
+                        
                       </div>
                       <div>
                         <Label className="mb-1 text-gray-700">CTA Button Color</Label>
@@ -596,6 +629,7 @@ export function Header({ setGenerateAi, startPresentation, slides, slideDockers,
                         </div>
                       </div>
                       <div>
+                        
                         <Label className="mb-1 text-gray-700">CTA Button Text Color</Label>
                         <div className="flex items-center gap-2">
                           <Input
@@ -640,24 +674,7 @@ export function Header({ setGenerateAi, startPresentation, slides, slideDockers,
                     </>
                   )}
 
-                  <div>
-                    <Label className="mb-1 text-gray-700">Slide</Label>
-                    <Select
-                      value={dockerForm.slideNumber}
-                      onValueChange={(value) => handleInputChange("slideNumber", value)}
-                    >
-                      <SelectTrigger className="w-full border-gray-300">
-                        <SelectValue placeholder="Select slide" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {slides.map((slide) => (
-                          <SelectItem key={slide.id} value={String(slide.id)}> {/* Use slide.id as value */}
-                            {slide.titleContainer?.title.replace(/<[^>]*>/g, "") || `Slide ${slides.indexOf(slide) + 1}`}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
+                  
 
                   <div className="flex items-center justify-between">
                     <Label htmlFor="allow-close" className="mb-0 text-gray-700">Allow Close</Label>
