@@ -6,7 +6,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Download, Expand, Sparkle, Trash2, Loader2 } from "lucide-react";
-import { v4 as uuidv4 } from "uuid";
 import Masonry from "react-masonry-css";
 import { toast } from "sonner";
 import { Toaster } from "@/components/ui/sonner";
@@ -28,27 +27,33 @@ export default function AiImages({ credits, setCradits }) {
   const [error, setError] = useState("");
   const [isLoadingImages, setIsLoadingImages] = useState(true);
 
+  const getUserId = () => {
+    const user = JSON.parse(localStorage.getItem("user") || "{}");
+    return user.id || null;
+  };
+  const userId = getUserId();
+
   useEffect(() => {
     const fetchImages = async () => {
       try {
         const token = localStorage.getItem("token");
-        const response = await axios.get(`${API_BASE_URL}/api/upload/files`, {
+        const response = await axios.get(`${API_BASE_URL}/api/ai-images?user_id=${userId}`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
         });
 
-        const fetchedImages = response.data.map((img) => {
-          const imageUrl = `${API_BASE_URL}${img.url}`;
+        const fetchedImages = response.data.data.map((img) => {
+          const imageUrl = img.image_path; // Full URL from the API
           console.log("Fetched Image URL:", imageUrl);
           return {
-            id: img.id,
+            id: img.documentId, // Use documentId as the unique identifier
             url: imageUrl,
-            prompt: img.caption || "Generated Image",
-            aspectRatio: img.width === img.height ? "square" : img.width > img.height ? "landscape" : "portrait",
+            prompt: img.prompt || "Generated Image",
+            aspectRatio: aspectRatio, // Use the selected aspect ratio (no width/height in response)
             createdAt: img.createdAt,
           };
-        }).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));;
+        }).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
         setImages(fetchedImages);
       } catch (err) {
@@ -59,8 +64,8 @@ export default function AiImages({ credits, setCradits }) {
       }
     };
 
-    fetchImages();
-  }, [images]);
+    if (userId) fetchImages();
+  }, [userId]); // Dependency on userId instead of images to avoid infinite loop
 
   const handleGenerate = async () => {
     if (credits < 10) {
@@ -71,6 +76,12 @@ export default function AiImages({ credits, setCradits }) {
 
     if (!prompt.trim()) {
       setError("Please enter a description");
+      return;
+    }
+
+    if (!userId) {
+      setError("User ID not found. Please log in.");
+      toast.error("User ID not found. Please log in.");
       return;
     }
 
@@ -97,37 +108,38 @@ export default function AiImages({ credits, setCradits }) {
       }
 
       const imageUrl = generateResponse.data.images[0].url;
-      const imageResponse = await fetch(imageUrl);
-      const imageBlob = await imageResponse.blob();
+      console.log("Generated Image URL:", imageUrl);
 
-      const formData = new FormData();
-      formData.append("files", imageBlob, `ai-image-${uuidv4()}.jpg`);
+      const payload = {
+        data: {
+          image_path: imageUrl,
+          user: userId,
+          prompt: prompt,
+        },
+      };
 
       const token = localStorage.getItem("token");
       const uploadResponse = await axios.post(
-        `${API_BASE_URL}/api/upload`,
-        formData,
+        `${API_BASE_URL}/api/ai-images`,
+        payload,
         {
           headers: {
             Authorization: `Bearer ${token}`,
-            "Content-Type": "multipart/form-data",
+            "Content-Type": "application/json", // Correct content type for JSON payload
           },
         }
       );
 
-      const uploadedImage = uploadResponse.data[0];
-      const newImageUrl = `${API_BASE_URL}${uploadedImage.url}`;
-      console.log("Uploaded Image URL:", newImageUrl);
-
+      const uploadedImage = uploadResponse.data.data; // Access the single object from the response
       const newImage = {
-        id: uploadedImage.id,
-        url: newImageUrl,
-        prompt,
-        aspectRatio,
+        id: uploadedImage.documentId,
+        url: uploadedImage.image_path,
+        prompt: uploadedImage.prompt,
+        aspectRatio: aspectRatio, // Use the selected aspect ratio
         createdAt: uploadedImage.createdAt,
       };
 
-      setImages(prev => [newImage, ...prev]);
+      setImages((prev) => [newImage, ...prev]);
       const newCredits = credits - 10;
       setCradits(newCredits);
       localStorage.setItem("credits", newCredits);
@@ -146,13 +158,13 @@ export default function AiImages({ credits, setCradits }) {
   const handleDelete = async (id) => {
     try {
       const token = localStorage.getItem("token");
-      await axios.delete(`${API_BASE_URL}/api/upload/files/${id}`, {
+      await axios.delete(`${API_BASE_URL}/api/ai-images/${id}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
 
-      setImages(prev => prev.filter(img => img.id !== id));
+      setImages((prev) => prev.filter((img) => img.id !== id));
       toast.success("Image deleted successfully!");
     } catch (err) {
       console.error("Error deleting image:", err);
@@ -178,7 +190,7 @@ export default function AiImages({ credits, setCradits }) {
   };
 
   const handleImageClick = (url) => {
-    window.open(url, "_blank"); // Open the full backend URL in a new tab
+    window.open(url, "_blank");
   };
 
   const breakpointColumnsObj = {
@@ -306,9 +318,7 @@ export default function AiImages({ credits, setCradits }) {
           className="flex gap-4 md:gap-6"
           columnClassName="masonry-column"
         >
-          {images
-    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)) // Add this sort
-    .map((image) => (
+          {images.map((image) => (
             <div
               key={image.id}
               className="mb-4 md:mb-6 relative group rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition-shadow bg-white dark:bg-gray-800"
@@ -318,7 +328,7 @@ export default function AiImages({ credits, setCradits }) {
                   ${image.aspectRatio === "square" ? "aspect-square" : image.aspectRatio === "portrait" ? "aspect-[3/4]" : "aspect-[4/3]"}
                   relative bg-gray-100 dark:bg-gray-700 cursor-pointer
                 `}
-                onClick={() => handleImageClick(image.url)} // Redirect on image click
+                onClick={() => handleImageClick(image.url)}
               >
                 <img
                   src={image.url}
@@ -337,7 +347,7 @@ export default function AiImages({ credits, setCradits }) {
                     size="icon"
                     className="text-white hover:bg-white/20 backdrop-blur-sm"
                     onClick={(e) => {
-                      e.stopPropagation(); // Prevent image click from triggering
+                      e.stopPropagation();
                       handleDownload(image.url);
                     }}
                     aria-label="Download"
@@ -349,7 +359,7 @@ export default function AiImages({ credits, setCradits }) {
                     size="icon"
                     className="text-white hover:bg-white/20 backdrop-blur-sm"
                     onClick={(e) => {
-                      e.stopPropagation(); // Prevent image click from triggering
+                      e.stopPropagation();
                       handleDelete(image.id);
                     }}
                     aria-label="Delete"
@@ -361,7 +371,7 @@ export default function AiImages({ credits, setCradits }) {
                     size="icon"
                     className="text-white hover:bg-white/20 backdrop-blur-sm"
                     onClick={(e) => {
-                      e.stopPropagation(); // Prevent image click from triggering
+                      e.stopPropagation();
                       window.open(image.url, "_blank");
                     }}
                     aria-label="Expand"
