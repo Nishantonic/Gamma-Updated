@@ -195,12 +195,14 @@ function DefaultAi({ generateAi = {},isPresentationMode,  index }) {
                 slideId={generateAi.id}
                 inputId={generateAi.titleContainer?.titleId}
               className="title text-3xl font-bold text-white mb-4 relative overflow-visible"
+              isPresentationMode={isPresentationMode}
             />
             </div>
             <div className="relative overflow-visible w-full z-0">
             <ParagraphAi
               initialData={description}
               initialStyles={descriptionStyles}
+              isPresentationMode={isPresentationMode}
               onUpdate={handleDescriptionUpdate}
               slideId={generateAi.id}
               inputId={generateAi.descriptionContainer?.descriptionId}
