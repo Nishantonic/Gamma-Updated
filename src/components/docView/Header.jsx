@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { ChevronDown, FilePlus, Home, Share2, Sparkles, Edit, Trash2, Loader2 } from "lucide-react";
+import { ChevronDown, FilePlus, Home, Share2, Sparkles, Edit, Trash2, Loader2, Clipboard, Check, Code, MessageCircle, Linkedin, Facebook, Twitter } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -25,7 +25,8 @@ import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { toast, Toaster } from "sonner";
-
+import { motion, AnimatePresence } from "framer-motion";
+import { FaWhatsapp } from "react-icons/fa6";
 export function Header({ setGenerateAi, startPresentation, slides, slideDockers, setSlideDockers, presentationId, presentationDocumentId }) {
   const navigate = useNavigate();
   const [isDockerPopupOpen, setIsDockerPopupOpen] = useState(false);
@@ -48,9 +49,11 @@ export function Header({ setGenerateAi, startPresentation, slides, slideDockers,
   });
   const [isLoadingLockers, setIsLoadingLockers] = useState(false);
   const [isSavingLocker, setIsSavingLocker] = useState(false);
-
+  
   const isPresentationIdValid = presentationId;
-
+  const [shareDialog, setShareDialog] = useState({ isOpen: false, url: "", presentationId: null });
+  const [copied, setCopied] = useState(false);
+  const [copiedEmbed, setCopiedEmbed] = useState(false);
   console.log("Slides prop:", slides);
 
   useEffect(() => {
@@ -159,7 +162,45 @@ export function Header({ setGenerateAi, startPresentation, slides, slideDockers,
       "Authorization": `Bearer ${token}`,
     };
   };
+  const copyToClipboard = async () => {
+    try {
+      await navigator.clipboard.writeText(shareDialog.url);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+      toast("Link copied to clipboard!", "success");
+    } catch (err) {
+      toast("Failed to copy to clipboard. Please try again.", "error");
+    }
+  };
+  const handleShare = async (presentationId) => {
+  // Directly construct the URL without unnecessary API call
+  const url = `${window.location.origin}/share/${presentationId}`;
+  setShareDialog({
+    isOpen: true,
+    url,
+    presentationId
+  });
+};
+  const shareOnTwitter = () => {
+    const text = encodeURIComponent(`Check out my presentation: ${shareDialog.url}`);
+    window.open(`https://twitter.com/intent/tweet?text=${text}`, "_blank");
+  };
 
+  const shareOnFacebook = () => {
+  const text = encodeURIComponent(`Check out my presentation: ${shareDialog.url}`);
+  window.open(`https://www.facebook.com/sharer/sharer.php?quote=${text}`, "_blank");
+};
+
+
+  const shareOnLinkedIn = () => {
+    const url = encodeURIComponent(shareDialog.url);
+    window.open(`https://www.linkedin.com/shareArticle?mini=true&text=${url}`, "_blank");
+  };
+
+  const shareOnWhatsApp = () => {
+    const text = encodeURIComponent(`Check out my presentation: ${shareDialog.url}`);
+    window.open(`https://api.whatsapp.com/send?text=${text}`, "_blank");
+  };
   const handleSaveDocker = async () => {
     setIsSavingLocker(true);
     try {
@@ -266,7 +307,17 @@ export function Header({ setGenerateAi, startPresentation, slides, slideDockers,
       setIsSavingLocker(false);
     }
   };
-
+  const copyEmbedCode = async () => {
+    try {
+      const embedCode = `<iframe width="560" height="315" src="${shareDialog.url}" frameborder="0" allowfullscreen></iframe>`;
+      await navigator.clipboard.writeText(embedCode);
+      setCopiedEmbed(true);
+      setTimeout(() => setCopiedEmbed(false), 2000);
+      toast.success("Embed code copied to clipboard!");
+    } catch (err) {
+      toast.error("Failed to copy embed code. Please try again.");
+    }
+  };
   const handleEditDocker = (slideId, docker) => {
     const details = docker.details || {};
     setDockerForm({
@@ -354,7 +405,128 @@ export function Header({ setGenerateAi, startPresentation, slides, slideDockers,
           <span className="text-sm text-muted-foreground">/</span>
           <span className="text-sm font-medium">{slides[0]?.titleContainer? slides[0].titleContainer.title.replace(/<[^>]*>/g, '') : "New Presentation" }</span>
         </div>
+        <Dialog open={shareDialog.isOpen} onOpenChange={(open) => setShareDialog(prev => ({ ...prev, isOpen: open }))}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Share Presentation</DialogTitle>
+              <DialogDescription>Share your presentation with others or embed it on your site.</DialogDescription>
+            </DialogHeader>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+              className="space-y-4 p-3"
+            >
+              {/* Share URL */}
+              <div className="flex items-center space-x-2 bg-gray-50 p-3 rounded-lg">
+                <a
+                  href={shareDialog.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex-1 text-blue-600 hover:text-blue-800 underline truncate"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {shareDialog.url}
+                </a>
+                <motion.button
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.9 }}
+                  onClick={copyToClipboard}
+                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                >
+                  {copied ? (
+                    <motion.div
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      transition={{ type: "spring", stiffness: 500, damping: 15 }}
+                    >
+                      <Check className="w-4 h-4 text-green-500" />
+                    </motion.div>
+                  ) : (
+                    <Clipboard className="w-4 h-4 text-gray-500" />
+                  )}
+                </motion.button>
+              </div>
 
+              {/* Social Media Buttons */}
+              <div className="flex justify-around gap-2">
+                <motion.button
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.9 }}
+                  onClick={shareOnTwitter}
+                  className="p-2 bg-blue-500 text-white rounded-full hover:bg-blue-600 transition-colors"
+                  title="Share on Twitter"
+                >
+                  <Twitter className="w-5 h-5" />
+                </motion.button>
+                <motion.button
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.9 }}
+                  onClick={shareOnFacebook}
+                  className="p-2 bg-blue-700 text-white rounded-full hover:bg-blue-800 transition-colors"
+                  title="Share on Facebook"
+                >
+                  <Facebook className="w-5 h-5" />
+                </motion.button>
+                <motion.button
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.9 }}
+                  onClick={shareOnLinkedIn}
+                  className="p-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition-colors"
+                  title="Share on LinkedIn"
+                >
+                  <Linkedin className="w-5 h-5" />
+                </motion.button>
+                <motion.button
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.9 }}
+                  onClick={shareOnWhatsApp}
+                  className="p-2 bg-green-500 text-white rounded-full hover:bg-green-600 transition-colors"
+                  title="Share on WhatsApp"
+                >
+                  <FaWhatsapp className="w-5 h-5" />
+                </motion.button>
+              </div>
+
+              {/* Embed Code */}
+              <div className="space-y-2">
+                <div className="flex justify-between">
+                <Label className="flex items-center gap-2 text-gray-700">
+                  <Code className="w-4 h-4" />
+                  Embed
+                </Label>
+                <motion.button
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.9 }}
+                    onClick={copyEmbedCode}
+                    className=" mr-3  p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                  >
+                    {copiedEmbed ? (
+                      <motion.div
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        transition={{ type: "spring", stiffness: 500, damping: 15 }}
+                      >
+                        <Check className="w-4 h-4 text-green-500" />
+                      </motion.div>
+                    ) : (
+                      <Clipboard className="w-4 h-4 text-gray-500" />
+                    )}
+                  </motion.button>
+                  </div>
+                <div className="relative">
+                  <Textarea
+                    value={`<iframe width="560" height="315" src="${shareDialog.url}" frameborder="0" allowfullscreen></iframe>`}
+                    readOnly
+                    className="w-full bg-gray-50 p-2 rounded-lg text-sm text-gray-700 resize-none"
+                    rows={3}
+                  />
+                  
+                </div>
+              </div>
+            </motion.div>
+          </DialogContent>
+        </Dialog>
         <div className="flex items-center gap-2">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -390,10 +562,27 @@ export function Header({ setGenerateAi, startPresentation, slides, slideDockers,
             </Tooltip>
           </TooltipProvider>
 
-          <Button variant="ghost" size="sm">
-            <Share2 className="h-4 w-4 mr-2" />
-            Share
-          </Button>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleShare(presentationId)}
+                  className={isPresentationIdValid ? "" : "opacity-50 cursor-not-allowed"}
+                  // disabled={!isPresentationIdValid}
+                >
+                  <Share2 className="h-4 w-4 mr-2" />
+                  Share
+                </Button>
+              </TooltipTrigger>
+              {!isPresentationIdValid && (
+                <TooltipContent>
+                  <p>Please save your presentation to share it</p>
+                </TooltipContent>
+              )}
+            </Tooltip>
+          </TooltipProvider>
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
