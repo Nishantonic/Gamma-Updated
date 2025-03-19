@@ -17,8 +17,12 @@ const DirectPresentationMode = () => {
   useEffect(() => {
     const loadSharedPresentation = async () => {
       try {
+        // Decode the shareId and extract the presentationId
+        const decodedId = atob(shareId); // Decode base64 string
+        const [presentationId] = decodedId.split(':'); // Split at ':' and take the first part
+
         const response = await fetch(
-          `https://presentaiapi.codesemic.com/api/slides/presentation/${shareId}`,
+          `https://presentaiapi.codesemic.com/api/slides/presentation/${presentationId}`,
           {
             headers: {
               'Authorization': `Bearer ${localStorage.getItem('token')}`,
@@ -61,7 +65,7 @@ const DirectPresentationMode = () => {
         setSlides(normalizedSlides);
         setLoading(false);
       } catch (err) {
-        setError('Presentation not found or sharing failed');
+        setError('Invalid share link or presentation not found');
         console.error('Error loading shared presentation:', err);
         setLoading(false);
       }
