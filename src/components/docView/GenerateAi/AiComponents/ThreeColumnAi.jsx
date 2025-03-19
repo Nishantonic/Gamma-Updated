@@ -270,7 +270,7 @@ const ThreeImgTextAi = ({ generateAi = {},isPresentationMode, ...props }) => {
 }
       </div>
 
-      <div className="mt-16 space-y-6">
+      <div className="mt-16 space-y-6 z-10">
         <TitleAi
           initialData={state.title}
           initialStyles={state.titleStyles}
@@ -286,11 +286,11 @@ const ThreeImgTextAi = ({ generateAi = {},isPresentationMode, ...props }) => {
           isPresentationMode={isPresentationMode}
         />
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5 px-10">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5 px-10 relative z-0">
           {cards.map((card, index) => (
             <div
               key={card.headingId}
-              className="flex flex-col bg-[#2a2438] rounded-lg p-4 shadow-lg"
+              className="flex flex-col bg-[#2a2438] rounded-lg p-4 shadow-lg relative z-0"
             >
               <div className="relative w-full h-40 bg-[#342c4e] rounded-lg overflow-hidden group mb-4 flex items-center justify-center">
                 {card.image ? (
@@ -323,6 +323,7 @@ const ThreeImgTextAi = ({ generateAi = {},isPresentationMode, ...props }) => {
                 />
               </div>
 
+              <div className="w-full relative z-10">
               <Heading
                 initialData={card.heading}
                 initialStyles={card.headingStyles}
@@ -336,7 +337,6 @@ const ThreeImgTextAi = ({ generateAi = {},isPresentationMode, ...props }) => {
                 inputId={card.headingId}
                 isPresentationMode={isPresentationMode}
               />
-              
               <ParagraphAi
                 initialData={card.description}
                 initialStyles={card.descriptionStyles}
@@ -350,6 +350,7 @@ const ThreeImgTextAi = ({ generateAi = {},isPresentationMode, ...props }) => {
                 inputId={card.descriptionId}
                 isPresentationMode={isPresentationMode}
               />
+              </div>
             </div>
           ))}
         </div>

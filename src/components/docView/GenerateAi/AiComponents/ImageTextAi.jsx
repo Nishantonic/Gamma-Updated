@@ -378,24 +378,23 @@ function ImageTextAi({ generateAi = {},isPresentationMode, ...props }) {
 
         {/* Title and Description Section */}
         <div
-          className="flex flex-col gap-4"
+          className="flex flex-col gap-4 relative z-0"
           style={{
-            width: `calc(100% - ${imageSize.width}px)`,
+            width: `calc(100% - ${imageSize.width}px - 2rem)`,
           }}
         >
-          <div>
-            <div className=" overflow-visible z-50 w-full   ">
+          <div className="w-full relative z-10">
             <TitleAi
               initialData={title}
-                initialStyles={titleStyles}
-                onUpdate={handleTitleUpdate}
-                slideId={generateAi.id}
-                inputId={generateAi.titleContainer?.titleId}
-                isPresentationMode={isPresentationMode}
-              className="title text-3xl font-bold text-white mb-4 relative overflow-visible"
+              initialStyles={titleStyles}
+              onUpdate={handleTitleUpdate}
+              slideId={generateAi.id}
+              inputId={generateAi.titleContainer?.titleId}
+              isPresentationMode={isPresentationMode}
+              className="text-3xl font-bold text-white mb-2"
             />
-            </div>
-            <div className=" overflow-visible z-50 w-full   ">
+          </div>
+          <div className="w-full relative z-0">
             <ParagraphAi
               initialData={description}
               initialStyles={descriptionStyles}
@@ -403,17 +402,14 @@ function ImageTextAi({ generateAi = {},isPresentationMode, ...props }) {
               slideId={generateAi.id}
               inputId={generateAi.descriptionContainer?.descriptionId}
               isPresentationMode={isPresentationMode}
-              className="description text-lg text-gray-300"
+              className="text-lg text-gray-300"
             />
-            </div>
           </div>
         </div>
       </div>
 
       {/* Dropped Items Section */}
-      <div className="mt-8">
-          {renderDroppedItems()}
-        </div>
+      <div className="mt-8 relative z-0">{renderDroppedItems()}</div>
     </Card>
   );
 }

@@ -3,43 +3,35 @@ import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
 import "react-quill/dist/quill.bubble.css";
 
-function Heading({ slideId, inputId, onUpdate, initialData,initialStyles, isPresentationMode}) {
+function Heading({ slideId, inputId, onUpdate, initialData, initialStyles, isPresentationMode }) {
   const quillRef = useRef(null);
 
-  const formattedInitialData = initialData || "Heading ";
+  const formattedInitialData = initialData || "Heading";
   const [editorHtml, setEditorHtml] = useState(formattedInitialData);
-  const [editorStyles, setEditorStyles] = useState({header : 2});
-
-  useEffect(()=>{
-    console.log("ispreisPresentationMode heading",isPresentationMode, isPresentationMode);
-    
-  },[isPresentationMode])
+  const [editorStyles, setEditorStyles] = useState(initialStyles || { header: 2 });
 
   useEffect(() => {
-        // Apply initial H1 format when component mounts
-        if (quillRef.current) {
-          const quill = quillRef.current.getEditor();
-          quill.formatText(0, quill.getLength(), 'header', 2);
-        }
-      }, []);
+    console.log("isPresentationMode in Heading:", isPresentationMode);
+  }, [isPresentationMode]);
+
+  useEffect(() => {
+    if (quillRef.current) {
+      const quill = quillRef.current.getEditor();
+      quill.formatText(0, quill.getLength(), "header", 2);
+    }
+  }, []);
 
   const handleChange = (value) => {
-  // Add null check for quillRef
-  if (!quillRef.current) return;
-  
-  const quill = quillRef.current.getEditor();
-  const styles = quill.getFormat();
-  
-  setEditorHtml(value);
-  setEditorStyles(styles);
-  
-  onUpdate(
-    value, // Send plain text
-    styles,
-    slideId,
-    inputId
-  );
-};
+    if (!quillRef.current) return;
+
+    const quill = quillRef.current.getEditor();
+    const styles = quill.getFormat();
+
+    setEditorHtml(value);
+    setEditorStyles(styles);
+
+    onUpdate(value, styles, slideId, inputId);
+  };
 
   const modules = {
     toolbar: [
@@ -56,81 +48,57 @@ function Heading({ slideId, inputId, onUpdate, initialData,initialStyles, isPres
   };
 
   return (
-<div className="w-full mx-auto p-4">
-  <div className="p-2 bg-transparent outline-none rounded text-white/50">
-    <ReactQuill
-      ref={quillRef}
-      value={editorHtml}
-      onChange={handleChange}
-      modules={modules}
-      formats={[
-        "header",
-        "bold",
-        "italic",
-        "underline",
-        "strike",
-        "list",
-        "bullet",
-        "script",
-        "align",
-        "blockquote",
-        "code-block",
-        "color",
-        "background",
-        "image",
-        "video",
-      ]}
-      theme="bubble"
-      placeholder="Heading nishant"
-      className="custom-quill-bubble w-full text-lg relative"
-      style={{
-        "--ql-toolbar-margin-left": "auto",
-        border: isPresentationMode ? "none" : "2px solid gray",  // Ensures no border is applied
-        outline: isPresentationMode ?  "none" : " 1px " , // Removes any focus outline
-        boxShadow: isPresentationMode ?  "none" : "initial", // Prevents unwanted shadows
-      }}
-    />
-  </div>
-</div> 
-  );  
+    <div className="w-full mx-auto p-4 relative z-10">
+      <div className="p-2 bg-transparent outline-none rounded text-white/50">
+        <ReactQuill
+          ref={quillRef}
+          value={editorHtml}
+          onChange={handleChange}
+          modules={modules}
+          formats={[
+            "header",
+            "bold",
+            "italic",
+            "underline",
+            "strike",
+            "list",
+            "bullet",
+            "script",
+            "align",
+            "blockquote",
+            "code-block",
+            "color",
+            "background",
+            "image",
+            "video",
+          ]}
+          theme="bubble"
+          placeholder="Enter heading..."
+          className="custom-quill-bubble w-full text-lg"
+          style={{
+            border: isPresentationMode ? "none" : "2px solid gray",
+            outline: isPresentationMode ? "none" : "1px",
+            boxShadow: isPresentationMode ? "none" : "initial",
+            background: "transparent",
+            color: "inherit",
+          }}
+        />
+      </div>
+      <style jsx global>{`
+        .ql-tooltip {
+          z-index: 9999 !important; /* Ensure toolbar stays above all components */
+          position: absolute;
+          top: -40px; /* Position above the editor */
+          transform: translateX(-50%);
+          left: 50%; /* Center horizontally */
+        }
+        .ql-container {
+          position: relative;
+          z-index: 1; /* Editor content below toolbar */
+        }
+      `}</style>
+    </div>
+  );
 }
 
 export default Heading;
-
-
-{/* <div className="w-full mx-auto p-4">
-  <div className="p-2 bg-transparent outline-none rounded text-white/50">
-    <ReactQuill
-      ref={quillRef}
-      value={editorHtml}
-      onChange={handleChange}
-      modules={modules}
-      formats={[
-        "header",
-        "bold",
-        "italic",
-        "underline",
-        "strike",
-        "list",
-        "bullet",
-        "script",
-        "align",
-        "blockquote",
-        "code-block",
-        "color",
-        "background",
-        "image",
-        "video",
-      ]}
-      theme="bubble"
-      placeholder="Heading nishant"
-      className="custom-quill-bubble w-full text-lg relative"
-      style={{
-        "--ql-toolbar-margin-left": "auto",
-        border: "none",  // Ensures no border is applied
-        outline: "none", // Removes any focus outline
-        boxShadow: "none", // Prevents unwanted shadows
-      }}
-    />
-  </div>
-</div> */}

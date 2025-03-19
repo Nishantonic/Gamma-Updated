@@ -56,7 +56,7 @@ function ParagraphAi({ slideId, inputId, onUpdate, initialData,initialStyles,isP
   };
 
   return (
-    <div className="w-full mx-auto p-4">
+    <div className="w-full mx-auto p-4 relative z-0">
       <div className="p-2 bg-transparent outline-none rounded text-white/50">
         <ReactQuill
           ref={quillRef}
@@ -82,12 +82,14 @@ function ParagraphAi({ slideId, inputId, onUpdate, initialData,initialStyles,isP
           ]}
           theme="bubble"
           placeholder="Heading nishant"
-          className="custom-quill-bubble w-full text-lg relative"
+          className="custom-quill-bubble w-full text-lg"
           style={{
             "--ql-toolbar-margin-left": "auto",
             border: isPresentationMode ? "none" : "2px solid gray",  // Ensures no border is applied
             outline: isPresentationMode ?  "none" : " 1px " , // Removes any focus outline
             boxShadow: isPresentationMode ?  "none" : "initial", // Prevents unwanted shadows
+            background: "transparent",
+            color: "inherit",
           }}
         />
       </div>

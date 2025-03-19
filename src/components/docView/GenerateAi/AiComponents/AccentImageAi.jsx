@@ -268,7 +268,7 @@ function AccentImageAi({ generateAi = {}, isPresentationMode, ...props }) {
 }
         </div>
 
-        <div className="flex flex-col md:flex-row gap-8 mt-16">
+        <div className="flex flex-col md:flex-row gap-8 mt-16 relative z-0">
           <div className="flex-1">
             <div className="relative overflow-visible z-50 w-full">
               <TitleAi
@@ -281,7 +281,7 @@ function AccentImageAi({ generateAi = {}, isPresentationMode, ...props }) {
                 isPresentationMode={isPresentationMode}
               />
             </div>
-            <div className="relative overflow-visible z-50 w-full">
+            <div className="overflow-visible z-50 w-full">
               <ParagraphAi
                 initialData={description}
                 initialStyles={descriptionStyles}

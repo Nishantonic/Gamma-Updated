@@ -185,9 +185,9 @@ function DefaultAi({ generateAi = {},isPresentationMode,  index }) {
         </div>
 
         {/* Title and Description Sections */}
-        <div className="flex flex-col gap-8 mt-10">
+        <div className="flex flex-col gap-8 mt-10 relative z-0">
           {/* Editable Title */}
-          <div className="relative overflow-visible w-full   ">
+          <div className="relative overflow-visible w-full z-10 ">
             <TitleAi
               initialData={title}
                 initialStyles={titleStyles}
@@ -197,7 +197,7 @@ function DefaultAi({ generateAi = {},isPresentationMode,  index }) {
               className="title text-3xl font-bold text-white mb-4 relative overflow-visible"
             />
             </div>
-            <div className="relative overflow-visible w-full   ">
+            <div className="relative overflow-visible w-full z-0">
             <ParagraphAi
               initialData={description}
               initialStyles={descriptionStyles}

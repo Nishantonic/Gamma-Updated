@@ -279,7 +279,7 @@ const renderDroppedItems = () => {
 
   return (
     <div>
-      <Card id={`slide-${generateAi.index}`} onDragOver={handleDragOver} onDrop={handleDrop} className="min-h-screen w-full md:min-h-[25vw] md:mt-[3vh] md:mb-[3vh] rounded-lg px-1 bg-[#342c4e] p-6 relative max-w-4xl mx-auto">
+      <Card id={`slide-${generateAi.index}`} onDragOver={handleDragOver} onDrop={handleDrop} className="min-h-screen w-full md:min-h-[25vw] my-8 bg-[#342c4e] relative overflow-visible max-w-4xl mx-auto px-3 py-3 outline-none border-none">
         <div className="absolute top-4 left-11">
           {!isPresentationMode &&
           <CardMenu
@@ -288,14 +288,14 @@ const renderDroppedItems = () => {
 }
         </div>
         <CardContent>
-          <div className="relative overflow-visible z-50 w-full   ">
+          <div className="mt-16 space-y-6 z-10">
           <TitleAi
               initialData={title}
               initialStyles={titleStyles}
               onUpdate={handleTitleUpdate}
               slideId={generateAi.id}
               inputId={generateAi.titleContainer?.titleId}
-              className="title text-3xl font-bold text-white mb-4 relative overflow-visible"
+              className="title text-3xl font-bold text-white mb-2 relative overflow-visible"
               isPresentationMode={isPresentationMode}
             />
             </div>
