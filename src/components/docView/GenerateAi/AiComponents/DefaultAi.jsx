@@ -202,6 +202,7 @@ function DefaultAi({ generateAi = {},isPresentationMode,  index }) {
             <ParagraphAi
               initialData={description}
               initialStyles={descriptionStyles}
+              isPresentationMode={isPresentationMode}
               onUpdate={handleDescriptionUpdate}
               slideId={generateAi.id}
               inputId={generateAi.descriptionContainer?.descriptionId}

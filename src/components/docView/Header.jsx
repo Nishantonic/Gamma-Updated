@@ -164,22 +164,12 @@ export function Header({ setGenerateAi, startPresentation, slides, slideDockers,
   };
   
   const handleShare = async (presentationId) => {
-  // Create a longer ID by combining presentationId with a timestamp and random string
-  const timestamp = Date.now().toString(36); // Convert timestamp to base36 for shorter string
-  const randomStr = Math.random().toString(36).substring(2, 8); // Random 6-char string
-  const combinedId = `${presentationId}:${timestamp}:${randomStr}`;
-  let encodedId = btoa(combinedId);
-
-  // Ensure the encoded ID is at least 8 characters (pad if necessary)
-  while (encodedId.length < 8) {
-    encodedId += '='; // Padding with '=' (common in base64)
-  }
-
-  const url = `${window.location.origin}/share/${encodedId}`;
+  // Directly construct the URL without unnecessary API call
+  const url = `${window.location.origin}/share/${presentationId}`;
   setShareDialog({
     isOpen: true,
     url,
-    presentationId,
+    presentationId
   });
 };
 

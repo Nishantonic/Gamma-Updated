@@ -72,7 +72,7 @@ const Gammas = ({ credits = 0, setCredits }) => {
         const token = localStorage.getItem('token');
         const user = JSON.parse(localStorage.getItem('user'));
 
-        // Fetch presentations from API
+        // Fetch only presentations (no slides)
         const presentationsResponse = await fetch(
           `https://presentaiapi.codesemic.com/api/presentations/user/${user.id}`,
           {
@@ -85,73 +85,18 @@ const Gammas = ({ credits = 0, setCredits }) => {
         if (!presentationsResponse.ok) throw new Error('Failed to fetch presentations');
         const presentations = await presentationsResponse.json();
 
-        // Fetch slides for each presentation
-        const enrichedPresentations = await Promise.all(
-          presentations.map(async (presentation) => {
-            const slidesResponse = await fetch(
-              `https://presentaiapi.codesemic.com/api/slides/presentation/${presentation.id}`,
-              {
-                headers: {
-                  'Authorization': `Bearer ${token}`,
-                },
-              }
-            );
+        // Store presentations with empty slides array
+        setArraySlides(presentations.map(presentation => ({ ...presentation, slides: [] })));
 
-            if (!slidesResponse.ok) {
-              console.error(`Failed to fetch slides for presentation ${presentation.id}`);
-              return { ...presentation, slides: [] }; // Fallback to empty slides
-            }
-
-            const slides = await slidesResponse.json();
-            const normalizedSlides = slides.map(slide => ({
-              id: slide.id,
-              type: slide.type || "custom",
-              titleContainer: slide.titleContainer ? JSON.parse(slide.titleContainer) : {
-                titleId: uuidv4(),
-                title: "Untitled",
-                styles: {},
-              },
-              descriptionContainer: slide.descriptionContainer ? JSON.parse(slide.descriptionContainer) : {
-                descriptionId: uuidv4(),
-                description: "",
-                styles: {},
-              },
-              imageContainer: slide.imageContainer ? JSON.parse(slide.imageContainer) : {
-                imageId: uuidv4(),
-                image: slide.image?.[0] || null,
-                styles: { width: 300, height: 210 },
-              },
-              dropContainer: slide.dropContainer ? JSON.parse(slide.dropContainer) : {
-                dropItems: slide.content ? JSON.parse(slide.content).dropItems || [] : [],
-              },
-              ...(slide.type === "twoColumn" && {
-                columns: slide.columns ? JSON.parse(slide.columns) : [],
-              }),
-              ...(slide.type === "threeImgCard" && {
-                cards: slide.cards ? JSON.parse(slide.cards) : [],
-              }),
-            }));
-
-            return { ...presentation, slides: normalizedSlides };
-          })
-        );
-
-        setArraySlides(enrichedPresentations);
-
+        // Load saved favorites and layout
         const savedFavorites = localStorage.getItem("favorites");
-        if (savedFavorites) {
-          setFavorites(JSON.parse(savedFavorites));
-        }
+        if (savedFavorites) setFavorites(JSON.parse(savedFavorites));
         const savedLayout = localStorage.getItem("layout");
-        if (savedLayout) {
-          setLayout(savedLayout);
-        }
+        if (savedLayout) setLayout(savedLayout);
         const savedFilter = localStorage.getItem("activeFilter");
-        if (savedFilter) {
-          setActiveFilter(savedFilter);
-        }
+        if (savedFilter) setActiveFilter(savedFilter);
       } catch (err) {
-        showNotification("Failed to load presentations or slides. Please try again.", "error");
+        showNotification("Failed to load presentations. Please try again.", "error");
         console.error(err);
       } finally {
         setTimeout(() => {
@@ -176,16 +121,79 @@ const Gammas = ({ credits = 0, setCredits }) => {
     setTimeout(() => setNotification(null), 3000);
   };
 
+  const fetchSlidesForPresentation = async (presentationId) => {
+    try {
+      const token = localStorage.getItem('token');
+      const slidesResponse = await fetch(
+        `https://presentaiapi.codesemic.com/api/slides/presentation/${presentationId}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (!slidesResponse.ok) throw new Error('Failed to fetch slides');
+      const slides = await slidesResponse.json();
+
+      const normalizedSlides = slides.map(slide => ({
+        id: slide.id,
+        type: slide.type || "custom",
+        titleContainer: slide.titleContainer ? JSON.parse(slide.titleContainer) : {
+          titleId: uuidv4(),
+          title: "Untitled",
+          styles: {},
+        },
+        descriptionContainer: slide.descriptionContainer ? JSON.parse(slide.descriptionContainer) : {
+          descriptionId: uuidv4(),
+          description: "",
+          styles: {},
+        },
+        imageContainer: slide.imageContainer ? JSON.parse(slide.imageContainer) : {
+          imageId: uuidv4(),
+          image: slide.image?.[0] || null,
+          styles: { width: 300, height: 210 },
+        },
+        dropContainer: slide.dropContainer ? JSON.parse(slide.dropContainer) : {
+          dropItems: slide.content ? JSON.parse(slide.content).dropItems || [] : [],
+        },
+        ...(slide.type === "twoColumn" && {
+          columns: slide.columns ? JSON.parse(slide.columns) : [],
+        }),
+        ...(slide.type === "threeImgCard" && {
+          cards: slide.cards ? JSON.parse(slide.cards) : [],
+        }),
+      }));
+
+      return normalizedSlides;
+    } catch (err) {
+      showNotification("Failed to load slides. Please try again.", "error");
+      console.error(err);
+      return [];
+    }
+  };
+
   const handleCardClick = async (presentationId) => {
     try {
       const token = localStorage.getItem('token');
       if (!token) throw new Error('No authentication token found');
 
+      // Fetch slides only when the card is clicked
+      const slides = await fetchSlidesForPresentation(presentationId);
+
+      // Update state with slides for the clicked presentation
+      setArraySlides(prev =>
+        prev.map(p =>
+          p.id === presentationId ? { ...p, slides } : p
+        )
+      );
+
       document.body.classList.add('transitioning');
       setTimeout(() => {
         navigate("/page", {
           state: {
-            presentationId: presentationId,
+            presentationId,
+            slides // Pass slides to the next page
           },
         });
         document.body.classList.remove('transitioning');
@@ -286,22 +294,12 @@ const Gammas = ({ credits = 0, setCredits }) => {
   };
 
   const handleShare = async (presentationId) => {
-  // Create a longer ID by combining presentationId with a timestamp and random string
-  const timestamp = Date.now().toString(36); // Convert timestamp to base36 for shorter string
-  const randomStr = Math.random().toString(36).substring(2, 8); // Random 6-char string
-  const combinedId = `${presentationId}:${timestamp}:${randomStr}`;
-  let encodedId = btoa(combinedId);
-
-  // Ensure the encoded ID is at least 8 characters (pad if necessary)
-  while (encodedId.length < 8) {
-    encodedId += '='; // Padding with '=' (common in base64)
-  }
-
-  const url = `${window.location.origin}/share/${encodedId}`;
+  // Directly construct the URL without unnecessary API call
+  const url = `${window.location.origin}/share/${presentationId}`;
   setShareDialog({
     isOpen: true,
     url,
-    presentationId,
+    presentationId
   });
 };
 

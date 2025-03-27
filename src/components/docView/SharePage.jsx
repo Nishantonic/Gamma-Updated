@@ -18,11 +18,11 @@ const DirectPresentationMode = () => {
     const loadSharedPresentation = async () => {
       try {
         // Decode the shareId and extract the presentationId
-        const decodedId = atob(shareId); // Decode base64 string
-        const [presentationId] = decodedId.split(':'); // Split at ':' and take the first part
+        // const decodedId = atob(shareId); // Decode base64 string
+        // const [presentationId] = decodedId.split(':'); // Split at ':' and take the first part
 
         const response = await fetch(
-          `https://presentaiapi.codesemic.com/api/slides/presentation/${presentationId}`,
+          `https://presentaiapi.codesemic.com/api/slides/presentation/${shareId}`,
           {
             headers: {
               'Authorization': `Bearer ${localStorage.getItem('token')}`,

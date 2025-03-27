@@ -140,7 +140,7 @@ const Login = () => {
         </div>
 
         <div className="max-w-md w-full space-y-8 relative">
-          <div className="bg-white backdrop-filter backdrop-blur-lg bg-opacity-90 rounded-2xl shadow-2xl overflow-hidden transform transition-all hover:scale-[1.01] duration-300">
+          <div className="bg-white backdrop-filter bg-opacity-90 rounded-2xl shadow-2xl overflow-hidden transform transition-all hover:scale-[1.01] duration-300">
             <div className="text-center py-8 border-b border-gray-100 bg-gradient-to-r from-indigo-600 to-purple-600">
               <h2 className="text-2xl font-bold text-white">
                 {!forgotPassword
@@ -334,6 +334,7 @@ const Login = () => {
                       onClick={() => {
                         setForgotPassword(false)
                         setErrorMessage("")
+                        
                       }}
                     >
                       Back to Login
