@@ -23,6 +23,8 @@ import ParagraphAi from "../GenerateAi/AiComponents/ParagraphAi";
 import ResponsiveImage from "@/components/SidebarLeft/components/ToolBarElements/ResponsiveImage";
 import ResponsiveVideo from "@/components/SidebarLeft/components/ToolBarElements/ResponsiveVideo";
 import ResponsiveAudio from "@/components/SidebarLeft/components/ToolBarElements/ResponsiveAudio";
+import { Chart as ChartJS, ArcElement, Tooltip, Legend, BarElement, CategoryScale, LinearScale } from "chart.js";
+ChartJS.register(ArcElement, Tooltip, Legend, BarElement, CategoryScale, LinearScale);
 
 export default function CardTemplates({
   generateAi = {},

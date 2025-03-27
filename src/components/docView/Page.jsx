@@ -54,6 +54,11 @@ export default function Page() {
     return savedSlides;
   });
 
+
+  useEffect(()=>{
+    console.log("My Slides: ", slides)
+  },[slides])
+
   const [presentationOpen,setPresentationOpen] = useState(false);
   const location = useLocation();
   const { droppedItems } = useDroppedItems();

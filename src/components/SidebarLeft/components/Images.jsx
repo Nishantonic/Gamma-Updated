@@ -2,12 +2,17 @@ import React, { useState, useRef, useEffect, useContext } from "react";
 import { Image } from "lucide-react";
 import { DragContext } from "../DragContext";
 import ResponsiveImage from "./ToolBarElements/ResponsiveImage";
+import AiImages from "@/components/dashboard/components/AiImages";
 const Images = () => {
   const [isCardVisible, setIsCardVisible] = useState(false);
   const [isNameVisible, setIsNameVisible] = useState(false);
     const { setDraggedElement } = useContext(DragContext);
-  
+  const [credit, setCredit] = useState(0);
   const cardRef = useRef(null);
+
+  useEffect(() => {
+    setCredit(localStorage.getItem("credit")) 
+  }, [credit]);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -51,7 +56,7 @@ const Images = () => {
       </div>
 
       {isCardVisible && (
-        <div className="absolute whitespace-nowrap right-11 top-0 bg-white text-black rounded-lg p-4 shadow-lg w-80 h-auto overflow-auto">
+        <div className="absolute whitespace-nowrap right-11 -top-20 bg-white text-black rounded-lg p-4 shadow-lg w-80 h-auto overflow-auto">
           {/* Header Section */}
           <h3 className="text-gray-600 font-semibold text-sm mb-4">
             Image Templates
@@ -75,11 +80,18 @@ const Images = () => {
                 </div>
                 <span>Upload Image</span>
               </label>
-              
             </div>
+
+
+            
 
            
           </div>
+          <div className="bg-gray-50 border h-80  border-gray-200 rounded-lg p-3 hover:shadow-md transform transition-all duration-300 hover:scale-105 flex items-center space-x-3  text-gray-800 font-medium cursor-pointer hover:text-gray-600">
+              
+                
+                <AiImages/>
+            </div>
         </div>
       )}
 

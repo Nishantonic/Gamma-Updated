@@ -44,6 +44,7 @@ const ThreeImgTextAi = ({ generateAi = {},isPresentationMode, ...props }) => {
   });
 
   const slideId = generateAi.id
+  const [isDeleted, setIsDeleted] = useState(false);
 
   const COMPONENT_MAP = {
     title: TitleAi,

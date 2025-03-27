@@ -261,7 +261,7 @@ export default function AiImages({ credits, setCradits }) {
             disabled={credits < 10}
           >
             <Sparkle className="mr-2 h-4 w-4" />
-            Generate New Image (10 credits)
+            Generate New Image 
           </Button>
         ) : (
           <div className="group relative inline-block">
@@ -271,7 +271,7 @@ export default function AiImages({ credits, setCradits }) {
               disabled={credits < 10}
             >
               <Sparkle className="mr-2 h-4 w-4" />
-              Generate New Image (10 credits)
+              Generate New Image
             </Button>
             <div className="absolute z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-200 top-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 text-sm text-red-600 bg-red-50 border border-red-100 rounded-lg shadow-sm w-max">
               Insufficient credits. You need at least 10 credits.
@@ -348,7 +348,7 @@ export default function AiImages({ credits, setCradits }) {
           className="flex gap-4 md:gap-6"
           columnClassName="masonry-column"
         >
-          {images.map((image) => (
+           {images.map((image) => (
             <div
               key={image.id}
               className="mb-4 md:mb-6 relative group rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition-shadow bg-white dark:bg-gray-800"
@@ -418,7 +418,7 @@ export default function AiImages({ credits, setCradits }) {
                 </p>
               </div>
             </div>
-          ))}
+          ))} 
         </Masonry>
       )}
     </div>

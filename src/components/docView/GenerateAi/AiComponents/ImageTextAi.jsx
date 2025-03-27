@@ -49,8 +49,8 @@ function ImageTextAi({ generateAi = {},isPresentationMode, ...props }) {
     paragraph: ParagraphAi,
     heading: Heading,
     image: ResponsiveImage,
-    video: ResponsiveVideo, // Add this
-  audio: ResponsiveAudio, // Add this
+    video: ResponsiveVideo, 
+    audio: ResponsiveAudio, 
   }
   useEffect(() => {
     if (
@@ -215,7 +215,6 @@ function ImageTextAi({ generateAi = {},isPresentationMode, ...props }) {
       styles: styles
     });
   };
-  
   
   
     const handleDrop = (event) => {
