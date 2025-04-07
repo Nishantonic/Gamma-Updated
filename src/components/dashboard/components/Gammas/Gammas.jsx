@@ -71,8 +71,8 @@ const Gammas = ({ credits = 0, setCredits }) => {
         setIsLoading(true);
         const token = localStorage.getItem('token');
         const user = JSON.parse(localStorage.getItem('user'));
-
-        // Fetch only presentations (no slides)
+  
+        // Fetch presentations with thumbnail or image data
         const presentationsResponse = await fetch(
           `https://presentaiapi.codesemic.com/api/presentations/user/${user.id}`,
           {
@@ -81,13 +81,28 @@ const Gammas = ({ credits = 0, setCredits }) => {
             }
           }
         );
-
+  
         if (!presentationsResponse.ok) throw new Error('Failed to fetch presentations');
         const presentations = await presentationsResponse.json();
-
-        // Store presentations with empty slides array
-        setArraySlides(presentations.map(presentation => ({ ...presentation, slides: [] })));
-
+  
+        // Map presentations and optionally fetch thumbnails if not included
+        const enrichedPresentations = await Promise.all(
+          presentations.map(async (presentation) => {
+            // If the API doesn't provide a thumbnail, fetch the first slide's image
+            if (!presentation.thumbnail && !presentation.image) {
+              const slides = await fetchSlidesForPresentation(presentation.id);
+              return {
+                ...presentation,
+                slides,
+                thumbnail: slides[0]?.imageContainer?.image || null
+              };
+            }
+            return { ...presentation, slides: [] }; // Keep slides empty if thumbnail exists
+          })
+        );
+  
+        setArraySlides(enrichedPresentations);
+  
         // Load saved favorites and layout
         const savedFavorites = localStorage.getItem("favorites");
         if (savedFavorites) setFavorites(JSON.parse(savedFavorites));
@@ -107,7 +122,6 @@ const Gammas = ({ credits = 0, setCredits }) => {
     };
     fetchPresentations();
   }, []);
-
   useEffect(() => {
     localStorage.setItem("layout", layout);
   }, [layout]);
@@ -200,14 +214,20 @@ const Gammas = ({ credits = 0, setCredits }) => {
       }, 300);
     } catch (err) {
       showNotification("Failed to load presentation. Please try again.", "error");
-      console.error('Error in handleCardClick:', err);
+      console.error(err);
     }
   };
 
+
   const handleDeleteSlide = async (presentationId) => {
+    console.log('Deleting presentation with ID:', presentationId);
+
+    
   try {
     const token = localStorage.getItem('token');
     const presentation = arraySlides.find(p => p.id === presentationId);
+    // console.log('Presentation:', presentation);
+    
     
     if (!presentation) {
       throw new Error('Presentation not found');
@@ -583,7 +603,9 @@ const Gammas = ({ credits = 0, setCredits }) => {
                   duration: 0.4,
                   delay: isInitialLoad ? index * 0.1 : 0,
                   type: "spring",
-                  damping: 15
+                  damping: 15,
+                  
+                  
                 }}
               >
                 <Card
@@ -605,7 +627,7 @@ const Gammas = ({ credits = 0, setCredits }) => {
       <Dialog open={shareDialog.isOpen} onOpenChange={(open) => setShareDialog(prev => ({ ...prev, isOpen: open }))}>
                 <DialogContent className="sm:max-w-lg">
                   <DialogHeader>
-                    <DialogTitle>Share Presentation</DialogTitle>
+                    <DialogTitle>Share Presentation </DialogTitle>
                     <DialogDescription>Share your presentation with others or embed it on your site.</DialogDescription>
                   </DialogHeader>
                   <motion.div

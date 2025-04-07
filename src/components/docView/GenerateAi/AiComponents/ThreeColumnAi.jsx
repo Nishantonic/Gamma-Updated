@@ -55,10 +55,6 @@ const ThreeImgTextAi = ({ generateAi = {},isPresentationMode, ...props }) => {
   audio: ResponsiveAudio, // Add this
   }
 
-  useEffect(()=>{
-    console.log("isPresentation Mode sjdnfndsfnknsdkf",isPresentationMode);
-    
-  })
 
   const [cards, setCards] = useState(() => {
     if (generateAi.cards?.length) {

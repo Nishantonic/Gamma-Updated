@@ -9,6 +9,8 @@ const Images = () => {
     const { setDraggedElement } = useContext(DragContext);
   const [credit, setCredit] = useState(0);
   const cardRef = useRef(null);
+  const [uploadedImage, setUploadedImage] = useState(localStorage.getItem("uploadedImage") || "");
+
 
   useEffect(() => {
     setCredit(localStorage.getItem("credit")) 
@@ -27,20 +29,40 @@ const Images = () => {
     };
   }, []);
 
-  const handleDragStart = (event, componentType) => {
-  const draggedElement = {
-    type: componentType,
-    data: {
-      value: "", // Initialize with empty content
-      style: { width: 300, height: 210 } // Default image size
+  const handleDragStart = (event, componentType, imageUrl = "") => {
+    const draggedElement = {
+      type: input,
+      data: {
+        value: imageUrl, // Store the image URL
+        style: { width: 300, height: 210 },
+      },
+    };
+  
+    setDraggedElement(draggedElement);
+    event.dataTransfer.setData(
+      "application/json",
+      JSON.stringify({ type: componentType, value: imageUrl })
+    );
+  
+    // Save image URL to local storage for persistence
+    if (imageUrl) {
+      localStorage.setItem("uploadedImage", imageUrl);
     }
   };
 
-  setDraggedElement(draggedElement);
-  event.dataTransfer.setData("application/json", JSON.stringify({
-    type: componentType
-  }));
-};
+  const handleImageUpload = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        setUploadedImage(reader.result); // Set uploaded image
+        localStorage.setItem("uploadedImage", reader.result); // Persist in local storage
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+  
+  
   return (
     <div className="relative group" ref={cardRef}>
       <div
@@ -78,7 +100,7 @@ const Images = () => {
                 <div className="w-8 h-8 bg-purple-100 text-purple-500 flex items-center justify-center rounded-md">
                   <Image className="w-5 h-5" />
                 </div>
-                <span>Upload Image</span>
+                <span>Upload Image </span>
               </label>
             </div>
 
@@ -89,7 +111,7 @@ const Images = () => {
           </div>
           <div className="bg-gray-50 border h-80  border-gray-200 rounded-lg p-3 hover:shadow-md transform transition-all duration-300 hover:scale-105 flex items-center space-x-3  text-gray-800 font-medium cursor-pointer hover:text-gray-600">
               
-                
+      
                 <AiImages/>
             </div>
         </div>

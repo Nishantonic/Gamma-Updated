@@ -1,8 +1,10 @@
+"use client";
+
 import React, { useState, useRef, useEffect, useContext } from "react";
-import { CaseSensitive, AlignJustify, Heading as HeadingIcon, Type } from "lucide-react";
+import { CaseSensitive, AlignJustify, Heading as HeadingIcon, Type, Grid2X2, Grid3X3, Grid } from "lucide-react";
 import { DragContext } from "../DragContext";
-import HeadingInput from "@/components/docView/GenerateAi/AiComponents/Heading"; // Your Heading component
-import TitleAi from "@/components/docView/GenerateAi/AiComponents/TitleAi"; // Your Title component
+import HeadingInput from "@/components/docView/GenerateAi/AiComponents/Heading";
+import TitleAi from "@/components/docView/GenerateAi/AiComponents/TitleAi";
 import ParagraphAi from "@/components/docView/GenerateAi/AiComponents/ParagraphAi";
 
 const BasicBlock = () => {
@@ -14,7 +16,7 @@ const BasicBlock = () => {
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (layoutRef.current && !layoutRef.current.contains(event.target)) {
-        setIsCardVisible(false); // Close the dropdown when clicking outside
+        setIsCardVisible(false);
       }
     };
 
@@ -24,10 +26,9 @@ const BasicBlock = () => {
     };
   }, []);
 
-  const handleDragStart = (event, componentType) => {
+  const handleDragStart = (event, componentType, rows = null, cols = null) => {
     let draggedElement;
 
-    // Define the dragged element based on componentType
     switch (componentType) {
       case "title":
         draggedElement = {
@@ -36,7 +37,7 @@ const BasicBlock = () => {
             value: "Default Title",
             style: {},
           },
-          component: TitleAi, // Pass the TitleAi component directly
+          component: TitleAi,
         };
         break;
       case "heading":
@@ -44,9 +45,9 @@ const BasicBlock = () => {
           type: "heading",
           data: {
             value: "Default Heading",
-            style: { header: 2 }, // Default style for HeadingInput
+            style: { header: 2 },
           },
-          component: HeadingInput, // Pass the HeadingInput component directly
+          component: HeadingInput,
         };
         break;
       case "paragraph":
@@ -56,24 +57,34 @@ const BasicBlock = () => {
             value: "Default Paragraph",
             style: {},
           },
-          component: ParagraphAi, // Pass the ParagraphAi component
+          component: ParagraphAi,
+        };
+        break;
+      case "matrix":
+        draggedElement = {
+          type: "matrix",
+          data: {
+            rows,
+            cols,
+            // Initialize with empty cells; content will auto-size
+            tableData: Array(rows).fill().map(() => Array(cols).fill("")),
+            styles: { width: cols * 100, height: rows * 100 }, // Initial size, will auto-adjust
+          },
+          // We'll assume a Matrix component exists or use a library like react-data-grid
+          component: "Matrix", // Placeholder; replace with actual component if needed
         };
         break;
       default:
         return;
     }
 
-    // Set the dragged element in the DragContext
     setDraggedElement(draggedElement);
 
-    // Serialize only the type and data for dataTransfer (component can't be serialized)
     const transferData = {
       type: draggedElement.type,
       data: draggedElement.data,
     };
     event.dataTransfer.setData("application/json", JSON.stringify(transferData));
-
-    // Optional: Set a simple string for drag feedback (if needed)
     event.dataTransfer.setData("text/plain", draggedElement.type);
   };
 
@@ -95,7 +106,6 @@ const BasicBlock = () => {
       {isCardVisible && (
         <div className="absolute whitespace-nowrap right-11 top-0 bg-gray-200 text-black rounded-md p-4 shadow-md w-96 h-auto">
           <h3 className="text-gray-400 mb-4">Basic Blocks</h3>
-          {/* Container for text templates */}
           <div className="grid grid-cols-3 gap-4">
             <div
               className="col-span-1 border-b pb-2 last:border-b-0 bg-gray-100 rounded transform transition-all duration-300 hover:scale-105 hover:shadow-xl p-2 flex flex-col items-center"
@@ -122,6 +132,36 @@ const BasicBlock = () => {
             >
               <AlignJustify className="text-green-500 w-5 h-5 mr-2" />
               <blockquote className="text-black">BlockQuote</blockquote>
+            </div>
+
+            {/* 2x2 Matrix */}
+            <div
+              className="col-span-1 border-b pb-2 last:border-b-0 bg-gray-100 rounded transform transition-all duration-300 hover:scale-105 hover:shadow-xl p-2 flex flex-col items-center"
+              draggable
+              onDragStart={(e) => handleDragStart(e, "matrix", 2, 2)}
+            >
+              <Grid2X2 className="text-purple-500 w-5 h-5 mr-2" />
+              <span className="text-black">2x2 Matrix</span>
+            </div>
+
+            {/* 3x3 Matrix */}
+            <div
+              className="col-span-1 border-b pb-2 last:border-b-0 bg-gray-100 rounded transform transition-all duration-300 hover:scale-105 hover:shadow-xl p-2 flex flex-col items-center"
+              draggable
+              onDragStart={(e) => handleDragStart(e, "matrix", 3, 3)}
+            >
+              <Grid3X3 className="text-orange-500 w-5 h-5 mr-2" />
+              <span className="text-black">3x3 Matrix</span>
+            </div>
+
+            {/* 4x4 Matrix */}
+            <div
+              className="col-span-1 border-b pb-2 last:border-b-0 bg-gray-100 rounded transform transition-all duration-300 hover:scale-105 hover:shadow-xl p-2 flex flex-col items-center"
+              draggable
+              onDragStart={(e) => handleDragStart(e, "matrix", 4, 4)}
+            >
+              <Grid className="text-teal-500 w-5 h-5 mr-2" />
+              <span className="text-black">4x4 Matrix</span>
             </div>
           </div>
         </div>

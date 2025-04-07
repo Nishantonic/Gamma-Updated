@@ -10,10 +10,7 @@ function TitleAi({ slideId, inputId, onUpdate, initialData, initialStyles, isPre
   const [editorHtml, setEditorHtml] = useState(formattedInitialData);
   const [editorStyles, setEditorStyles] = useState(initialStyles || { header: 1 });
 
-  // Debug presentation mode
-  useEffect(() => {
-    console.log("isPresentationMode in TitleAi:", isPresentationMode);
-  }, [isPresentationMode]);
+
 
   // Apply initial header format when component mounts
   useEffect(() => {

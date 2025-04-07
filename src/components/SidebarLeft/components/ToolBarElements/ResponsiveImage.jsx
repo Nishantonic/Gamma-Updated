@@ -7,8 +7,7 @@ const ResponsiveImage = ({ initialData = null, initialStyles = { width: 300, hei
   const [isResizing, setIsResizing] = useState(false);
   const [initialMousePos, setInitialMousePos] = useState({ x: 0, y: 0 });
   const [initialSize, setInitialSize] = useState({ width: 0, height: 0 });
-  const [isUploading, setIsUploading] = useState(!initialData);
-  const [showMenu, setShowMenu] = useState(false);
+  const [isUploading, setIsUploading] = useState(!initialData); // Show upload if no initial data
 
   const handleImagePreview = async (e) => {
     const file = e.target.files[0];
@@ -16,6 +15,7 @@ const ResponsiveImage = ({ initialData = null, initialStyles = { width: 300, hei
       try {
         const base64Data = await fileToBase64(file);
         setPreview(base64Data);
+        setIsUploading(false); // Hide upload input after successful upload
         onUpdate?.(base64Data, imageSize);
       } catch (error) {
         console.error("Error converting image to base64:", error);
@@ -46,10 +46,26 @@ const ResponsiveImage = ({ initialData = null, initialStyles = { width: 300, hei
     setIsResizing(false);
   };
 
+  // Reset preview and upload state when initialData changes
   useEffect(() => {
     setPreview(initialData);
     setImageSize(initialStyles);
+    setIsUploading(!initialData); // Show "Click to Upload" if no initialData
   }, [initialData, initialStyles]);
+
+  // Function to handle deletion (only available when no image is uploaded)
+  const handleDelete = () => {
+    if (!preview && onDelete) {
+      onDelete(); // Call onDelete prop to remove the component
+    }
+  };
+
+  // Function to clear image and show upload again
+  const handleClearImage = () => {
+    setPreview(null);
+    setIsUploading(true);
+    onUpdate?.(null, imageSize); // Notify parent of cleared image
+  };
 
   return (
     <span
@@ -63,16 +79,37 @@ const ResponsiveImage = ({ initialData = null, initialStyles = { width: 300, hei
       onMouseLeave={handleMouseUp}
     >
       {preview ? (
-        <img
-          src={preview}
-          alt="Preview"
-          className="w-full h-full object-cover rounded-lg"
-        />
+        <>
+          <img
+            src={preview}
+            alt="Preview"
+            className="w-full h-full object-cover rounded-lg"
+          />
+          {/* Clear button (available only when image is present) */}
+          <button
+            className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded opacity-0 group-hover:opacity-100 transition-opacity"
+            onClick={handleClearImage}
+          >
+            X
+          </button>
+        </>
       ) : (
-        <div className="flex items-center justify-center w-12 h-full text-[#9d8ba7]"
+        <div
+          className="flex flex-col items-center justify-center w-full h-full text-[#9d8ba7] cursor-pointer"
           onClick={() => setIsUploading(true)}
         >
           <span>Click to Upload</span>
+          {/* Delete button (visible only when no image is uploaded) */}
+          {onDelete && (
+            <button
+            className="mt-2 bg-red-500 text-white px-3 py-1 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity 
+            hover:bg-red-600 active:bg-red-700 shadow-md transform hover:scale-105 transition-all duration-200"
+            onClick={handleDelete}
+          >
+            🗑 Delete
+          </button>
+          
+          )}
         </div>
       )}
 

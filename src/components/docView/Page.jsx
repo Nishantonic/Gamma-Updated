@@ -6,7 +6,7 @@ import { closestCorners, DndContext } from "@dnd-kit/core";
 import { arrayMove } from "@dnd-kit/sortable";
 import Home from "../Home/Home";
 import GenerateAi from "./GenerateAi/GenerateAi";
-import { Download, Loader2, Save, Send } from "lucide-react";
+import { Download, Loader, Loader2, Save, Send } from "lucide-react";
 import { Button } from "../ui/button";
 import {
   Dialog,
@@ -49,6 +49,8 @@ export default function Page() {
   const [aiInputData, setAiInputData] = useState("");
   const [isAiGenerated, setIsAiGenerated] = useState(false);
   const [isImpressPresent, setIsImpressPresent] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+
   const [ArraySlides, setArraySlides] = useState(() => {
     const savedSlides = JSON.parse(localStorage.getItem("slides")) || [];
     return savedSlides;
@@ -79,6 +81,18 @@ export default function Page() {
     }
   }, [currentSlide]);
 
+  const handleSaveSlideLoading = async () => {
+    if (isSaving) return; // Prevent multiple clicks
+  
+    setIsSaving(true);
+    try {
+      await handleSaveSlide(); // Replace with your actual save function
+    } catch (error) {
+      console.error("Failed to save slide:", error);
+    } finally {
+      setIsSaving(false);
+    }
+  };
  
   const renderSlideComponent = (slideData) => {
     const safeSlide = {
@@ -514,150 +528,191 @@ export default function Page() {
     navigate("/home");
   }
 };
-
-  useEffect(() => {
-    const loadPresentation = async (presentationId) => {
-      try {
-        const token = localStorage.getItem("token");
-        if (!token) {
-          toast.error("Please login to view presentation");
-          navigate("/login");
-          return;
-        }
-
-        setIsLoadingCopy(true);
-        const response = await fetch(
-          `https://presentaiapi.codesemic.com/api/slides/presentation/${presentationId}`,
-          {
-            headers: getAuthHeaders(),
-          }
-        );
-
-        if (!response.ok) throw new Error(`Failed to fetch slides: ${response.status} ${response.statusText}`);
-
-        const jsonResponse = await response.json();
-        const documentId = jsonResponse[0]?.presentation?.documentId;
-        setPresentationDocumentId(documentId);
-        console.log("Raw API response in Page:", jsonResponse);
-
-        if (!Array.isArray(jsonResponse)) {
-          throw new Error("Invalid response format: Expected an array");
-        }
-
-        const normalizedSlides = jsonResponse.map((slide) => ({
-          id: slide.id || uuidv4(),
-          documentId:slide.documentId || uuidv4(),
-          type: slide.type || "custom",
-          titleContainer: slide.titleContainer
-            ? JSON.parse(slide.titleContainer)
-            : {
-                titleId: uuidv4(),
-                title: slide.title || "Untitled",
-                styles: {},
-              },
-          descriptionContainer: slide.descriptionContainer
-            ? JSON.parse(slide.descriptionContainer)
-            : {
-                descriptionId: uuidv4(),
-                description: slide.description || "",
-                styles: {},
-              },
-          imageContainer: slide.imageContainer
-            ? JSON.parse(slide.imageContainer)
-            : {
-                imageId: uuidv4(),
-                image: slide.image?.[0] || null,
-                styles: { width: 300, height: 210 },
-              },
-          dropContainer: slide.dropContainer
-            ? JSON.parse(slide.dropContainer)
-            : {
-                dropItems: slide.content ? JSON.parse(slide.content).dropItems || [] : [],
-              },
-          ...(slide.type === "twoColumn" && {
-            columns: slide.columns ? JSON.parse(slide.columns) : [],
-          }),
-          ...(slide.type === "threeImgCard" && {
-            cards: slide.cards ? JSON.parse(slide.cards) : [],
-          }),
-        }));
-
-        setSlides(normalizedSlides);
-        setSlidesPreview(
-          normalizedSlides.map((slide, index) => ({
-            number: index + 1,
-            id: slide.id,
-            documentId: slide.documentId, // Include in preview too if needed
-            title: slide.titleContainer.title,
-            type: slide.type,
-            content: renderSlideComponent(slide),
-            onClick: () => setCurrentSlide(index + 1),
-            ...slide,
-          }))
-        );
-        toast.success("Presentation loaded successfully!");
-      } catch (error) {
-        console.error("Error loading slides:", error);
-        toast.error("Failed to load presentation");
-      } finally {
-        setIsLoadingCopy(false);
+// Existing useEffect for loading presentation
+useEffect(() => {
+  const loadPresentation = async (presentationId) => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        toast.error("Please login to view presentation");
+        navigate("/login");
+        return;
       }
-    };
 
-    if (location.state?.slidesArray) {
-      setSlides(location.state.slidesArray);
+      setIsLoadingCopy(true);
+      const response = await fetch(
+        `https://presentaiapi.codesemic.com/api/slides/presentation/${presentationId}`,
+        {
+          headers: getAuthHeaders(),
+        }
+      );
+
+      if (!response.ok) throw new Error(`Failed to fetch slides: ${response.status} ${response.statusText}`);
+
+      const jsonResponse = await response.json();
+      const documentId = jsonResponse[0]?.presentation?.documentId;
+      setPresentationDocumentId(documentId);
+      console.log("Raw API response in Page:", jsonResponse);
+
+      if (!Array.isArray(jsonResponse)) {
+        throw new Error("Invalid response format: Expected an array");
+      }
+
+      const normalizedSlides = jsonResponse.map((slide) => ({
+        id: slide.id || uuidv4(),
+        documentId: slide.documentId || uuidv4(),
+        type: slide.type || "custom",
+        titleContainer: slide.titleContainer
+          ? JSON.parse(slide.titleContainer)
+          : {
+              titleId: uuidv4(),
+              title: slide.title || "Untitled",
+              styles: {},
+            },
+        descriptionContainer: slide.descriptionContainer
+          ? JSON.parse(slide.descriptionContainer)
+          : {
+              descriptionId: uuidv4(),
+              description: slide.description || "",
+              styles: {},
+            },
+        imageContainer: slide.imageContainer
+          ? JSON.parse(slide.imageContainer)
+          : {
+              imageId: uuidv4(),
+              image: slide.image?.[0] || null,
+              styles: { width: 300, height: 210 },
+            },
+        dropContainer: slide.dropContainer
+          ? JSON.parse(slide.dropContainer)
+          : {
+              dropItems: slide.content ? JSON.parse(slide.content).dropItems || [] : [],
+            },
+        ...(slide.type === "twoColumn" && {
+          columns: slide.columns ? JSON.parse(slide.columns) : [],
+        }),
+        ...(slide.type === "threeImgCard" && {
+          cards: slide.cards ? JSON.parse(slide.cards) : [],
+        }),
+      }));
+
+      setSlides(normalizedSlides);
       setSlidesPreview(
-        location.state.slidesArray.map((slide, index) => ({
+        normalizedSlides.map((slide, index) => ({
           number: index + 1,
           id: slide.id,
-          title: slide.titleContainer?.title,
+          documentId: slide.documentId,
+          title: slide.titleContainer.title,
           type: slide.type,
           content: renderSlideComponent(slide),
           onClick: () => setCurrentSlide(index + 1),
           ...slide,
         }))
       );
-    } else if (location.state?.presentationId) {
-      setPresentationId(location.state.presentationId);
-      loadPresentation(location.state.presentationId);
-    } else {
-      const defaultSlide = {
-        id: uuidv4(),
-        type: "custom",
-        titleContainer: {
-          titleId: uuidv4(),
-          title: "New Presentation",
-          styles: {},
-        },
-        descriptionContainer: {
-          descriptionId: uuidv4(),
-          description: "",
-          styles: {},
-        },
-        imageContainer: {
-          imageId: uuidv4(),
-          image: null,
-          styles: { width: 300, height: 210 },
-        },
-        dropContainer: {
-          dropItems: [],
-        },
-      };
-
-      setSlides([defaultSlide]);
-      setSlidesPreview([
-        {
-          number: 1,
-          id: defaultSlide.id,
-          title: "New Presentation",
-          type: "custom",
-          content: renderSlideComponent(defaultSlide),
-          onClick: () => setCurrentSlide(1),
-          ...defaultSlide,
-        },
-      ]);
+      toast.success("Presentation loaded successfully!");
+    } catch (error) {
+      console.error("Error loading slides:", error);
+      toast.error("Failed to load presentation");
+    } finally {
+      setIsLoadingCopy(false);
     }
-  }, [location.state, navigate, toast]);
+  };
+
+  if (location.state?.slidesArray) {
+    setSlides(location.state.slidesArray);
+    setSlidesPreview(
+      location.state.slidesArray.map((slide, index) => ({
+        number: index + 1,
+        id: slide.id,
+        title: slide.titleContainer?.title,
+        type: slide.type,
+        content: renderSlideComponent(slide),
+        onClick: () => setCurrentSlide(index + 1),
+        ...slide,
+      }))
+    );
+  } else if (location.state?.presentationId) {
+    setPresentationId(location.state.presentationId);
+    loadPresentation(location.state.presentationId);
+  } else {
+    const defaultSlide = {
+      id: uuidv4(),
+      type: "custom",
+      titleContainer: {
+        titleId: uuidv4(),
+        title: "New Presentation",
+        styles: {},
+      },
+      descriptionContainer: {
+        descriptionId: uuidv4(),
+        description: "",
+        styles: {},
+      },
+      imageContainer: {
+        imageId: uuidv4(),
+        image: null,
+        styles: { width: 300, height: 210 },
+      },
+      dropContainer: {
+        dropItems: [],
+      },
+    };
+
+    setSlides([defaultSlide]);
+    setSlidesPreview([
+      {
+        number: 1,
+        id: defaultSlide.id,
+        title: "New Presentation",
+        type: "custom",
+        content: renderSlideComponent(defaultSlide),
+        onClick: () => setCurrentSlide(1),
+        ...defaultSlide,
+      },
+    ]);
+  }
+}, [location.state, navigate, toast]);
+
+// New useEffect to handle adding a custom slide when slides.length === 0
+useEffect(() => {
+  if (slides.length === 0) {
+    const defaultSlide = {
+      id: uuidv4(),
+      type: "custom",
+      titleContainer: {
+        titleId: uuidv4(),
+        title: "New Presentation",
+        styles: {},
+      },
+      descriptionContainer: {
+        descriptionId: uuidv4(),
+        description: "",
+        styles: {},
+      },
+      imageContainer: {
+        imageId: uuidv4(),
+        image: null,
+        styles: { width: 300, height: 210 },
+      },
+      dropContainer: {
+        dropItems: [],
+      },
+    };
+
+    setSlides([defaultSlide]);
+    setSlidesPreview([
+      {
+        number: 1,
+        id: defaultSlide.id,
+        title: "New Presentation",
+        type: "custom",
+        content: renderSlideComponent(defaultSlide),
+        onClick: () => setCurrentSlide(1),
+        ...defaultSlide,
+      },
+    ]);
+  }
+}, [slides, setSlides, setSlidesPreview, setCurrentSlide, renderSlideComponent]);
 
   const handleDragEnd = (e) => {
     const { active, over } = e;
@@ -1228,13 +1283,18 @@ export default function Page() {
                       Download Presentation
                     </Button>
                     <Button
-                      onClick={handleSaveSlide}
-                      className="bg-green-600 hover:bg-green-700 text-white"
-                      size="lg"
-                    >
-                      <Save className="mr-2 h-4 w-4" />
-                      Save
-                    </Button>
+  onClick={handleSaveSlideLoading}
+  disabled={isSaving} // Disable button while saving
+  className={`bg-green-600 hover:bg-green-700 text-white ${isSaving ? "opacity-50 cursor-not-allowed" : ""}`}
+  size="lg"
+>
+  {isSaving ? (
+    <Loader className="mr-2 h-4 w-4 animate-spin" /> // Show loader icon
+  ) : (
+    <Save className="mr-2 h-4 w-4" />
+  )}
+  {isSaving ? "Saving..." : "Save"}
+</Button>
                   </CardContent>
                 </Card>
               )}

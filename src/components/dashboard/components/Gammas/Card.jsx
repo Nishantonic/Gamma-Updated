@@ -25,13 +25,26 @@ const Card = ({
   const title = truncateText(presentation?.title, 50) || 'Untitled Presentation';
   const description = truncateText(presentation?.description, 100) || 'No description available';
   
-  // Use the first slide's image from presentation.slides[0] if available
-  const image = presentation?.slides?.[0]?.imageContainer?.image;
-
-  // Debugging logs
-  console.log("Presentation:", presentation);
-  console.log("First Slide:", presentation?.slides?.[0]);
-  console.log("Image:", image);
+  // Try to get image from multiple possible sources
+  const getImageSource = () => {
+    // Prioritize presentation-level image or thumbnail
+    if (presentation?.thumbnail) {
+      return presentation.thumbnail;
+    }
+    if (presentation?.image) {
+      return presentation.image;
+    }
+    // Fallback to slides if available
+    if (presentation?.slides?.length > 0) {
+      const firstSlide = presentation.slides[0];
+      if (firstSlide?.imageContainer?.image) {
+        return firstSlide.imageContainer.image;
+      }
+    }
+    return null; // No image available
+  };
+  
+  const image = getImageSource();
 
   const handleDropdownClick = (e) => {
     e.stopPropagation();
@@ -95,7 +108,7 @@ const Card = ({
         <div className="relative w-48 h-33 flex-shrink-0 bg-gray-100 overflow-hidden rounded-xl ">
           {image ? (
             <img
-              src={image}
+              src={image || "/placeholder.svg"}
               alt={title}
               className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-300 "
             />
@@ -150,7 +163,7 @@ const Card = ({
       <div className="relative h-48 w-full bg-gray-100 overflow-hidden">
         {image ? (
           <img
-            src={image}
+            src={image || "/placeholder.svg"}
             alt={title}
             className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-300"
           />

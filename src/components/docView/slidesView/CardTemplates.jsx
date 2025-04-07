@@ -23,8 +23,8 @@ import ParagraphAi from "../GenerateAi/AiComponents/ParagraphAi";
 import ResponsiveImage from "@/components/SidebarLeft/components/ToolBarElements/ResponsiveImage";
 import ResponsiveVideo from "@/components/SidebarLeft/components/ToolBarElements/ResponsiveVideo";
 import ResponsiveAudio from "@/components/SidebarLeft/components/ToolBarElements/ResponsiveAudio";
-import { Chart as ChartJS, ArcElement, Tooltip, Legend, BarElement, CategoryScale, LinearScale } from "chart.js";
-ChartJS.register(ArcElement, Tooltip, Legend, BarElement, CategoryScale, LinearScale);
+import { Bar, Pie, Line } from "react-chartjs-2";
+import { BarChart2, PieChart as PieChartIcon, TrendingUp } from "lucide-react";
 
 export default function CardTemplates({
   generateAi = {},
@@ -47,13 +47,17 @@ export default function CardTemplates({
   const { draggedElement } = useContext(DragContext);
   const slideId = generateAi.id || uuidv4();
 
-  const COMPONENT_MAP = {
+ const COMPONENT_MAP = {
     title: TitleAi,
     paragraph: ParagraphAi,
     heading: Heading,
     image: ResponsiveImage,
     video: ResponsiveVideo,
     audio: ResponsiveAudio,
+    "column-chart": Bar,  // Vertical bars (Column Chart)
+    "bar-chart": Bar,     // Horizontal bars (Bar Chart)
+    "pie-chart": Pie,     // Pie Chart
+    "line-chart": Line,   // Line Chart
   };
 
   // Handle title and description updates
@@ -90,29 +94,47 @@ export default function CardTemplates({
   }
 };
   
-const handleDrop = (event) => {
-  event.preventDefault();
-  const data = JSON.parse(event.dataTransfer.getData("application/json"));
 
-  if (data.type === "template") {
-    handleTemplateDrop(data.templateType);
-  } else if (data.type) {
-    const newItem = {
-      id: uuidv4(),
-      type: data.type,
-      content: "",
-      styles: { width: 300, height: 210 },
-    };
+  // Updated handleDrop to support all chart types
+  const handleDrop = (event) => {
+    event.preventDefault();
+    const data = JSON.parse(event.dataTransfer.getData("application/json"));
 
-    const updatedData = {
-      ...generateAi,
-      dropContainer: {
-        dropItems: [...(generateAi.dropContainer?.dropItems || []), newItem],
-      },
-    };
-    generateAi.onEdit?.(updatedData);
-  }
-};
+    if (data.type) {
+      let newItem;
+      // Handle all chart types
+      if (
+        data.type === "column-chart" ||
+        data.type === "bar-chart" ||
+        data.type === "pie-chart" ||
+        data.type === "line-chart"
+      ) {
+        newItem = {
+          id: uuidv4(),
+          type: data.type,
+          chartData: data.data.chartData, // Chart data from ChartsDiagram
+          options: data.data.options,     // Chart options
+          styles: data.data.style,        // Width and height
+        };
+      } else {
+        // Handle other types (e.g., title, paragraph)
+        newItem = {
+          id: uuidv4(),
+          type: data.type,
+          content: "",
+          styles: { width: 300, height: 210 },
+        };
+      }
+
+      const updatedData = {
+        ...generateAi,
+        dropContainer: {
+          dropItems: [...(generateAi.dropContainer?.dropItems || []), newItem],
+        },
+      };
+      generateAi.onEdit?.(updatedData);
+    }
+  };
 
   const handleDragOver = (event) => {
   event.preventDefault();
@@ -247,30 +269,57 @@ if (isDeleted) {
   return null;
 }
 
-const renderDroppedItems = () => {
-  return (generateAi.dropContainer?.dropItems || []).map((item) => {
-    const Component = COMPONENT_MAP[item.type];
-    if (!Component) return null;
+// Updated renderDroppedItems to render all chart types
+  const renderDroppedItems = () => {
+    return (generateAi.dropContainer?.dropItems || []).map((item) => {
+      const Component = COMPONENT_MAP[item.type];
+      if (!Component) {
+        console.warn(`No component found for type: ${item.type}`);
+        return null;
+      }
 
-    return (
-      <div key={item.id} className="mb-4 relative group">
-        <Component
-          slideId={slideId}
-          inputId={item.id}
-          initialData={item.content}
-          initialStyles={item.styles}
-          onUpdate={(value, styles) => {
-            handleUpdateDroppedItem(item.id, {
-              content: value,
-              styles: styles,
-            });
-          }}
-        />
-        <Button
-          variant="ghost"
-          size="sm"
-          className="absolute -top-3 -right-3 opacity-0 group-hover:opacity-100 transition-opacity"
-          onClick={() => handleDeleteDroppedItem(item.id)}
+      // Render chart components
+      if (
+        item.type === "column-chart" ||
+        item.type === "bar-chart" ||
+        item.type === "pie-chart" ||
+        item.type === "line-chart"
+      ) {
+        return (
+          <div key={item.id} className="mb-4 relative group" style={item.styles}>
+            <Component data={item.chartData} options={item.options} />
+            <Button
+              variant="ghost"
+              size="sm"
+              className="absolute -top-3 -right-3 opacity-0 group-hover:opacity-100 transition-opacity"
+              onClick={() => handleDeleteDroppedItem(item.id)}
+            >
+              ×
+            </Button>
+          </div>
+        );
+      }
+
+      // Render other components (title, paragraph, etc.)
+      return (
+        <div key={item.id} className="mb-4 relative group">
+          <Component
+            slideId={slideId}
+            inputId={item.id}
+            initialData={item.content}
+            initialStyles={item.styles}
+            onUpdate={(value, styles) => {
+              handleUpdateDroppedItem(item.id, {
+                content: value,
+                styles: styles,
+              });
+            }}
+          />
+          <Button
+            variant="ghost"
+            size="sm"
+            className="absolute -top-3 -right-3 opacity-0 group-hover:opacity-100 transition-opacity"
+            onClick={() => handleDeleteDroppedItem(item.id)}
           >
             ×
           </Button>
@@ -313,7 +362,6 @@ const renderDroppedItems = () => {
               Or start with a template
             </h2>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 px-10">
-              {/* Updated template cards with type handling */}
               <Card
                 className="p-4 bg-[#2a2438] border-[#3a3347] hover:border-[#4a4357] cursor-pointer transition-colors relative group"
                 onClick={handleImageText}

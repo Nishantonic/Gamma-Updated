@@ -18,10 +18,6 @@ function ParagraphAi({ slideId, inputId, onUpdate, initialData,initialStyles,isP
       }
     }, []);
 
-     useEffect(()=>{
-        console.log("ispreisPresentationMode paragraph",isPresentationMode, isPresentationMode);
-        
-      })
 
   const handleChange = (value) => {
   // Add null check for quillRef

@@ -207,7 +207,6 @@ function DefaultAi({ generateAi = {},isPresentationMode,  index }) {
               slideId={generateAi.id}
               inputId={generateAi.descriptionContainer?.descriptionId}
               className="description text-lg text-gray-300"
-              isPresentationMode={isPresentationMode}
             />
             </div>
         </div>

@@ -10,9 +10,7 @@ function Heading({ slideId, inputId, onUpdate, initialData, initialStyles, isPre
   const [editorHtml, setEditorHtml] = useState(formattedInitialData);
   const [editorStyles, setEditorStyles] = useState(initialStyles || { header: 2 });
 
-  useEffect(() => {
-    console.log("isPresentationMode in Heading:", isPresentationMode);
-  }, [isPresentationMode]);
+
 
   useEffect(() => {
     if (quillRef.current) {
